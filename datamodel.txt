@@ -1,0 +1,48 @@
+
+
+* index page: list of songs
+* song page: list tracks
+
+* file structure:
+- songs/
+  - <songid>/
+    - tracks/
+      - <track filename>
+
+
+
+Song:
+ - id
+ - title
+ - perms
+ - tracks
+
+Track:
+ - id
+ - songid
+ - title
+ - author? userid?
+ - filepath
+
+
+---
+
+Perm:
+ - id
+ - userid   [null=wildcard]
+ - groupid  [null=wildcard]
+ - songid
+ - read?
+ - write?
+
+
+User:
+ - id
+ - username
+ - passwd
+ - groups
+
+
+Group:
+ - id
+ - name
