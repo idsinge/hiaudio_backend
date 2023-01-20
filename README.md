@@ -10,6 +10,9 @@ source venv/bin/activate
 # install requirements
 pip install -r requirements.txt
 
+# init db
+python initdb.py
+
 # run the server 
 python app.py
 
