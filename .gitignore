@@ -1,0 +1,6 @@
+env
+.env
+.DS_Store
+database.db
+webapp
+sqlite_db

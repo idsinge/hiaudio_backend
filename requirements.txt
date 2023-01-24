@@ -3,3 +3,7 @@ Flask-Cors
 Flask-SQLAlchemy
 SQLAlchemy
 SQLAlchemy-serializer
+oauthlib
+pyOpenSSL
+requests
+Flask-Login
