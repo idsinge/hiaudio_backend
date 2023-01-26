@@ -4,14 +4,14 @@ Usage:
 # create python virtualenv
 virtualenv -p python3 venv
 
-or 
+# or 
 
 python3 -m venv venv
 
 # activate virtualenv
 source venv/bin/activate
 
-or 
+# or
 
 . venv/bin/activate
 
@@ -33,7 +33,7 @@ python app.py
 # Verify it's running
 Open -> https://127.0.0.1:7007/
 
-or
+# or
 
 Open -> http://localhost:7007/
 
