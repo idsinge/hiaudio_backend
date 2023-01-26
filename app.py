@@ -251,7 +251,10 @@ def page(filename):
 
     return jsonify(request.data)
 
-if __name__ == "__main__":
-    app.run(ssl_context="adhoc", port=7007, debug=True)
-#if __name__ == "__main__":    
-    #app.run(host='0.0.0.0', port=7007, debug=True)
+# FOR HTTPS
+# if __name__ == "__main__":
+#     app.run(ssl_context="adhoc", port=7007, debug=True)
+
+# FOR HTTP
+if __name__ == "__main__":    
+    app.run(host='0.0.0.0', port=7007, debug=True)

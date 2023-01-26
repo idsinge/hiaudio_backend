@@ -4,8 +4,12 @@ import os
 
 with app.app_context():
 
-    os.remove(DB_FILE)
-    db.create_all()
+    if os.path.exists(DB_FILE):
+        print('The file exists')
+        os.remove(DB_FILE)
+    else:
+        print('The file does not exist')       
+        db.create_all()
 
     song1 = Song(title="David & bunchofsongsbot")
 
