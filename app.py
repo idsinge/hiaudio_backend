@@ -72,9 +72,9 @@ db.init_app(app)
 @app.route('/')
 def index():
     if current_user.is_authenticated:
-        return redirect("https://localhost:80/index.html?auth=true")
+        return redirect("https://localhost:7007/webapp/index.html?auth=true")
     else:
-        return redirect("https://localhost:80/index.html")
+        return redirect("https://localhost:7007/webapp/index.html")
 
 @app.route("/register")
 @app.route("/profile")
@@ -180,8 +180,7 @@ def logout():
 @cross_origin()
 def songs():
     songs = Song.query.all()
-    jsongs = jsonify(songs=[ song.to_dict( rules=('-tracks',) ) for song in songs])
-    print(jsongs)
+    jsongs = jsonify(songs=[ song.to_dict( rules=('-tracks',) ) for song in songs])    
     return jsongs
 
 
@@ -189,8 +188,7 @@ def songs():
 @cross_origin()
 def song(id):
     song = Song.query.get_or_404(id)
-    jsong = jsonify(song.to_dict( rules=('-path',) ))
-    print(jsong)
+    jsong = jsonify(song.to_dict( rules=('-path',) ))    
     return jsong
 
 
@@ -201,10 +199,11 @@ def trackfile(id):
     return send_from_directory( DATA_BASEDIR, track.path )
 
 @app.route('/newsong', methods=['POST'])
+@login_required
 @cross_origin()
 def newsong():
-    if current_user.is_authenticated:
-        print(request.data)
+    print(current_user.get_id())
+    if current_user.is_authenticated:        
         title = request.get_json()["title"]
 
         song = Song(title=title)
@@ -223,32 +222,33 @@ def allowed_file(filename):
 
 @app.route('/fileUpload/', methods=['POST'])
 @cross_origin()
+@login_required
 def fileupload():
+    print(current_user.get_id())
+    if current_user.is_authenticated:        
+        songid = request.form['song_id']
+        song = Song.query.get_or_404(songid)
 
-    songid = request.form['song_id']
-    song = Song.query.get_or_404(songid)
-
-    file = request.files['audio']
+        file = request.files['audio']
 
 
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        trackpath = f"songs/{songid}/{filename}"
-        fullpath = os.path.join(DATA_BASEDIR, trackpath )
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            trackpath = f"songs/{songid}/{filename}"
+            fullpath = os.path.join(DATA_BASEDIR, trackpath )
 
-        os.makedirs(os.path.dirname(fullpath), exist_ok=True);
+            os.makedirs(os.path.dirname(fullpath), exist_ok=True);
 
-        file.save( fullpath )
+            file.save( fullpath )
 
-        newtrack = Track(title=filename, path=trackpath, song=song)
-        db.session.add(newtrack)
-        db.session.commit()
+            newtrack = Track(title=filename, path=trackpath, song=song)
+            db.session.add(newtrack)
+            db.session.commit()
 
-    return ""
+    return jsonify({"error":"not authenticated"})
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
-def page(filename):
-    print(filename)
+def page(filename):    
     filename = filename or 'webapp/index.html'
     if request.method == 'GET':
         return send_from_directory('.', filename)
