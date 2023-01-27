@@ -69,14 +69,22 @@ def load_user(user_id):
 
 db.init_app(app)
 
-@app.route("/")
+@app.route('/')
 def index():
+    if current_user.is_authenticated:
+        return redirect("https://localhost:80/index.html?auth=true")
+    else:
+        return redirect("https://localhost:80/index.html")
+
+@app.route("/register")
+@app.route("/profile")
+def register():
     if current_user.is_authenticated:
         return (
             "<p>Hello, {}! You're logged in! Email: {}</p>"
             "<div><p>Google Profile Picture:</p>"
             '<img src="{}" alt="Google profile pic"></img></div>'
-            '<a class="button" href="/webapp/index.html">Go Home</a><br>'
+            '<a class="button" href="/">Go Home</a><br>'
             '<a class="button" href="/logout">Logout</a>'.format(
                 current_user.name, current_user.email, current_user.profile_pic
             )
@@ -86,8 +94,6 @@ def index():
 
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
-
-
 
 @app.route("/login")
 def login():
@@ -194,27 +200,26 @@ def trackfile(id):
     track = Track.query.get_or_404(id)
     return send_from_directory( DATA_BASEDIR, track.path )
 
-
-
 @app.route('/newsong', methods=['POST'])
 @cross_origin()
 def newsong():
-    print(request.data)
-    title = request.get_json()["title"]
+    if current_user.is_authenticated:
+        print(request.data)
+        title = request.get_json()["title"]
 
-    song = Song(title=title)
+        song = Song(title=title)
 
-    db.session.add(song)
-    db.session.commit()
+        db.session.add(song)
+        db.session.commit()
 
-    return jsonify(song=song.to_dict( rules=('-path',) ))
-
-
+        return jsonify(song=song.to_dict( rules=('-path',) ))
+    
+    else:
+        return jsonify({"error":"not authenticated"})
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 @app.route('/fileUpload/', methods=['POST'])
 @cross_origin()
@@ -239,7 +244,6 @@ def fileupload():
         db.session.add(newtrack)
         db.session.commit()
 
-
     return ""
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
@@ -252,9 +256,9 @@ def page(filename):
     return jsonify(request.data)
 
 # FOR HTTPS
-# if __name__ == "__main__":
-#     app.run(ssl_context="adhoc", port=7007, debug=True)
+if __name__ == "__main__":
+    app.run(ssl_context="adhoc", port=7007, debug=True)
 
 # FOR HTTP
-if __name__ == "__main__":    
-    app.run(host='0.0.0.0', port=7007, debug=True)
+# if __name__ == "__main__":    
+#     app.run(host='0.0.0.0', port=7007, debug=True)
