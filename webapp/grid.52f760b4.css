@@ -1,0 +1,2 @@
+.grid{width:85%;margin:7em auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.grid-div{max-width:370px;margin:14pt}@media screen and (max-width:530px){.grid{margin:8.5em auto}}
+/*# sourceMappingURL=grid.52f760b4.css.map */
