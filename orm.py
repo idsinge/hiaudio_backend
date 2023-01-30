@@ -5,29 +5,29 @@ from sqlalchemy_serializer import SerializerMixin
 
 db = SQLAlchemy()
 
-class Person(db.Model, UserMixin):
+class User(db.Model, UserMixin):
 
     id = db.Column(db.String(100), primary_key=True)
     username = db.Column(db.String(100))
     name = db.Column(db.String(100))
     email = db.Column(db.String(100))
     profile_pic = db.Column(db.String(100))
-    songs = db.relationship('Song', backref='person')   
+    songs = db.relationship('Song', backref='user')   
 
     def __repr__(self):
-        return f'<Person "{self.email}">'
+        return f'<User "{self.email}">'
 
 
 
 class Song(db.Model, SerializerMixin):
 
-    serialize_rules = ('-person', )
+    serialize_rules = ('-user', )
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100))
     tracks = db.relationship('Track', backref='song')
 
-    person_id = db.Column(db.String(100), db.ForeignKey('person.id'))
+    user_id = db.Column(db.String(100), db.ForeignKey('user.id'))
 
     def __repr__(self):
         return f'<Song "{self.title}">'

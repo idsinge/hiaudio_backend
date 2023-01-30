@@ -1,5 +1,5 @@
 from app import app, DATA_BASEDIR, DB_FILE
-from orm import db, Song, Track, Person
+from orm import db, Song, Track, User
 import os
 
 with app.app_context():
@@ -12,11 +12,11 @@ with app.app_context():
     
     db.create_all()
 
-    person1 = Person(id="123456789", username="josema", name="Jose Ma", email="gilpanal+2@gmail.com", profile_pic="https://myserver.com/user+josema&profilepicture.jpg")
-    db.session.add(person1)
+    user1 = User(id="123456789", username="josema", name="Jose Ma", email="gilpanal+2@gmail.com", profile_pic="https://myserver.com/user+josema&profilepicture.jpg")
+    db.session.add(user1)
     db.session.commit()
 
-    song1 = Song(title="David & bunchofsongsbot", person=person1)
+    song1 = Song(title="David & bunchofsongsbot", user=user1)
 
     db.session.add(song1)
     db.session.commit()

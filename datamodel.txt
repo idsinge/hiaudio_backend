@@ -4,15 +4,15 @@
 * song page: list tracks
 
 * file structure:
-- persons/
-  - <personid>
+- users/
+  - <userid>
     - songs/
       - <songid>/
         - tracks/
           - <track filename>
 
 
-Person:
+User:
  - id
  - username 
  - groups
@@ -23,7 +23,7 @@ Person:
 
 Song:
  - id
- - personid
+ - userid
  - title
  - perms
  - tracks
@@ -45,16 +45,6 @@ Perm:
  - songid
  - read?
  - write?
-
-
-User:
- - id
- - username 
- - groups
- - name
- - email
- - profile_pic
-
 
 Group:
  - id

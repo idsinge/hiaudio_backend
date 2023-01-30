@@ -4,7 +4,7 @@ from flask import Flask, request, redirect, url_for, jsonify, send_from_director
 from flask_cors import CORS, cross_origin
 from werkzeug.utils import secure_filename
 
-from orm import db, Song, Track, Person
+from orm import db, Song, Track, User
 
 from flask_login import (
     LoginManager,
@@ -51,7 +51,7 @@ client = WebApplicationClient(GOOGLE_CLIENT_ID)
 # Flask-Login helper to retrieve a user from our db
 @login_manager.user_loader
 def load_user(user_id):
-    return Person.query.get(user_id)
+    return User.query.get(user_id)
 
 db.init_app(app)
 
@@ -142,15 +142,15 @@ def callback():
     
     # Create a user in your db with the information provided
     # by Google
-    person = Person(id=unique_id, name=users_name, email=users_email, profile_pic=picture)
+    user = User(id=unique_id, name=users_name, email=users_email, profile_pic=picture)
    
     # Doesn't exist? Add it to the database.  
-    if not Person.query.get(unique_id):
-        db.session.add(person)
+    if not User.query.get(unique_id):
+        db.session.add(user)
         db.session.commit()
 
     # Begin user session by logging the user in    
-    login_user(person)
+    login_user(user)
 
     # Send user back to homepage
     return redirect(url_for("index"))
@@ -161,19 +161,19 @@ def logout():
     logout_user()
     return redirect(url_for("index"))
 
-@app.route('/persons')
+@app.route('/users')
 @cross_origin()
-def persons():
-    persons = Person.query.all()
-    jpersons = jsonify(persons=[ person.to_dict( rules=('-songs',) ) for person in persons])    
-    return jpersons
+def users():
+    users = User.query.all()
+    jusers = jsonify(users=[ user.to_dict( rules=('-songs',) ) for user in users])    
+    return jusers
 
-@app.route('/person/<int:id>')
+@app.route('/users/<int:id>')
 @cross_origin()
-def person(id):
-    person = Person.query.get_or_404(id)
-    jperson = jsonify(person.to_dict( rules=('-path',) ))    
-    return jperson
+def user(id):
+    user = User.query.get_or_404(id)
+    juser = jsonify(user.to_dict( rules=('-path',) ))    
+    return juser
 
 @app.route('/songs')
 @cross_origin()
