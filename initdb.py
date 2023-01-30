@@ -1,5 +1,5 @@
 from app import app, DATA_BASEDIR, DB_FILE
-from orm import db, Song, Track
+from orm import db, Song, Track, Person
 import os
 
 with app.app_context():
@@ -9,9 +9,14 @@ with app.app_context():
         os.remove(DB_FILE)
     else:
         print('The file does not exist')       
-        db.create_all()
+    
+    db.create_all()
 
-    song1 = Song(title="David & bunchofsongsbot")
+    person1 = Person(id="123456789", username="josema", name="Jose Ma", email="gilpanal+2@gmail.com", profile_pic="https://myserver.com/user+josema&profilepicture.jpg")
+    db.session.add(person1)
+    db.session.commit()
+
+    song1 = Song(title="David & bunchofsongsbot", person=person1)
 
     db.session.add(song1)
     db.session.commit()

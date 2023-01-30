@@ -1,16 +1,11 @@
 import os, json
-from flask import Flask, render_template, request, redirect, url_for, jsonify, send_from_directory
+from flask import Flask, request, redirect, url_for, jsonify, send_from_directory
 
 from flask_cors import CORS, cross_origin
 from werkzeug.utils import secure_filename
 
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy_serializer import SerializerMixin
+from orm import db, Song, Track, Person
 
-from orm import db, Song, Track
-
-import sqlite3
-# Third-party libraries
 from flask_login import (
     LoginManager,
     current_user,
@@ -20,10 +15,6 @@ from flask_login import (
 )
 from oauthlib.oauth2 import WebApplicationClient
 import requests
-
-# Internal imports
-from db import init_db_command
-from user import User
 
 # Configuration
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
@@ -54,20 +45,13 @@ app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-# Naive database setup
-try:
-    init_db_command()
-except sqlite3.OperationalError:
-    # Assume it's already been created
-    pass
-
 # OAuth 2 client setup
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 # Flask-Login helper to retrieve a user from our db
 @login_manager.user_loader
 def load_user(user_id):
-    return User.get(user_id)
+    return Person.query.get(user_id)
 
 db.init_app(app)
 
@@ -158,16 +142,15 @@ def callback():
     
     # Create a user in your db with the information provided
     # by Google
-    user = User(
-        id_=unique_id, name=users_name, email=users_email, profile_pic=picture
-    )
+    person = Person(id=unique_id, name=users_name, email=users_email, profile_pic=picture)
+   
+    # Doesn't exist? Add it to the database.  
+    if not Person.query.get(unique_id):
+        db.session.add(person)
+        db.session.commit()
 
-    # Doesn't exist? Add it to the database.
-    if not User.get(unique_id):
-        User.create(unique_id, users_name, users_email, picture)
-
-    # Begin user session by logging the user in
-    login_user(user)
+    # Begin user session by logging the user in    
+    login_user(person)
 
     # Send user back to homepage
     return redirect(url_for("index"))
@@ -177,6 +160,20 @@ def callback():
 def logout():
     logout_user()
     return redirect(url_for("index"))
+
+@app.route('/persons')
+@cross_origin()
+def persons():
+    persons = Person.query.all()
+    jpersons = jsonify(persons=[ person.to_dict( rules=('-songs',) ) for person in persons])    
+    return jpersons
+
+@app.route('/person/<int:id>')
+@cross_origin()
+def person(id):
+    person = Person.query.get_or_404(id)
+    jperson = jsonify(person.to_dict( rules=('-path',) ))    
+    return jperson
 
 @app.route('/songs')
 @cross_origin()
@@ -226,7 +223,7 @@ def allowed_file(filename):
 @cross_origin()
 @login_required
 def fileupload():
-    print(current_user.get_id())
+    
     if current_user.is_authenticated:        
         songid = request.form['song_id']
         song = Song.query.get_or_404(songid)
