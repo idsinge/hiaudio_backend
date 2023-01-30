@@ -40,6 +40,8 @@ DATA_BASEDIR = os.path.join(basedir, "../data/")
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg'}
 
 app = Flask(__name__)
+# allow uploads up to 16MB
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
@@ -220,7 +222,7 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/fileUpload/', methods=['POST'])
+@app.route('/fileUpload', methods=['POST'])
 @cross_origin()
 @login_required
 def fileupload():
@@ -244,8 +246,15 @@ def fileupload():
             newtrack = Track(title=filename, path=trackpath, song=song)
             db.session.add(newtrack)
             db.session.commit()
-
-    return jsonify({"error":"not authenticated"})
+            respInfo ={"message":{
+                "audio":{"songid":songid, "title":filename, "path":trackpath, "file_unique_id":"fileuniqueid"}}, 
+                "date":"123456789", 
+                "message_id":"messageid"}
+            return jsonify({"ok":"true", "result":respInfo})
+        else: 
+            return jsonify({"error":"type not allowed"})
+    else:
+        return jsonify({"error":"not authenticated"})
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):    
