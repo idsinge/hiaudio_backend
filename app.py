@@ -201,11 +201,10 @@ def trackfile(id):
 @login_required
 @cross_origin()
 def newsong():
-    print(current_user.get_id())
     if current_user.is_authenticated:        
         title = request.get_json()["title"]
-
-        song = Song(title=title)
+        user = User.query.get(current_user.get_id())
+        song = Song(title=title, user=user)
 
         db.session.add(song)
         db.session.commit()
@@ -223,10 +222,10 @@ def allowed_file(filename):
 @cross_origin()
 @login_required
 def fileupload():
-    
-    if current_user.is_authenticated:        
-        songid = request.form['song_id']
-        song = Song.query.get_or_404(songid)
+    user_auth = current_user.get_id()    
+    songid = request.form['song_id']
+    song = Song.query.get_or_404(songid)
+    if song.user.id == user_auth:        
 
         file = request.files['audio']
 
@@ -251,7 +250,7 @@ def fileupload():
         else: 
             return jsonify({"error":"type not allowed"})
     else:
-        return jsonify({"error":"not authenticated"})
+        return jsonify({"error":"not valid user"})
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):    
