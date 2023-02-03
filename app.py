@@ -262,7 +262,7 @@ def page(filename):
 
 # FOR HTTPS
 if __name__ == "__main__":
-    app.run(ssl_context="adhoc", port=7007, debug=True)
+    app.run(ssl_context="adhoc", host='0.0.0.0', port=7007, debug=True)
 
 # FOR HTTP
 # if __name__ == "__main__":    
