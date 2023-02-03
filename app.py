@@ -57,10 +57,10 @@ db.init_app(app)
 
 @app.route('/')
 def index():
-    if current_user.is_authenticated:
-        return redirect("https://localhost:7007/webapp/index.html?auth=true")
+    if current_user.is_authenticated:        
+        return redirect(request.base_url+"webapp/index.html?auth=true")
     else:
-        return redirect("https://localhost:7007/webapp/index.html")
+        return redirect(request.base_url+"webapp/index.html")
 
 @app.route("/register")
 @app.route("/profile")
