@@ -12,20 +12,18 @@ with app.app_context():
     
     db.create_all()
 
-    user1 = User(id="123456789", username="josema", name="Jose Ma", email="gilpanal+2@gmail.com", profile_pic="https://myserver.com/user+josema&profilepicture.jpg")
+    user1 = User(id="123456789", username="superadmin", name="Super Admin", email="gilpanal+2@gmail.com", profile_pic="https://lh3.googleusercontent.com/a/AEdFTp5F-T3LomGACzwOvVRbctIfx84OMUoNqZpLjq_-fg=s96-c")
     db.session.add(user1)
     db.session.commit()
 
-    song1 = Song(title="David & bunchofsongsbot", user=user1)
+    song1 = Song(title="Live Together", user=user1)
 
     db.session.add(song1)
     db.session.commit()
 
 
 
-    track1 = Track(title="Never Too Much (Spen & Thommy's Club Anthem Mix)", path=f"songs/{song1.id}/file_2129", song=song1)
-    track2 = Track(title="track2", path=f"songs/{song1.id}/file_2130", song=song1)
-    track3 = Track(title="track3", path=f"songs/{song1.id}/file_2131", song=song1)
-
-    db.session.add_all({track1, track2, track3})
+    track1 = Track(title="Acoustic", path=f"songs/{song1.id}/acoustic_1-mastered.mp3", song=song1)
+    track2 = Track(title="Methronome", path=f"songs/{song1.id}/methronome_110.mp3", song=song1)
+    db.session.add_all({track1, track2})
     db.session.commit()

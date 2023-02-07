@@ -37,4 +37,13 @@ Open -> https://127.0.0.1:7007/
 
 Open -> http://localhost:7007/
 
+# To make the frontend work together with the backend
+# in local DEV mode/environment
+# follow below instructions at:
+https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally
+
+# Inside backend repo clone:
+git https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp.git
+
+rename "beatbytebot_webapp" to "webapp"
 ```
