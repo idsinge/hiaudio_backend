@@ -58,9 +58,9 @@ db.init_app(app)
 @app.route('/')
 def index():
     if current_user.is_authenticated:        
-        return redirect(request.base_url+"webapp/index.html?auth=true")
+        return redirect(request.base_url+"public/index.html?auth=true")
     else:
-        return redirect(request.base_url+"webapp/index.html")
+        return redirect(request.base_url+"public/index.html")
 
 @app.route("/register")
 @app.route("/profile")
@@ -188,8 +188,14 @@ def songs():
 @app.route('/song/<int:id>')
 @cross_origin()
 def song(id):
+    user_auth = current_user.get_id()    
     song = Song.query.get_or_404(id)
-    jsong = jsonify(song.to_dict( rules=('-path',) ))    
+    owner = False
+    if song.user.id == user_auth:
+        owner = True
+    data = song.to_dict( rules=('-path',) )
+    data['owner'] = owner
+    jsong = jsonify(data)    
     return jsong
 
 
@@ -198,6 +204,20 @@ def song(id):
 def trackfile(id):
     track = Track.query.get_or_404(id)
     return send_from_directory( DATA_BASEDIR, track.path )
+
+@app.route('/deletetrack/<int:id>', methods=['DELETE'])
+@login_required
+@cross_origin()
+def deletetrack(id):
+    track = Track.query.get(id) 
+
+    # TODO: delete file from folder   
+    if(track is None):
+        return jsonify({"error":"track not found"})
+    else:
+        db.session.delete(track)
+        db.session.commit()
+        return jsonify({"ok":"true", "result":track.id})
 
 @app.route('/newsong', methods=['POST'])
 @login_required
@@ -244,8 +264,9 @@ def fileupload():
             newtrack = Track(title=filename, path=trackpath, song=song)
             db.session.add(newtrack)
             db.session.commit()
+            data=newtrack.to_dict( rules=('-path',) )
             respInfo ={"message":{
-                "audio":{"songid":songid, "title":filename, "path":trackpath, "file_unique_id":"fileuniqueid"}}, 
+                "audio":{"songid":songid, "title":filename, "path":trackpath, "file_unique_id":data['id']}}, 
                 "date":"123456789", 
                 "message_id":"messageid"}
             return jsonify({"ok":"true", "result":respInfo})
@@ -256,7 +277,7 @@ def fileupload():
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):    
-    filename = filename or 'webapp/index.html'
+    filename = filename or 'public/index.html'
     if request.method == 'GET':
         return send_from_directory('.', filename)
 

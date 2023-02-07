@@ -4,3 +4,4 @@ venv
 .DS_Store
 database.db
 sqlite_db
+webapp
