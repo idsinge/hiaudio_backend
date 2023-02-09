@@ -153,7 +153,7 @@ var queryString = window.location.search;
 var isAuthenticated = queryString.split('auth=')[1];
 var domainIs = window.location.host;
 var uriSongPage = '/song.html?songId=';
-if (domainIs !== 'localhost:80') {
+if (domainIs !== 'localhost:80' && window.location.origin !== 'http://localhost') {
   uriSongPage = '/public' + uriSongPage;
 }
 if (isAuthenticated) {
@@ -261,7 +261,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59131" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60623" + '/');
   ws.onmessage = function (event) {
     checkedAssets = {};
     assetsToAccept = [];

@@ -332,9 +332,9 @@ var TrackHandler = /*#__PURE__*/function () {
     key: "displayOptMenuForTracks",
     value: function displayOptMenuForTracks() {
       var controlsList = document.getElementsByClassName('controls');
-      var arrayTracks = _song.playlist.getInfo();
+      var arrayTracks = _song.playlist.getInfo().tracks;
       for (var i = 0; i < controlsList.length; i++) {
-        if (arrayTracks[i].customClass) {
+        if (arrayTracks && arrayTracks[i].customClass) {
           var message_id = arrayTracks[i].customClass.message_id;
           var name = arrayTracks[i].customClass.name;
           var track_id = arrayTracks[i].customClass.track_id;
@@ -392,6 +392,9 @@ var TrackHandler = /*#__PURE__*/function () {
         return res.json();
       }).then(function (res) {
         doAfterDeleted(res, pos);
+      }).catch(function (err) {
+        console.log(err);
+        (0, _song_helper.cancelLoader)(_song.LOADER_ELEM_ID);
       });
     }
   }, {
@@ -510,7 +513,3147 @@ var FileUploader = /*#__PURE__*/function () {
   return FileUploader;
 }();
 exports.FileUploader = FileUploader;
-},{"../js/config":"js/config.js","./song":"song/song.js","./song_helper":"song/song_helper.js"}],"../node_modules/lodash.assign/index.js":[function(require,module,exports) {
+},{"../js/config":"js/config.js","./song":"song/song.js","./song_helper":"song/song_helper.js"}],"../node_modules/process/browser.js":[function(require,module,exports) {
+
+// shim for using process in browser
+var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+function defaultSetTimout() {
+  throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout() {
+  throw new Error('clearTimeout has not been defined');
+}
+(function () {
+  try {
+    if (typeof setTimeout === 'function') {
+      cachedSetTimeout = setTimeout;
+    } else {
+      cachedSetTimeout = defaultSetTimout;
+    }
+  } catch (e) {
+    cachedSetTimeout = defaultSetTimout;
+  }
+  try {
+    if (typeof clearTimeout === 'function') {
+      cachedClearTimeout = clearTimeout;
+    } else {
+      cachedClearTimeout = defaultClearTimeout;
+    }
+  } catch (e) {
+    cachedClearTimeout = defaultClearTimeout;
+  }
+})();
+function runTimeout(fun) {
+  if (cachedSetTimeout === setTimeout) {
+    //normal enviroments in sane situations
+    return setTimeout(fun, 0);
+  }
+  // if setTimeout wasn't available but was latter defined
+  if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+    cachedSetTimeout = setTimeout;
+    return setTimeout(fun, 0);
+  }
+  try {
+    // when when somebody has screwed with setTimeout but no I.E. maddness
+    return cachedSetTimeout(fun, 0);
+  } catch (e) {
+    try {
+      // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+      return cachedSetTimeout.call(null, fun, 0);
+    } catch (e) {
+      // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+      return cachedSetTimeout.call(this, fun, 0);
+    }
+  }
+}
+function runClearTimeout(marker) {
+  if (cachedClearTimeout === clearTimeout) {
+    //normal enviroments in sane situations
+    return clearTimeout(marker);
+  }
+  // if clearTimeout wasn't available but was latter defined
+  if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+    cachedClearTimeout = clearTimeout;
+    return clearTimeout(marker);
+  }
+  try {
+    // when when somebody has screwed with setTimeout but no I.E. maddness
+    return cachedClearTimeout(marker);
+  } catch (e) {
+    try {
+      // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+      return cachedClearTimeout.call(null, marker);
+    } catch (e) {
+      // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+      // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+      return cachedClearTimeout.call(this, marker);
+    }
+  }
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+function cleanUpNextTick() {
+  if (!draining || !currentQueue) {
+    return;
+  }
+  draining = false;
+  if (currentQueue.length) {
+    queue = currentQueue.concat(queue);
+  } else {
+    queueIndex = -1;
+  }
+  if (queue.length) {
+    drainQueue();
+  }
+}
+function drainQueue() {
+  if (draining) {
+    return;
+  }
+  var timeout = runTimeout(cleanUpNextTick);
+  draining = true;
+  var len = queue.length;
+  while (len) {
+    currentQueue = queue;
+    queue = [];
+    while (++queueIndex < len) {
+      if (currentQueue) {
+        currentQueue[queueIndex].run();
+      }
+    }
+    queueIndex = -1;
+    len = queue.length;
+  }
+  currentQueue = null;
+  draining = false;
+  runClearTimeout(timeout);
+}
+process.nextTick = function (fun) {
+  var args = new Array(arguments.length - 1);
+  if (arguments.length > 1) {
+    for (var i = 1; i < arguments.length; i++) {
+      args[i - 1] = arguments[i];
+    }
+  }
+  queue.push(new Item(fun, args));
+  if (queue.length === 1 && !draining) {
+    runTimeout(drainQueue);
+  }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+  this.fun = fun;
+  this.array = array;
+}
+Item.prototype.run = function () {
+  this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+function noop() {}
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+process.listeners = function (name) {
+  return [];
+};
+process.binding = function (name) {
+  throw new Error('process.binding is not supported');
+};
+process.cwd = function () {
+  return '/';
+};
+process.chdir = function (dir) {
+  throw new Error('process.chdir is not supported');
+};
+process.umask = function () {
+  return 0;
+};
+},{}],"../node_modules/base64-js/index.js":[function(require,module,exports) {
+'use strict'
+
+exports.byteLength = byteLength
+exports.toByteArray = toByteArray
+exports.fromByteArray = fromByteArray
+
+var lookup = []
+var revLookup = []
+var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array
+
+var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+for (var i = 0, len = code.length; i < len; ++i) {
+  lookup[i] = code[i]
+  revLookup[code.charCodeAt(i)] = i
+}
+
+// Support decoding URL-safe base64 strings, as Node.js does.
+// See: https://en.wikipedia.org/wiki/Base64#URL_applications
+revLookup['-'.charCodeAt(0)] = 62
+revLookup['_'.charCodeAt(0)] = 63
+
+function getLens (b64) {
+  var len = b64.length
+
+  if (len % 4 > 0) {
+    throw new Error('Invalid string. Length must be a multiple of 4')
+  }
+
+  // Trim off extra bytes after placeholder bytes are found
+  // See: https://github.com/beatgammit/base64-js/issues/42
+  var validLen = b64.indexOf('=')
+  if (validLen === -1) validLen = len
+
+  var placeHoldersLen = validLen === len
+    ? 0
+    : 4 - (validLen % 4)
+
+  return [validLen, placeHoldersLen]
+}
+
+// base64 is 4/3 + up to two characters of the original data
+function byteLength (b64) {
+  var lens = getLens(b64)
+  var validLen = lens[0]
+  var placeHoldersLen = lens[1]
+  return ((validLen + placeHoldersLen) * 3 / 4) - placeHoldersLen
+}
+
+function _byteLength (b64, validLen, placeHoldersLen) {
+  return ((validLen + placeHoldersLen) * 3 / 4) - placeHoldersLen
+}
+
+function toByteArray (b64) {
+  var tmp
+  var lens = getLens(b64)
+  var validLen = lens[0]
+  var placeHoldersLen = lens[1]
+
+  var arr = new Arr(_byteLength(b64, validLen, placeHoldersLen))
+
+  var curByte = 0
+
+  // if there are placeholders, only get up to the last complete 4 chars
+  var len = placeHoldersLen > 0
+    ? validLen - 4
+    : validLen
+
+  var i
+  for (i = 0; i < len; i += 4) {
+    tmp =
+      (revLookup[b64.charCodeAt(i)] << 18) |
+      (revLookup[b64.charCodeAt(i + 1)] << 12) |
+      (revLookup[b64.charCodeAt(i + 2)] << 6) |
+      revLookup[b64.charCodeAt(i + 3)]
+    arr[curByte++] = (tmp >> 16) & 0xFF
+    arr[curByte++] = (tmp >> 8) & 0xFF
+    arr[curByte++] = tmp & 0xFF
+  }
+
+  if (placeHoldersLen === 2) {
+    tmp =
+      (revLookup[b64.charCodeAt(i)] << 2) |
+      (revLookup[b64.charCodeAt(i + 1)] >> 4)
+    arr[curByte++] = tmp & 0xFF
+  }
+
+  if (placeHoldersLen === 1) {
+    tmp =
+      (revLookup[b64.charCodeAt(i)] << 10) |
+      (revLookup[b64.charCodeAt(i + 1)] << 4) |
+      (revLookup[b64.charCodeAt(i + 2)] >> 2)
+    arr[curByte++] = (tmp >> 8) & 0xFF
+    arr[curByte++] = tmp & 0xFF
+  }
+
+  return arr
+}
+
+function tripletToBase64 (num) {
+  return lookup[num >> 18 & 0x3F] +
+    lookup[num >> 12 & 0x3F] +
+    lookup[num >> 6 & 0x3F] +
+    lookup[num & 0x3F]
+}
+
+function encodeChunk (uint8, start, end) {
+  var tmp
+  var output = []
+  for (var i = start; i < end; i += 3) {
+    tmp =
+      ((uint8[i] << 16) & 0xFF0000) +
+      ((uint8[i + 1] << 8) & 0xFF00) +
+      (uint8[i + 2] & 0xFF)
+    output.push(tripletToBase64(tmp))
+  }
+  return output.join('')
+}
+
+function fromByteArray (uint8) {
+  var tmp
+  var len = uint8.length
+  var extraBytes = len % 3 // if we have 1 byte left, pad 2 bytes
+  var parts = []
+  var maxChunkLength = 16383 // must be multiple of 3
+
+  // go through the array every three bytes, we'll deal with trailing stuff later
+  for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
+    parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)))
+  }
+
+  // pad the end with zeros, but make sure to not forget the extra bytes
+  if (extraBytes === 1) {
+    tmp = uint8[len - 1]
+    parts.push(
+      lookup[tmp >> 2] +
+      lookup[(tmp << 4) & 0x3F] +
+      '=='
+    )
+  } else if (extraBytes === 2) {
+    tmp = (uint8[len - 2] << 8) + uint8[len - 1]
+    parts.push(
+      lookup[tmp >> 10] +
+      lookup[(tmp >> 4) & 0x3F] +
+      lookup[(tmp << 2) & 0x3F] +
+      '='
+    )
+  }
+
+  return parts.join('')
+}
+
+},{}],"../node_modules/ieee754/index.js":[function(require,module,exports) {
+/*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
+exports.read = function (buffer, offset, isLE, mLen, nBytes) {
+  var e, m
+  var eLen = (nBytes * 8) - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var nBits = -7
+  var i = isLE ? (nBytes - 1) : 0
+  var d = isLE ? -1 : 1
+  var s = buffer[offset + i]
+
+  i += d
+
+  e = s & ((1 << (-nBits)) - 1)
+  s >>= (-nBits)
+  nBits += eLen
+  for (; nBits > 0; e = (e * 256) + buffer[offset + i], i += d, nBits -= 8) {}
+
+  m = e & ((1 << (-nBits)) - 1)
+  e >>= (-nBits)
+  nBits += mLen
+  for (; nBits > 0; m = (m * 256) + buffer[offset + i], i += d, nBits -= 8) {}
+
+  if (e === 0) {
+    e = 1 - eBias
+  } else if (e === eMax) {
+    return m ? NaN : ((s ? -1 : 1) * Infinity)
+  } else {
+    m = m + Math.pow(2, mLen)
+    e = e - eBias
+  }
+  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
+}
+
+exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
+  var e, m, c
+  var eLen = (nBytes * 8) - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0)
+  var i = isLE ? 0 : (nBytes - 1)
+  var d = isLE ? 1 : -1
+  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
+
+  value = Math.abs(value)
+
+  if (isNaN(value) || value === Infinity) {
+    m = isNaN(value) ? 1 : 0
+    e = eMax
+  } else {
+    e = Math.floor(Math.log(value) / Math.LN2)
+    if (value * (c = Math.pow(2, -e)) < 1) {
+      e--
+      c *= 2
+    }
+    if (e + eBias >= 1) {
+      value += rt / c
+    } else {
+      value += rt * Math.pow(2, 1 - eBias)
+    }
+    if (value * c >= 2) {
+      e++
+      c /= 2
+    }
+
+    if (e + eBias >= eMax) {
+      m = 0
+      e = eMax
+    } else if (e + eBias >= 1) {
+      m = ((value * c) - 1) * Math.pow(2, mLen)
+      e = e + eBias
+    } else {
+      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen)
+      e = 0
+    }
+  }
+
+  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
+
+  e = (e << mLen) | m
+  eLen += mLen
+  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
+
+  buffer[offset + i - d] |= s * 128
+}
+
+},{}],"../node_modules/isarray/index.js":[function(require,module,exports) {
+var toString = {}.toString;
+
+module.exports = Array.isArray || function (arr) {
+  return toString.call(arr) == '[object Array]';
+};
+
+},{}],"../node_modules/buffer/index.js":[function(require,module,exports) {
+
+var global = arguments[3];
+/*!
+ * The buffer module from node.js, for the browser.
+ *
+ * @author   Feross Aboukhadijeh <http://feross.org>
+ * @license  MIT
+ */
+/* eslint-disable no-proto */
+
+'use strict'
+
+var base64 = require('base64-js')
+var ieee754 = require('ieee754')
+var isArray = require('isarray')
+
+exports.Buffer = Buffer
+exports.SlowBuffer = SlowBuffer
+exports.INSPECT_MAX_BYTES = 50
+
+/**
+ * If `Buffer.TYPED_ARRAY_SUPPORT`:
+ *   === true    Use Uint8Array implementation (fastest)
+ *   === false   Use Object implementation (most compatible, even IE6)
+ *
+ * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
+ * Opera 11.6+, iOS 4.2+.
+ *
+ * Due to various browser bugs, sometimes the Object implementation will be used even
+ * when the browser supports typed arrays.
+ *
+ * Note:
+ *
+ *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
+ *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
+ *
+ *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
+ *
+ *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
+ *     incorrect length in some situations.
+
+ * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
+ * get the Object implementation, which is slower but behaves correctly.
+ */
+Buffer.TYPED_ARRAY_SUPPORT = global.TYPED_ARRAY_SUPPORT !== undefined
+  ? global.TYPED_ARRAY_SUPPORT
+  : typedArraySupport()
+
+/*
+ * Export kMaxLength after typed array support is determined.
+ */
+exports.kMaxLength = kMaxLength()
+
+function typedArraySupport () {
+  try {
+    var arr = new Uint8Array(1)
+    arr.__proto__ = {__proto__: Uint8Array.prototype, foo: function () { return 42 }}
+    return arr.foo() === 42 && // typed array instances can be augmented
+        typeof arr.subarray === 'function' && // chrome 9-10 lack `subarray`
+        arr.subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
+  } catch (e) {
+    return false
+  }
+}
+
+function kMaxLength () {
+  return Buffer.TYPED_ARRAY_SUPPORT
+    ? 0x7fffffff
+    : 0x3fffffff
+}
+
+function createBuffer (that, length) {
+  if (kMaxLength() < length) {
+    throw new RangeError('Invalid typed array length')
+  }
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    // Return an augmented `Uint8Array` instance, for best performance
+    that = new Uint8Array(length)
+    that.__proto__ = Buffer.prototype
+  } else {
+    // Fallback: Return an object instance of the Buffer class
+    if (that === null) {
+      that = new Buffer(length)
+    }
+    that.length = length
+  }
+
+  return that
+}
+
+/**
+ * The Buffer constructor returns instances of `Uint8Array` that have their
+ * prototype changed to `Buffer.prototype`. Furthermore, `Buffer` is a subclass of
+ * `Uint8Array`, so the returned instances will have all the node `Buffer` methods
+ * and the `Uint8Array` methods. Square bracket notation works as expected -- it
+ * returns a single octet.
+ *
+ * The `Uint8Array` prototype remains unmodified.
+ */
+
+function Buffer (arg, encodingOrOffset, length) {
+  if (!Buffer.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer)) {
+    return new Buffer(arg, encodingOrOffset, length)
+  }
+
+  // Common case.
+  if (typeof arg === 'number') {
+    if (typeof encodingOrOffset === 'string') {
+      throw new Error(
+        'If encoding is specified then the first argument must be a string'
+      )
+    }
+    return allocUnsafe(this, arg)
+  }
+  return from(this, arg, encodingOrOffset, length)
+}
+
+Buffer.poolSize = 8192 // not used by this implementation
+
+// TODO: Legacy, not needed anymore. Remove in next major version.
+Buffer._augment = function (arr) {
+  arr.__proto__ = Buffer.prototype
+  return arr
+}
+
+function from (that, value, encodingOrOffset, length) {
+  if (typeof value === 'number') {
+    throw new TypeError('"value" argument must not be a number')
+  }
+
+  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
+    return fromArrayBuffer(that, value, encodingOrOffset, length)
+  }
+
+  if (typeof value === 'string') {
+    return fromString(that, value, encodingOrOffset)
+  }
+
+  return fromObject(that, value)
+}
+
+/**
+ * Functionally equivalent to Buffer(arg, encoding) but throws a TypeError
+ * if value is a number.
+ * Buffer.from(str[, encoding])
+ * Buffer.from(array)
+ * Buffer.from(buffer)
+ * Buffer.from(arrayBuffer[, byteOffset[, length]])
+ **/
+Buffer.from = function (value, encodingOrOffset, length) {
+  return from(null, value, encodingOrOffset, length)
+}
+
+if (Buffer.TYPED_ARRAY_SUPPORT) {
+  Buffer.prototype.__proto__ = Uint8Array.prototype
+  Buffer.__proto__ = Uint8Array
+  if (typeof Symbol !== 'undefined' && Symbol.species &&
+      Buffer[Symbol.species] === Buffer) {
+    // Fix subarray() in ES2016. See: https://github.com/feross/buffer/pull/97
+    Object.defineProperty(Buffer, Symbol.species, {
+      value: null,
+      configurable: true
+    })
+  }
+}
+
+function assertSize (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('"size" argument must be a number')
+  } else if (size < 0) {
+    throw new RangeError('"size" argument must not be negative')
+  }
+}
+
+function alloc (that, size, fill, encoding) {
+  assertSize(size)
+  if (size <= 0) {
+    return createBuffer(that, size)
+  }
+  if (fill !== undefined) {
+    // Only pay attention to encoding if it's a string. This
+    // prevents accidentally sending in a number that would
+    // be interpretted as a start offset.
+    return typeof encoding === 'string'
+      ? createBuffer(that, size).fill(fill, encoding)
+      : createBuffer(that, size).fill(fill)
+  }
+  return createBuffer(that, size)
+}
+
+/**
+ * Creates a new filled Buffer instance.
+ * alloc(size[, fill[, encoding]])
+ **/
+Buffer.alloc = function (size, fill, encoding) {
+  return alloc(null, size, fill, encoding)
+}
+
+function allocUnsafe (that, size) {
+  assertSize(size)
+  that = createBuffer(that, size < 0 ? 0 : checked(size) | 0)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) {
+    for (var i = 0; i < size; ++i) {
+      that[i] = 0
+    }
+  }
+  return that
+}
+
+/**
+ * Equivalent to Buffer(num), by default creates a non-zero-filled Buffer instance.
+ * */
+Buffer.allocUnsafe = function (size) {
+  return allocUnsafe(null, size)
+}
+/**
+ * Equivalent to SlowBuffer(num), by default creates a non-zero-filled Buffer instance.
+ */
+Buffer.allocUnsafeSlow = function (size) {
+  return allocUnsafe(null, size)
+}
+
+function fromString (that, string, encoding) {
+  if (typeof encoding !== 'string' || encoding === '') {
+    encoding = 'utf8'
+  }
+
+  if (!Buffer.isEncoding(encoding)) {
+    throw new TypeError('"encoding" must be a valid string encoding')
+  }
+
+  var length = byteLength(string, encoding) | 0
+  that = createBuffer(that, length)
+
+  var actual = that.write(string, encoding)
+
+  if (actual !== length) {
+    // Writing a hex string, for example, that contains invalid characters will
+    // cause everything after the first invalid character to be ignored. (e.g.
+    // 'abxxcd' will be treated as 'ab')
+    that = that.slice(0, actual)
+  }
+
+  return that
+}
+
+function fromArrayLike (that, array) {
+  var length = array.length < 0 ? 0 : checked(array.length) | 0
+  that = createBuffer(that, length)
+  for (var i = 0; i < length; i += 1) {
+    that[i] = array[i] & 255
+  }
+  return that
+}
+
+function fromArrayBuffer (that, array, byteOffset, length) {
+  array.byteLength // this throws if `array` is not a valid ArrayBuffer
+
+  if (byteOffset < 0 || array.byteLength < byteOffset) {
+    throw new RangeError('\'offset\' is out of bounds')
+  }
+
+  if (array.byteLength < byteOffset + (length || 0)) {
+    throw new RangeError('\'length\' is out of bounds')
+  }
+
+  if (byteOffset === undefined && length === undefined) {
+    array = new Uint8Array(array)
+  } else if (length === undefined) {
+    array = new Uint8Array(array, byteOffset)
+  } else {
+    array = new Uint8Array(array, byteOffset, length)
+  }
+
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    // Return an augmented `Uint8Array` instance, for best performance
+    that = array
+    that.__proto__ = Buffer.prototype
+  } else {
+    // Fallback: Return an object instance of the Buffer class
+    that = fromArrayLike(that, array)
+  }
+  return that
+}
+
+function fromObject (that, obj) {
+  if (Buffer.isBuffer(obj)) {
+    var len = checked(obj.length) | 0
+    that = createBuffer(that, len)
+
+    if (that.length === 0) {
+      return that
+    }
+
+    obj.copy(that, 0, 0, len)
+    return that
+  }
+
+  if (obj) {
+    if ((typeof ArrayBuffer !== 'undefined' &&
+        obj.buffer instanceof ArrayBuffer) || 'length' in obj) {
+      if (typeof obj.length !== 'number' || isnan(obj.length)) {
+        return createBuffer(that, 0)
+      }
+      return fromArrayLike(that, obj)
+    }
+
+    if (obj.type === 'Buffer' && isArray(obj.data)) {
+      return fromArrayLike(that, obj.data)
+    }
+  }
+
+  throw new TypeError('First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.')
+}
+
+function checked (length) {
+  // Note: cannot use `length < kMaxLength()` here because that fails when
+  // length is NaN (which is otherwise coerced to zero.)
+  if (length >= kMaxLength()) {
+    throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
+                         'size: 0x' + kMaxLength().toString(16) + ' bytes')
+  }
+  return length | 0
+}
+
+function SlowBuffer (length) {
+  if (+length != length) { // eslint-disable-line eqeqeq
+    length = 0
+  }
+  return Buffer.alloc(+length)
+}
+
+Buffer.isBuffer = function isBuffer (b) {
+  return !!(b != null && b._isBuffer)
+}
+
+Buffer.compare = function compare (a, b) {
+  if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b)) {
+    throw new TypeError('Arguments must be Buffers')
+  }
+
+  if (a === b) return 0
+
+  var x = a.length
+  var y = b.length
+
+  for (var i = 0, len = Math.min(x, y); i < len; ++i) {
+    if (a[i] !== b[i]) {
+      x = a[i]
+      y = b[i]
+      break
+    }
+  }
+
+  if (x < y) return -1
+  if (y < x) return 1
+  return 0
+}
+
+Buffer.isEncoding = function isEncoding (encoding) {
+  switch (String(encoding).toLowerCase()) {
+    case 'hex':
+    case 'utf8':
+    case 'utf-8':
+    case 'ascii':
+    case 'latin1':
+    case 'binary':
+    case 'base64':
+    case 'ucs2':
+    case 'ucs-2':
+    case 'utf16le':
+    case 'utf-16le':
+      return true
+    default:
+      return false
+  }
+}
+
+Buffer.concat = function concat (list, length) {
+  if (!isArray(list)) {
+    throw new TypeError('"list" argument must be an Array of Buffers')
+  }
+
+  if (list.length === 0) {
+    return Buffer.alloc(0)
+  }
+
+  var i
+  if (length === undefined) {
+    length = 0
+    for (i = 0; i < list.length; ++i) {
+      length += list[i].length
+    }
+  }
+
+  var buffer = Buffer.allocUnsafe(length)
+  var pos = 0
+  for (i = 0; i < list.length; ++i) {
+    var buf = list[i]
+    if (!Buffer.isBuffer(buf)) {
+      throw new TypeError('"list" argument must be an Array of Buffers')
+    }
+    buf.copy(buffer, pos)
+    pos += buf.length
+  }
+  return buffer
+}
+
+function byteLength (string, encoding) {
+  if (Buffer.isBuffer(string)) {
+    return string.length
+  }
+  if (typeof ArrayBuffer !== 'undefined' && typeof ArrayBuffer.isView === 'function' &&
+      (ArrayBuffer.isView(string) || string instanceof ArrayBuffer)) {
+    return string.byteLength
+  }
+  if (typeof string !== 'string') {
+    string = '' + string
+  }
+
+  var len = string.length
+  if (len === 0) return 0
+
+  // Use a for loop to avoid recursion
+  var loweredCase = false
+  for (;;) {
+    switch (encoding) {
+      case 'ascii':
+      case 'latin1':
+      case 'binary':
+        return len
+      case 'utf8':
+      case 'utf-8':
+      case undefined:
+        return utf8ToBytes(string).length
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return len * 2
+      case 'hex':
+        return len >>> 1
+      case 'base64':
+        return base64ToBytes(string).length
+      default:
+        if (loweredCase) return utf8ToBytes(string).length // assume utf8
+        encoding = ('' + encoding).toLowerCase()
+        loweredCase = true
+    }
+  }
+}
+Buffer.byteLength = byteLength
+
+function slowToString (encoding, start, end) {
+  var loweredCase = false
+
+  // No need to verify that "this.length <= MAX_UINT32" since it's a read-only
+  // property of a typed array.
+
+  // This behaves neither like String nor Uint8Array in that we set start/end
+  // to their upper/lower bounds if the value passed is out of range.
+  // undefined is handled specially as per ECMA-262 6th Edition,
+  // Section 13.3.3.7 Runtime Semantics: KeyedBindingInitialization.
+  if (start === undefined || start < 0) {
+    start = 0
+  }
+  // Return early if start > this.length. Done here to prevent potential uint32
+  // coercion fail below.
+  if (start > this.length) {
+    return ''
+  }
+
+  if (end === undefined || end > this.length) {
+    end = this.length
+  }
+
+  if (end <= 0) {
+    return ''
+  }
+
+  // Force coersion to uint32. This will also coerce falsey/NaN values to 0.
+  end >>>= 0
+  start >>>= 0
+
+  if (end <= start) {
+    return ''
+  }
+
+  if (!encoding) encoding = 'utf8'
+
+  while (true) {
+    switch (encoding) {
+      case 'hex':
+        return hexSlice(this, start, end)
+
+      case 'utf8':
+      case 'utf-8':
+        return utf8Slice(this, start, end)
+
+      case 'ascii':
+        return asciiSlice(this, start, end)
+
+      case 'latin1':
+      case 'binary':
+        return latin1Slice(this, start, end)
+
+      case 'base64':
+        return base64Slice(this, start, end)
+
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return utf16leSlice(this, start, end)
+
+      default:
+        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
+        encoding = (encoding + '').toLowerCase()
+        loweredCase = true
+    }
+  }
+}
+
+// The property is used by `Buffer.isBuffer` and `is-buffer` (in Safari 5-7) to detect
+// Buffer instances.
+Buffer.prototype._isBuffer = true
+
+function swap (b, n, m) {
+  var i = b[n]
+  b[n] = b[m]
+  b[m] = i
+}
+
+Buffer.prototype.swap16 = function swap16 () {
+  var len = this.length
+  if (len % 2 !== 0) {
+    throw new RangeError('Buffer size must be a multiple of 16-bits')
+  }
+  for (var i = 0; i < len; i += 2) {
+    swap(this, i, i + 1)
+  }
+  return this
+}
+
+Buffer.prototype.swap32 = function swap32 () {
+  var len = this.length
+  if (len % 4 !== 0) {
+    throw new RangeError('Buffer size must be a multiple of 32-bits')
+  }
+  for (var i = 0; i < len; i += 4) {
+    swap(this, i, i + 3)
+    swap(this, i + 1, i + 2)
+  }
+  return this
+}
+
+Buffer.prototype.swap64 = function swap64 () {
+  var len = this.length
+  if (len % 8 !== 0) {
+    throw new RangeError('Buffer size must be a multiple of 64-bits')
+  }
+  for (var i = 0; i < len; i += 8) {
+    swap(this, i, i + 7)
+    swap(this, i + 1, i + 6)
+    swap(this, i + 2, i + 5)
+    swap(this, i + 3, i + 4)
+  }
+  return this
+}
+
+Buffer.prototype.toString = function toString () {
+  var length = this.length | 0
+  if (length === 0) return ''
+  if (arguments.length === 0) return utf8Slice(this, 0, length)
+  return slowToString.apply(this, arguments)
+}
+
+Buffer.prototype.equals = function equals (b) {
+  if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
+  if (this === b) return true
+  return Buffer.compare(this, b) === 0
+}
+
+Buffer.prototype.inspect = function inspect () {
+  var str = ''
+  var max = exports.INSPECT_MAX_BYTES
+  if (this.length > 0) {
+    str = this.toString('hex', 0, max).match(/.{2}/g).join(' ')
+    if (this.length > max) str += ' ... '
+  }
+  return '<Buffer ' + str + '>'
+}
+
+Buffer.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
+  if (!Buffer.isBuffer(target)) {
+    throw new TypeError('Argument must be a Buffer')
+  }
+
+  if (start === undefined) {
+    start = 0
+  }
+  if (end === undefined) {
+    end = target ? target.length : 0
+  }
+  if (thisStart === undefined) {
+    thisStart = 0
+  }
+  if (thisEnd === undefined) {
+    thisEnd = this.length
+  }
+
+  if (start < 0 || end > target.length || thisStart < 0 || thisEnd > this.length) {
+    throw new RangeError('out of range index')
+  }
+
+  if (thisStart >= thisEnd && start >= end) {
+    return 0
+  }
+  if (thisStart >= thisEnd) {
+    return -1
+  }
+  if (start >= end) {
+    return 1
+  }
+
+  start >>>= 0
+  end >>>= 0
+  thisStart >>>= 0
+  thisEnd >>>= 0
+
+  if (this === target) return 0
+
+  var x = thisEnd - thisStart
+  var y = end - start
+  var len = Math.min(x, y)
+
+  var thisCopy = this.slice(thisStart, thisEnd)
+  var targetCopy = target.slice(start, end)
+
+  for (var i = 0; i < len; ++i) {
+    if (thisCopy[i] !== targetCopy[i]) {
+      x = thisCopy[i]
+      y = targetCopy[i]
+      break
+    }
+  }
+
+  if (x < y) return -1
+  if (y < x) return 1
+  return 0
+}
+
+// Finds either the first index of `val` in `buffer` at offset >= `byteOffset`,
+// OR the last index of `val` in `buffer` at offset <= `byteOffset`.
+//
+// Arguments:
+// - buffer - a Buffer to search
+// - val - a string, Buffer, or number
+// - byteOffset - an index into `buffer`; will be clamped to an int32
+// - encoding - an optional encoding, relevant is val is a string
+// - dir - true for indexOf, false for lastIndexOf
+function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
+  // Empty buffer means no match
+  if (buffer.length === 0) return -1
+
+  // Normalize byteOffset
+  if (typeof byteOffset === 'string') {
+    encoding = byteOffset
+    byteOffset = 0
+  } else if (byteOffset > 0x7fffffff) {
+    byteOffset = 0x7fffffff
+  } else if (byteOffset < -0x80000000) {
+    byteOffset = -0x80000000
+  }
+  byteOffset = +byteOffset  // Coerce to Number.
+  if (isNaN(byteOffset)) {
+    // byteOffset: it it's undefined, null, NaN, "foo", etc, search whole buffer
+    byteOffset = dir ? 0 : (buffer.length - 1)
+  }
+
+  // Normalize byteOffset: negative offsets start from the end of the buffer
+  if (byteOffset < 0) byteOffset = buffer.length + byteOffset
+  if (byteOffset >= buffer.length) {
+    if (dir) return -1
+    else byteOffset = buffer.length - 1
+  } else if (byteOffset < 0) {
+    if (dir) byteOffset = 0
+    else return -1
+  }
+
+  // Normalize val
+  if (typeof val === 'string') {
+    val = Buffer.from(val, encoding)
+  }
+
+  // Finally, search either indexOf (if dir is true) or lastIndexOf
+  if (Buffer.isBuffer(val)) {
+    // Special case: looking for empty string/buffer always fails
+    if (val.length === 0) {
+      return -1
+    }
+    return arrayIndexOf(buffer, val, byteOffset, encoding, dir)
+  } else if (typeof val === 'number') {
+    val = val & 0xFF // Search for a byte value [0-255]
+    if (Buffer.TYPED_ARRAY_SUPPORT &&
+        typeof Uint8Array.prototype.indexOf === 'function') {
+      if (dir) {
+        return Uint8Array.prototype.indexOf.call(buffer, val, byteOffset)
+      } else {
+        return Uint8Array.prototype.lastIndexOf.call(buffer, val, byteOffset)
+      }
+    }
+    return arrayIndexOf(buffer, [ val ], byteOffset, encoding, dir)
+  }
+
+  throw new TypeError('val must be string, number or Buffer')
+}
+
+function arrayIndexOf (arr, val, byteOffset, encoding, dir) {
+  var indexSize = 1
+  var arrLength = arr.length
+  var valLength = val.length
+
+  if (encoding !== undefined) {
+    encoding = String(encoding).toLowerCase()
+    if (encoding === 'ucs2' || encoding === 'ucs-2' ||
+        encoding === 'utf16le' || encoding === 'utf-16le') {
+      if (arr.length < 2 || val.length < 2) {
+        return -1
+      }
+      indexSize = 2
+      arrLength /= 2
+      valLength /= 2
+      byteOffset /= 2
+    }
+  }
+
+  function read (buf, i) {
+    if (indexSize === 1) {
+      return buf[i]
+    } else {
+      return buf.readUInt16BE(i * indexSize)
+    }
+  }
+
+  var i
+  if (dir) {
+    var foundIndex = -1
+    for (i = byteOffset; i < arrLength; i++) {
+      if (read(arr, i) === read(val, foundIndex === -1 ? 0 : i - foundIndex)) {
+        if (foundIndex === -1) foundIndex = i
+        if (i - foundIndex + 1 === valLength) return foundIndex * indexSize
+      } else {
+        if (foundIndex !== -1) i -= i - foundIndex
+        foundIndex = -1
+      }
+    }
+  } else {
+    if (byteOffset + valLength > arrLength) byteOffset = arrLength - valLength
+    for (i = byteOffset; i >= 0; i--) {
+      var found = true
+      for (var j = 0; j < valLength; j++) {
+        if (read(arr, i + j) !== read(val, j)) {
+          found = false
+          break
+        }
+      }
+      if (found) return i
+    }
+  }
+
+  return -1
+}
+
+Buffer.prototype.includes = function includes (val, byteOffset, encoding) {
+  return this.indexOf(val, byteOffset, encoding) !== -1
+}
+
+Buffer.prototype.indexOf = function indexOf (val, byteOffset, encoding) {
+  return bidirectionalIndexOf(this, val, byteOffset, encoding, true)
+}
+
+Buffer.prototype.lastIndexOf = function lastIndexOf (val, byteOffset, encoding) {
+  return bidirectionalIndexOf(this, val, byteOffset, encoding, false)
+}
+
+function hexWrite (buf, string, offset, length) {
+  offset = Number(offset) || 0
+  var remaining = buf.length - offset
+  if (!length) {
+    length = remaining
+  } else {
+    length = Number(length)
+    if (length > remaining) {
+      length = remaining
+    }
+  }
+
+  // must be an even number of digits
+  var strLen = string.length
+  if (strLen % 2 !== 0) throw new TypeError('Invalid hex string')
+
+  if (length > strLen / 2) {
+    length = strLen / 2
+  }
+  for (var i = 0; i < length; ++i) {
+    var parsed = parseInt(string.substr(i * 2, 2), 16)
+    if (isNaN(parsed)) return i
+    buf[offset + i] = parsed
+  }
+  return i
+}
+
+function utf8Write (buf, string, offset, length) {
+  return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length)
+}
+
+function asciiWrite (buf, string, offset, length) {
+  return blitBuffer(asciiToBytes(string), buf, offset, length)
+}
+
+function latin1Write (buf, string, offset, length) {
+  return asciiWrite(buf, string, offset, length)
+}
+
+function base64Write (buf, string, offset, length) {
+  return blitBuffer(base64ToBytes(string), buf, offset, length)
+}
+
+function ucs2Write (buf, string, offset, length) {
+  return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
+}
+
+Buffer.prototype.write = function write (string, offset, length, encoding) {
+  // Buffer#write(string)
+  if (offset === undefined) {
+    encoding = 'utf8'
+    length = this.length
+    offset = 0
+  // Buffer#write(string, encoding)
+  } else if (length === undefined && typeof offset === 'string') {
+    encoding = offset
+    length = this.length
+    offset = 0
+  // Buffer#write(string, offset[, length][, encoding])
+  } else if (isFinite(offset)) {
+    offset = offset | 0
+    if (isFinite(length)) {
+      length = length | 0
+      if (encoding === undefined) encoding = 'utf8'
+    } else {
+      encoding = length
+      length = undefined
+    }
+  // legacy write(string, encoding, offset, length) - remove in v0.13
+  } else {
+    throw new Error(
+      'Buffer.write(string, encoding, offset[, length]) is no longer supported'
+    )
+  }
+
+  var remaining = this.length - offset
+  if (length === undefined || length > remaining) length = remaining
+
+  if ((string.length > 0 && (length < 0 || offset < 0)) || offset > this.length) {
+    throw new RangeError('Attempt to write outside buffer bounds')
+  }
+
+  if (!encoding) encoding = 'utf8'
+
+  var loweredCase = false
+  for (;;) {
+    switch (encoding) {
+      case 'hex':
+        return hexWrite(this, string, offset, length)
+
+      case 'utf8':
+      case 'utf-8':
+        return utf8Write(this, string, offset, length)
+
+      case 'ascii':
+        return asciiWrite(this, string, offset, length)
+
+      case 'latin1':
+      case 'binary':
+        return latin1Write(this, string, offset, length)
+
+      case 'base64':
+        // Warning: maxLength not taken into account in base64Write
+        return base64Write(this, string, offset, length)
+
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return ucs2Write(this, string, offset, length)
+
+      default:
+        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
+        encoding = ('' + encoding).toLowerCase()
+        loweredCase = true
+    }
+  }
+}
+
+Buffer.prototype.toJSON = function toJSON () {
+  return {
+    type: 'Buffer',
+    data: Array.prototype.slice.call(this._arr || this, 0)
+  }
+}
+
+function base64Slice (buf, start, end) {
+  if (start === 0 && end === buf.length) {
+    return base64.fromByteArray(buf)
+  } else {
+    return base64.fromByteArray(buf.slice(start, end))
+  }
+}
+
+function utf8Slice (buf, start, end) {
+  end = Math.min(buf.length, end)
+  var res = []
+
+  var i = start
+  while (i < end) {
+    var firstByte = buf[i]
+    var codePoint = null
+    var bytesPerSequence = (firstByte > 0xEF) ? 4
+      : (firstByte > 0xDF) ? 3
+      : (firstByte > 0xBF) ? 2
+      : 1
+
+    if (i + bytesPerSequence <= end) {
+      var secondByte, thirdByte, fourthByte, tempCodePoint
+
+      switch (bytesPerSequence) {
+        case 1:
+          if (firstByte < 0x80) {
+            codePoint = firstByte
+          }
+          break
+        case 2:
+          secondByte = buf[i + 1]
+          if ((secondByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0x1F) << 0x6 | (secondByte & 0x3F)
+            if (tempCodePoint > 0x7F) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 3:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0xC | (secondByte & 0x3F) << 0x6 | (thirdByte & 0x3F)
+            if (tempCodePoint > 0x7FF && (tempCodePoint < 0xD800 || tempCodePoint > 0xDFFF)) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 4:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          fourthByte = buf[i + 3]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80 && (fourthByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0x12 | (secondByte & 0x3F) << 0xC | (thirdByte & 0x3F) << 0x6 | (fourthByte & 0x3F)
+            if (tempCodePoint > 0xFFFF && tempCodePoint < 0x110000) {
+              codePoint = tempCodePoint
+            }
+          }
+      }
+    }
+
+    if (codePoint === null) {
+      // we did not generate a valid codePoint so insert a
+      // replacement char (U+FFFD) and advance only 1 byte
+      codePoint = 0xFFFD
+      bytesPerSequence = 1
+    } else if (codePoint > 0xFFFF) {
+      // encode to utf16 (surrogate pair dance)
+      codePoint -= 0x10000
+      res.push(codePoint >>> 10 & 0x3FF | 0xD800)
+      codePoint = 0xDC00 | codePoint & 0x3FF
+    }
+
+    res.push(codePoint)
+    i += bytesPerSequence
+  }
+
+  return decodeCodePointsArray(res)
+}
+
+// Based on http://stackoverflow.com/a/22747272/680742, the browser with
+// the lowest limit is Chrome, with 0x10000 args.
+// We go 1 magnitude less, for safety
+var MAX_ARGUMENTS_LENGTH = 0x1000
+
+function decodeCodePointsArray (codePoints) {
+  var len = codePoints.length
+  if (len <= MAX_ARGUMENTS_LENGTH) {
+    return String.fromCharCode.apply(String, codePoints) // avoid extra slice()
+  }
+
+  // Decode in chunks to avoid "call stack size exceeded".
+  var res = ''
+  var i = 0
+  while (i < len) {
+    res += String.fromCharCode.apply(
+      String,
+      codePoints.slice(i, i += MAX_ARGUMENTS_LENGTH)
+    )
+  }
+  return res
+}
+
+function asciiSlice (buf, start, end) {
+  var ret = ''
+  end = Math.min(buf.length, end)
+
+  for (var i = start; i < end; ++i) {
+    ret += String.fromCharCode(buf[i] & 0x7F)
+  }
+  return ret
+}
+
+function latin1Slice (buf, start, end) {
+  var ret = ''
+  end = Math.min(buf.length, end)
+
+  for (var i = start; i < end; ++i) {
+    ret += String.fromCharCode(buf[i])
+  }
+  return ret
+}
+
+function hexSlice (buf, start, end) {
+  var len = buf.length
+
+  if (!start || start < 0) start = 0
+  if (!end || end < 0 || end > len) end = len
+
+  var out = ''
+  for (var i = start; i < end; ++i) {
+    out += toHex(buf[i])
+  }
+  return out
+}
+
+function utf16leSlice (buf, start, end) {
+  var bytes = buf.slice(start, end)
+  var res = ''
+  for (var i = 0; i < bytes.length; i += 2) {
+    res += String.fromCharCode(bytes[i] + bytes[i + 1] * 256)
+  }
+  return res
+}
+
+Buffer.prototype.slice = function slice (start, end) {
+  var len = this.length
+  start = ~~start
+  end = end === undefined ? len : ~~end
+
+  if (start < 0) {
+    start += len
+    if (start < 0) start = 0
+  } else if (start > len) {
+    start = len
+  }
+
+  if (end < 0) {
+    end += len
+    if (end < 0) end = 0
+  } else if (end > len) {
+    end = len
+  }
+
+  if (end < start) end = start
+
+  var newBuf
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    newBuf = this.subarray(start, end)
+    newBuf.__proto__ = Buffer.prototype
+  } else {
+    var sliceLen = end - start
+    newBuf = new Buffer(sliceLen, undefined)
+    for (var i = 0; i < sliceLen; ++i) {
+      newBuf[i] = this[i + start]
+    }
+  }
+
+  return newBuf
+}
+
+/*
+ * Need to make sure that buffer isn't trying to write out of bounds.
+ */
+function checkOffset (offset, ext, length) {
+  if ((offset % 1) !== 0 || offset < 0) throw new RangeError('offset is not uint')
+  if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length')
+}
+
+Buffer.prototype.readUIntLE = function readUIntLE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+  var val = this[offset]
+  var mul = 1
+  var i = 0
+  while (++i < byteLength && (mul *= 0x100)) {
+    val += this[offset + i] * mul
+  }
+
+  return val
+}
+
+Buffer.prototype.readUIntBE = function readUIntBE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) {
+    checkOffset(offset, byteLength, this.length)
+  }
+
+  var val = this[offset + --byteLength]
+  var mul = 1
+  while (byteLength > 0 && (mul *= 0x100)) {
+    val += this[offset + --byteLength] * mul
+  }
+
+  return val
+}
+
+Buffer.prototype.readUInt8 = function readUInt8 (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 1, this.length)
+  return this[offset]
+}
+
+Buffer.prototype.readUInt16LE = function readUInt16LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  return this[offset] | (this[offset + 1] << 8)
+}
+
+Buffer.prototype.readUInt16BE = function readUInt16BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  return (this[offset] << 8) | this[offset + 1]
+}
+
+Buffer.prototype.readUInt32LE = function readUInt32LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return ((this[offset]) |
+      (this[offset + 1] << 8) |
+      (this[offset + 2] << 16)) +
+      (this[offset + 3] * 0x1000000)
+}
+
+Buffer.prototype.readUInt32BE = function readUInt32BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return (this[offset] * 0x1000000) +
+    ((this[offset + 1] << 16) |
+    (this[offset + 2] << 8) |
+    this[offset + 3])
+}
+
+Buffer.prototype.readIntLE = function readIntLE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+  var val = this[offset]
+  var mul = 1
+  var i = 0
+  while (++i < byteLength && (mul *= 0x100)) {
+    val += this[offset + i] * mul
+  }
+  mul *= 0x80
+
+  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
+
+  return val
+}
+
+Buffer.prototype.readIntBE = function readIntBE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+  var i = byteLength
+  var mul = 1
+  var val = this[offset + --i]
+  while (i > 0 && (mul *= 0x100)) {
+    val += this[offset + --i] * mul
+  }
+  mul *= 0x80
+
+  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
+
+  return val
+}
+
+Buffer.prototype.readInt8 = function readInt8 (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 1, this.length)
+  if (!(this[offset] & 0x80)) return (this[offset])
+  return ((0xff - this[offset] + 1) * -1)
+}
+
+Buffer.prototype.readInt16LE = function readInt16LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  var val = this[offset] | (this[offset + 1] << 8)
+  return (val & 0x8000) ? val | 0xFFFF0000 : val
+}
+
+Buffer.prototype.readInt16BE = function readInt16BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  var val = this[offset + 1] | (this[offset] << 8)
+  return (val & 0x8000) ? val | 0xFFFF0000 : val
+}
+
+Buffer.prototype.readInt32LE = function readInt32LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return (this[offset]) |
+    (this[offset + 1] << 8) |
+    (this[offset + 2] << 16) |
+    (this[offset + 3] << 24)
+}
+
+Buffer.prototype.readInt32BE = function readInt32BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return (this[offset] << 24) |
+    (this[offset + 1] << 16) |
+    (this[offset + 2] << 8) |
+    (this[offset + 3])
+}
+
+Buffer.prototype.readFloatLE = function readFloatLE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+  return ieee754.read(this, offset, true, 23, 4)
+}
+
+Buffer.prototype.readFloatBE = function readFloatBE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+  return ieee754.read(this, offset, false, 23, 4)
+}
+
+Buffer.prototype.readDoubleLE = function readDoubleLE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 8, this.length)
+  return ieee754.read(this, offset, true, 52, 8)
+}
+
+Buffer.prototype.readDoubleBE = function readDoubleBE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 8, this.length)
+  return ieee754.read(this, offset, false, 52, 8)
+}
+
+function checkInt (buf, value, offset, ext, max, min) {
+  if (!Buffer.isBuffer(buf)) throw new TypeError('"buffer" argument must be a Buffer instance')
+  if (value > max || value < min) throw new RangeError('"value" argument is out of bounds')
+  if (offset + ext > buf.length) throw new RangeError('Index out of range')
+}
+
+Buffer.prototype.writeUIntLE = function writeUIntLE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) {
+    var maxBytes = Math.pow(2, 8 * byteLength) - 1
+    checkInt(this, value, offset, byteLength, maxBytes, 0)
+  }
+
+  var mul = 1
+  var i = 0
+  this[offset] = value & 0xFF
+  while (++i < byteLength && (mul *= 0x100)) {
+    this[offset + i] = (value / mul) & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeUIntBE = function writeUIntBE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) {
+    var maxBytes = Math.pow(2, 8 * byteLength) - 1
+    checkInt(this, value, offset, byteLength, maxBytes, 0)
+  }
+
+  var i = byteLength - 1
+  var mul = 1
+  this[offset + i] = value & 0xFF
+  while (--i >= 0 && (mul *= 0x100)) {
+    this[offset + i] = (value / mul) & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeUInt8 = function writeUInt8 (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 1, 0xff, 0)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
+  this[offset] = (value & 0xff)
+  return offset + 1
+}
+
+function objectWriteUInt16 (buf, value, offset, littleEndian) {
+  if (value < 0) value = 0xffff + value + 1
+  for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; ++i) {
+    buf[offset + i] = (value & (0xff << (8 * (littleEndian ? i : 1 - i)))) >>>
+      (littleEndian ? i : 1 - i) * 8
+  }
+}
+
+Buffer.prototype.writeUInt16LE = function writeUInt16LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value & 0xff)
+    this[offset + 1] = (value >>> 8)
+  } else {
+    objectWriteUInt16(this, value, offset, true)
+  }
+  return offset + 2
+}
+
+Buffer.prototype.writeUInt16BE = function writeUInt16BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 8)
+    this[offset + 1] = (value & 0xff)
+  } else {
+    objectWriteUInt16(this, value, offset, false)
+  }
+  return offset + 2
+}
+
+function objectWriteUInt32 (buf, value, offset, littleEndian) {
+  if (value < 0) value = 0xffffffff + value + 1
+  for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; ++i) {
+    buf[offset + i] = (value >>> (littleEndian ? i : 3 - i) * 8) & 0xff
+  }
+}
+
+Buffer.prototype.writeUInt32LE = function writeUInt32LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset + 3] = (value >>> 24)
+    this[offset + 2] = (value >>> 16)
+    this[offset + 1] = (value >>> 8)
+    this[offset] = (value & 0xff)
+  } else {
+    objectWriteUInt32(this, value, offset, true)
+  }
+  return offset + 4
+}
+
+Buffer.prototype.writeUInt32BE = function writeUInt32BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 24)
+    this[offset + 1] = (value >>> 16)
+    this[offset + 2] = (value >>> 8)
+    this[offset + 3] = (value & 0xff)
+  } else {
+    objectWriteUInt32(this, value, offset, false)
+  }
+  return offset + 4
+}
+
+Buffer.prototype.writeIntLE = function writeIntLE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) {
+    var limit = Math.pow(2, 8 * byteLength - 1)
+
+    checkInt(this, value, offset, byteLength, limit - 1, -limit)
+  }
+
+  var i = 0
+  var mul = 1
+  var sub = 0
+  this[offset] = value & 0xFF
+  while (++i < byteLength && (mul *= 0x100)) {
+    if (value < 0 && sub === 0 && this[offset + i - 1] !== 0) {
+      sub = 1
+    }
+    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeIntBE = function writeIntBE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) {
+    var limit = Math.pow(2, 8 * byteLength - 1)
+
+    checkInt(this, value, offset, byteLength, limit - 1, -limit)
+  }
+
+  var i = byteLength - 1
+  var mul = 1
+  var sub = 0
+  this[offset + i] = value & 0xFF
+  while (--i >= 0 && (mul *= 0x100)) {
+    if (value < 0 && sub === 0 && this[offset + i + 1] !== 0) {
+      sub = 1
+    }
+    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeInt8 = function writeInt8 (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 1, 0x7f, -0x80)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
+  if (value < 0) value = 0xff + value + 1
+  this[offset] = (value & 0xff)
+  return offset + 1
+}
+
+Buffer.prototype.writeInt16LE = function writeInt16LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value & 0xff)
+    this[offset + 1] = (value >>> 8)
+  } else {
+    objectWriteUInt16(this, value, offset, true)
+  }
+  return offset + 2
+}
+
+Buffer.prototype.writeInt16BE = function writeInt16BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 8)
+    this[offset + 1] = (value & 0xff)
+  } else {
+    objectWriteUInt16(this, value, offset, false)
+  }
+  return offset + 2
+}
+
+Buffer.prototype.writeInt32LE = function writeInt32LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value & 0xff)
+    this[offset + 1] = (value >>> 8)
+    this[offset + 2] = (value >>> 16)
+    this[offset + 3] = (value >>> 24)
+  } else {
+    objectWriteUInt32(this, value, offset, true)
+  }
+  return offset + 4
+}
+
+Buffer.prototype.writeInt32BE = function writeInt32BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
+  if (value < 0) value = 0xffffffff + value + 1
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 24)
+    this[offset + 1] = (value >>> 16)
+    this[offset + 2] = (value >>> 8)
+    this[offset + 3] = (value & 0xff)
+  } else {
+    objectWriteUInt32(this, value, offset, false)
+  }
+  return offset + 4
+}
+
+function checkIEEE754 (buf, value, offset, ext, max, min) {
+  if (offset + ext > buf.length) throw new RangeError('Index out of range')
+  if (offset < 0) throw new RangeError('Index out of range')
+}
+
+function writeFloat (buf, value, offset, littleEndian, noAssert) {
+  if (!noAssert) {
+    checkIEEE754(buf, value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38)
+  }
+  ieee754.write(buf, value, offset, littleEndian, 23, 4)
+  return offset + 4
+}
+
+Buffer.prototype.writeFloatLE = function writeFloatLE (value, offset, noAssert) {
+  return writeFloat(this, value, offset, true, noAssert)
+}
+
+Buffer.prototype.writeFloatBE = function writeFloatBE (value, offset, noAssert) {
+  return writeFloat(this, value, offset, false, noAssert)
+}
+
+function writeDouble (buf, value, offset, littleEndian, noAssert) {
+  if (!noAssert) {
+    checkIEEE754(buf, value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308)
+  }
+  ieee754.write(buf, value, offset, littleEndian, 52, 8)
+  return offset + 8
+}
+
+Buffer.prototype.writeDoubleLE = function writeDoubleLE (value, offset, noAssert) {
+  return writeDouble(this, value, offset, true, noAssert)
+}
+
+Buffer.prototype.writeDoubleBE = function writeDoubleBE (value, offset, noAssert) {
+  return writeDouble(this, value, offset, false, noAssert)
+}
+
+// copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
+Buffer.prototype.copy = function copy (target, targetStart, start, end) {
+  if (!start) start = 0
+  if (!end && end !== 0) end = this.length
+  if (targetStart >= target.length) targetStart = target.length
+  if (!targetStart) targetStart = 0
+  if (end > 0 && end < start) end = start
+
+  // Copy 0 bytes; we're done
+  if (end === start) return 0
+  if (target.length === 0 || this.length === 0) return 0
+
+  // Fatal error conditions
+  if (targetStart < 0) {
+    throw new RangeError('targetStart out of bounds')
+  }
+  if (start < 0 || start >= this.length) throw new RangeError('sourceStart out of bounds')
+  if (end < 0) throw new RangeError('sourceEnd out of bounds')
+
+  // Are we oob?
+  if (end > this.length) end = this.length
+  if (target.length - targetStart < end - start) {
+    end = target.length - targetStart + start
+  }
+
+  var len = end - start
+  var i
+
+  if (this === target && start < targetStart && targetStart < end) {
+    // descending copy from end
+    for (i = len - 1; i >= 0; --i) {
+      target[i + targetStart] = this[i + start]
+    }
+  } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
+    // ascending copy from start
+    for (i = 0; i < len; ++i) {
+      target[i + targetStart] = this[i + start]
+    }
+  } else {
+    Uint8Array.prototype.set.call(
+      target,
+      this.subarray(start, start + len),
+      targetStart
+    )
+  }
+
+  return len
+}
+
+// Usage:
+//    buffer.fill(number[, offset[, end]])
+//    buffer.fill(buffer[, offset[, end]])
+//    buffer.fill(string[, offset[, end]][, encoding])
+Buffer.prototype.fill = function fill (val, start, end, encoding) {
+  // Handle string cases:
+  if (typeof val === 'string') {
+    if (typeof start === 'string') {
+      encoding = start
+      start = 0
+      end = this.length
+    } else if (typeof end === 'string') {
+      encoding = end
+      end = this.length
+    }
+    if (val.length === 1) {
+      var code = val.charCodeAt(0)
+      if (code < 256) {
+        val = code
+      }
+    }
+    if (encoding !== undefined && typeof encoding !== 'string') {
+      throw new TypeError('encoding must be a string')
+    }
+    if (typeof encoding === 'string' && !Buffer.isEncoding(encoding)) {
+      throw new TypeError('Unknown encoding: ' + encoding)
+    }
+  } else if (typeof val === 'number') {
+    val = val & 255
+  }
+
+  // Invalid ranges are not set to a default, so can range check early.
+  if (start < 0 || this.length < start || this.length < end) {
+    throw new RangeError('Out of range index')
+  }
+
+  if (end <= start) {
+    return this
+  }
+
+  start = start >>> 0
+  end = end === undefined ? this.length : end >>> 0
+
+  if (!val) val = 0
+
+  var i
+  if (typeof val === 'number') {
+    for (i = start; i < end; ++i) {
+      this[i] = val
+    }
+  } else {
+    var bytes = Buffer.isBuffer(val)
+      ? val
+      : utf8ToBytes(new Buffer(val, encoding).toString())
+    var len = bytes.length
+    for (i = 0; i < end - start; ++i) {
+      this[i + start] = bytes[i % len]
+    }
+  }
+
+  return this
+}
+
+// HELPER FUNCTIONS
+// ================
+
+var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g
+
+function base64clean (str) {
+  // Node strips out invalid characters like \n and \t from the string, base64-js does not
+  str = stringtrim(str).replace(INVALID_BASE64_RE, '')
+  // Node converts strings with length < 2 to ''
+  if (str.length < 2) return ''
+  // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
+  while (str.length % 4 !== 0) {
+    str = str + '='
+  }
+  return str
+}
+
+function stringtrim (str) {
+  if (str.trim) return str.trim()
+  return str.replace(/^\s+|\s+$/g, '')
+}
+
+function toHex (n) {
+  if (n < 16) return '0' + n.toString(16)
+  return n.toString(16)
+}
+
+function utf8ToBytes (string, units) {
+  units = units || Infinity
+  var codePoint
+  var length = string.length
+  var leadSurrogate = null
+  var bytes = []
+
+  for (var i = 0; i < length; ++i) {
+    codePoint = string.charCodeAt(i)
+
+    // is surrogate component
+    if (codePoint > 0xD7FF && codePoint < 0xE000) {
+      // last char was a lead
+      if (!leadSurrogate) {
+        // no lead yet
+        if (codePoint > 0xDBFF) {
+          // unexpected trail
+          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+          continue
+        } else if (i + 1 === length) {
+          // unpaired lead
+          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+          continue
+        }
+
+        // valid lead
+        leadSurrogate = codePoint
+
+        continue
+      }
+
+      // 2 leads in a row
+      if (codePoint < 0xDC00) {
+        if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+        leadSurrogate = codePoint
+        continue
+      }
+
+      // valid surrogate pair
+      codePoint = (leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00) + 0x10000
+    } else if (leadSurrogate) {
+      // valid bmp char, but last char was a lead
+      if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+    }
+
+    leadSurrogate = null
+
+    // encode utf8
+    if (codePoint < 0x80) {
+      if ((units -= 1) < 0) break
+      bytes.push(codePoint)
+    } else if (codePoint < 0x800) {
+      if ((units -= 2) < 0) break
+      bytes.push(
+        codePoint >> 0x6 | 0xC0,
+        codePoint & 0x3F | 0x80
+      )
+    } else if (codePoint < 0x10000) {
+      if ((units -= 3) < 0) break
+      bytes.push(
+        codePoint >> 0xC | 0xE0,
+        codePoint >> 0x6 & 0x3F | 0x80,
+        codePoint & 0x3F | 0x80
+      )
+    } else if (codePoint < 0x110000) {
+      if ((units -= 4) < 0) break
+      bytes.push(
+        codePoint >> 0x12 | 0xF0,
+        codePoint >> 0xC & 0x3F | 0x80,
+        codePoint >> 0x6 & 0x3F | 0x80,
+        codePoint & 0x3F | 0x80
+      )
+    } else {
+      throw new Error('Invalid code point')
+    }
+  }
+
+  return bytes
+}
+
+function asciiToBytes (str) {
+  var byteArray = []
+  for (var i = 0; i < str.length; ++i) {
+    // Node's code seems to be doing this and not & 0x7F..
+    byteArray.push(str.charCodeAt(i) & 0xFF)
+  }
+  return byteArray
+}
+
+function utf16leToBytes (str, units) {
+  var c, hi, lo
+  var byteArray = []
+  for (var i = 0; i < str.length; ++i) {
+    if ((units -= 2) < 0) break
+
+    c = str.charCodeAt(i)
+    hi = c >> 8
+    lo = c % 256
+    byteArray.push(lo)
+    byteArray.push(hi)
+  }
+
+  return byteArray
+}
+
+function base64ToBytes (str) {
+  return base64.toByteArray(base64clean(str))
+}
+
+function blitBuffer (src, dst, offset, length) {
+  for (var i = 0; i < length; ++i) {
+    if ((i + offset >= dst.length) || (i >= src.length)) break
+    dst[i + offset] = src[i]
+  }
+  return i
+}
+
+function isnan (val) {
+  return val !== val // eslint-disable-line no-self-compare
+}
+
+},{"base64-js":"../node_modules/base64-js/index.js","ieee754":"../node_modules/ieee754/index.js","isarray":"../node_modules/isarray/index.js","buffer":"../node_modules/buffer/index.js"}],"../node_modules/waveform-playlist/build/waveform-playlist.umd.js":[function(require,module,exports) {
+var define;
+var process = require("process");
+var Buffer = require("buffer").Buffer;
+(function webpackUniversalModuleDefinition(root, factory) {
+	if(typeof exports === 'object' && typeof module === 'object')
+		module.exports = factory();
+	else if(typeof define === 'function' && define.amd)
+		define("WaveformPlaylist", [], factory);
+	else if(typeof exports === 'object')
+		exports["WaveformPlaylist"] = factory();
+	else
+		root["WaveformPlaylist"] = factory();
+})(this, function() {
+return /******/ (() => { // webpackBootstrap
+/******/ 	var __webpack_modules__ = ({
+
+/***/ 6824:
+/***/ ((module) => {
+
+/*!
+ * Cross-Browser Split 1.1.1
+ * Copyright 2007-2012 Steven Levithan <stevenlevithan.com>
+ * Available under the MIT License
+ * ECMAScript compliant, uniform cross-browser split method
+ */
+
+/**
+ * Splits a string into an array of strings using a regex or string separator. Matches of the
+ * separator are not included in the result array. However, if `separator` is a regex that contains
+ * capturing groups, backreferences are spliced into the result each time `separator` is matched.
+ * Fixes browser bugs compared to the native `String.prototype.split` and can be used reliably
+ * cross-browser.
+ * @param {String} str String to split.
+ * @param {RegExp|String} separator Regex or string to use for separating the string.
+ * @param {Number} [limit] Maximum number of items to include in the result array.
+ * @returns {Array} Array of substrings.
+ * @example
+ *
+ * // Basic use
+ * split('a b c d', ' ');
+ * // -> ['a', 'b', 'c', 'd']
+ *
+ * // With limit
+ * split('a b c d', ' ', 2);
+ * // -> ['a', 'b']
+ *
+ * // Backreferences in result array
+ * split('..word1 word2..', /([a-z]+)(\d+)/i);
+ * // -> ['..', 'word', '1', ' ', 'word', '2', '..']
+ */
+module.exports = (function split(undef) {
+
+  var nativeSplit = String.prototype.split,
+    compliantExecNpcg = /()??/.exec("")[1] === undef,
+    // NPCG: nonparticipating capturing group
+    self;
+
+  self = function(str, separator, limit) {
+    // If `separator` is not a regex, use `nativeSplit`
+    if (Object.prototype.toString.call(separator) !== "[object RegExp]") {
+      return nativeSplit.call(str, separator, limit);
+    }
+    var output = [],
+      flags = (separator.ignoreCase ? "i" : "") + (separator.multiline ? "m" : "") + (separator.extended ? "x" : "") + // Proposed for ES6
+      (separator.sticky ? "y" : ""),
+      // Firefox 3+
+      lastLastIndex = 0,
+      // Make `global` and avoid `lastIndex` issues by working with a copy
+      separator = new RegExp(separator.source, flags + "g"),
+      separator2, match, lastIndex, lastLength;
+    str += ""; // Type-convert
+    if (!compliantExecNpcg) {
+      // Doesn't need flags gy, but they don't hurt
+      separator2 = new RegExp("^" + separator.source + "$(?!\\s)", flags);
+    }
+    /* Values for `limit`, per the spec:
+     * If undefined: 4294967295 // Math.pow(2, 32) - 1
+     * If 0, Infinity, or NaN: 0
+     * If positive number: limit = Math.floor(limit); if (limit > 4294967295) limit -= 4294967296;
+     * If negative number: 4294967296 - Math.floor(Math.abs(limit))
+     * If other: Type-convert, then use the above rules
+     */
+    limit = limit === undef ? -1 >>> 0 : // Math.pow(2, 32) - 1
+    limit >>> 0; // ToUint32(limit)
+    while (match = separator.exec(str)) {
+      // `separator.lastIndex` is not reliable cross-browser
+      lastIndex = match.index + match[0].length;
+      if (lastIndex > lastLastIndex) {
+        output.push(str.slice(lastLastIndex, match.index));
+        // Fix browsers whose `exec` methods don't consistently return `undefined` for
+        // nonparticipating capturing groups
+        if (!compliantExecNpcg && match.length > 1) {
+          match[0].replace(separator2, function() {
+            for (var i = 1; i < arguments.length - 2; i++) {
+              if (arguments[i] === undef) {
+                match[i] = undef;
+              }
+            }
+          });
+        }
+        if (match.length > 1 && match.index < str.length) {
+          Array.prototype.push.apply(output, match.slice(1));
+        }
+        lastLength = match[0].length;
+        lastLastIndex = lastIndex;
+        if (output.length >= limit) {
+          break;
+        }
+      }
+      if (separator.lastIndex === match.index) {
+        separator.lastIndex++; // Avoid an infinite loop
+      }
+    }
+    if (lastLastIndex === str.length) {
+      if (lastLength || !separator.test("")) {
+        output.push("");
+      }
+    } else {
+      output.push(str.slice(lastLastIndex));
+    }
+    return output.length > limit ? output.slice(0, limit) : output;
+  };
+
+  return self;
+})();
+
+
+/***/ }),
+
+/***/ 1804:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var isValue         = __webpack_require__(5618)
+  , isPlainFunction = __webpack_require__(7205)
+  , assign          = __webpack_require__(7191)
+  , normalizeOpts   = __webpack_require__(5516)
+  , contains        = __webpack_require__(9981);
+
+var d = (module.exports = function (dscr, value/*, options*/) {
+	var c, e, w, options, desc;
+	if (arguments.length < 2 || typeof dscr !== "string") {
+		options = value;
+		value = dscr;
+		dscr = null;
+	} else {
+		options = arguments[2];
+	}
+	if (isValue(dscr)) {
+		c = contains.call(dscr, "c");
+		e = contains.call(dscr, "e");
+		w = contains.call(dscr, "w");
+	} else {
+		c = w = true;
+		e = false;
+	}
+
+	desc = { value: value, configurable: c, enumerable: e, writable: w };
+	return !options ? desc : assign(normalizeOpts(options), desc);
+});
+
+d.gs = function (dscr, get, set/*, options*/) {
+	var c, e, options, desc;
+	if (typeof dscr !== "string") {
+		options = set;
+		set = get;
+		get = dscr;
+		dscr = null;
+	} else {
+		options = arguments[3];
+	}
+	if (!isValue(get)) {
+		get = undefined;
+	} else if (!isPlainFunction(get)) {
+		options = get;
+		get = set = undefined;
+	} else if (!isValue(set)) {
+		set = undefined;
+	} else if (!isPlainFunction(set)) {
+		options = set;
+		set = undefined;
+	}
+	if (isValue(dscr)) {
+		c = contains.call(dscr, "c");
+		e = contains.call(dscr, "e");
+	} else {
+		c = true;
+		e = false;
+	}
+
+	desc = { get: get, set: set, configurable: c, enumerable: e };
+	return !options ? desc : assign(normalizeOpts(options), desc);
+};
+
+
+/***/ }),
+
+/***/ 430:
+/***/ ((module) => {
+
+"use strict";
+
+
+// eslint-disable-next-line no-empty-function
+module.exports = function () {};
+
+
+/***/ }),
+
+/***/ 7191:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+module.exports = __webpack_require__(6560)() ? Object.assign : __webpack_require__(7346);
+
+
+/***/ }),
+
+/***/ 6560:
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = function () {
+	var assign = Object.assign, obj;
+	if (typeof assign !== "function") return false;
+	obj = { foo: "raz" };
+	assign(obj, { bar: "dwa" }, { trzy: "trzy" });
+	return obj.foo + obj.bar + obj.trzy === "razdwatrzy";
+};
+
+
+/***/ }),
+
+/***/ 7346:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var keys  = __webpack_require__(5103)
+  , value = __webpack_require__(2745)
+  , max   = Math.max;
+
+module.exports = function (dest, src/*, …srcn*/) {
+	var error, i, length = max(arguments.length, 2), assign;
+	dest = Object(value(dest));
+	assign = function (key) {
+		try {
+			dest[key] = src[key];
+		} catch (e) {
+			if (!error) error = e;
+		}
+	};
+	for (i = 1; i < length; ++i) {
+		src = arguments[i];
+		keys(src).forEach(assign);
+	}
+	if (error !== undefined) throw error;
+	return dest;
+};
+
+
+/***/ }),
+
+/***/ 6914:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var _undefined = __webpack_require__(430)(); // Support ES3 engines
+
+module.exports = function (val) { return val !== _undefined && val !== null; };
+
+
+/***/ }),
+
+/***/ 5103:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+module.exports = __webpack_require__(7446)() ? Object.keys : __webpack_require__(6137);
+
+
+/***/ }),
+
+/***/ 7446:
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = function () {
+	try {
+		Object.keys("primitive");
+		return true;
+	} catch (e) {
+		return false;
+	}
+};
+
+
+/***/ }),
+
+/***/ 6137:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var isValue = __webpack_require__(6914);
+
+var keys = Object.keys;
+
+module.exports = function (object) { return keys(isValue(object) ? Object(object) : object); };
+
+
+/***/ }),
+
+/***/ 5516:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var isValue = __webpack_require__(6914);
+
+var forEach = Array.prototype.forEach, create = Object.create;
+
+var process = function (src, obj) {
+	var key;
+	for (key in src) obj[key] = src[key];
+};
+
+// eslint-disable-next-line no-unused-vars
+module.exports = function (opts1/*, …options*/) {
+	var result = create(null);
+	forEach.call(arguments, function (options) {
+		if (!isValue(options)) return;
+		process(Object(options), result);
+	});
+	return result;
+};
+
+
+/***/ }),
+
+/***/ 1290:
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = function (fn) {
+	if (typeof fn !== "function") throw new TypeError(fn + " is not a function");
+	return fn;
+};
+
+
+/***/ }),
+
+/***/ 2745:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var isValue = __webpack_require__(6914);
+
+module.exports = function (value) {
+	if (!isValue(value)) throw new TypeError("Cannot use null or undefined");
+	return value;
+};
+
+
+/***/ }),
+
+/***/ 9981:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+module.exports = __webpack_require__(3591)() ? String.prototype.contains : __webpack_require__(6042);
+
+
+/***/ }),
+
+/***/ 3591:
+/***/ ((module) => {
+
+"use strict";
+
+
+var str = "razdwatrzy";
+
+module.exports = function () {
+	if (typeof str.contains !== "function") return false;
+	return str.contains("dwa") === true && str.contains("foo") === false;
+};
+
+
+/***/ }),
+
+/***/ 6042:
+/***/ ((module) => {
+
+"use strict";
+
+
+var indexOf = String.prototype.indexOf;
+
+module.exports = function (searchString/*, position*/) {
+	return indexOf.call(this, searchString, arguments[1]) > -1;
+};
+
+
+/***/ }),
+
+/***/ 8832:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var OneVersionConstraint = __webpack_require__(4167);
+
+var MY_VERSION = '7';
+OneVersionConstraint('ev-store', MY_VERSION);
+
+var hashKey = '__EV_STORE_KEY@' + MY_VERSION;
+
+module.exports = EvStore;
+
+function EvStore(elem) {
+    var hash = elem[hashKey];
+
+    if (!hash) {
+        hash = elem[hashKey] = {};
+    }
+
+    return hash;
+}
+
+
+/***/ }),
+
+/***/ 8370:
+/***/ ((module, exports, __webpack_require__) => {
+
+"use strict";
+
+
+var d        = __webpack_require__(1804)
+  , callable = __webpack_require__(1290)
+
+  , apply = Function.prototype.apply, call = Function.prototype.call
+  , create = Object.create, defineProperty = Object.defineProperty
+  , defineProperties = Object.defineProperties
+  , hasOwnProperty = Object.prototype.hasOwnProperty
+  , descriptor = { configurable: true, enumerable: false, writable: true }
+
+  , on, once, off, emit, methods, descriptors, base;
+
+on = function (type, listener) {
+	var data;
+
+	callable(listener);
+
+	if (!hasOwnProperty.call(this, '__ee__')) {
+		data = descriptor.value = create(null);
+		defineProperty(this, '__ee__', descriptor);
+		descriptor.value = null;
+	} else {
+		data = this.__ee__;
+	}
+	if (!data[type]) data[type] = listener;
+	else if (typeof data[type] === 'object') data[type].push(listener);
+	else data[type] = [data[type], listener];
+
+	return this;
+};
+
+once = function (type, listener) {
+	var once, self;
+
+	callable(listener);
+	self = this;
+	on.call(this, type, once = function () {
+		off.call(self, type, once);
+		apply.call(listener, this, arguments);
+	});
+
+	once.__eeOnceListener__ = listener;
+	return this;
+};
+
+off = function (type, listener) {
+	var data, listeners, candidate, i;
+
+	callable(listener);
+
+	if (!hasOwnProperty.call(this, '__ee__')) return this;
+	data = this.__ee__;
+	if (!data[type]) return this;
+	listeners = data[type];
+
+	if (typeof listeners === 'object') {
+		for (i = 0; (candidate = listeners[i]); ++i) {
+			if ((candidate === listener) ||
+					(candidate.__eeOnceListener__ === listener)) {
+				if (listeners.length === 2) data[type] = listeners[i ? 0 : 1];
+				else listeners.splice(i, 1);
+			}
+		}
+	} else {
+		if ((listeners === listener) ||
+				(listeners.__eeOnceListener__ === listener)) {
+			delete data[type];
+		}
+	}
+
+	return this;
+};
+
+emit = function (type) {
+	var i, l, listener, listeners, args;
+
+	if (!hasOwnProperty.call(this, '__ee__')) return;
+	listeners = this.__ee__[type];
+	if (!listeners) return;
+
+	if (typeof listeners === 'object') {
+		l = arguments.length;
+		args = new Array(l - 1);
+		for (i = 1; i < l; ++i) args[i - 1] = arguments[i];
+
+		listeners = listeners.slice();
+		for (i = 0; (listener = listeners[i]); ++i) {
+			apply.call(listener, this, args);
+		}
+	} else {
+		switch (arguments.length) {
+		case 1:
+			call.call(listeners, this);
+			break;
+		case 2:
+			call.call(listeners, this, arguments[1]);
+			break;
+		case 3:
+			call.call(listeners, this, arguments[1], arguments[2]);
+			break;
+		default:
+			l = arguments.length;
+			args = new Array(l - 1);
+			for (i = 1; i < l; ++i) {
+				args[i - 1] = arguments[i];
+			}
+			apply.call(listeners, this, args);
+		}
+	}
+};
+
+methods = {
+	on: on,
+	once: once,
+	off: off,
+	emit: emit
+};
+
+descriptors = {
+	on: d(on),
+	once: d(once),
+	off: d(off),
+	emit: d(emit)
+};
+
+base = defineProperties({}, descriptors);
+
+module.exports = exports = function (o) {
+	return (o == null) ? create(base) : defineProperties(Object(o), descriptors);
+};
+exports.methods = methods;
+
+
+/***/ }),
+
+/***/ 6226:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+    value: true
+}));
+exports.linear = linear;
+exports.exponential = exponential;
+exports.sCurve = sCurve;
+exports.logarithmic = logarithmic;
+function linear(length, rotation) {
+    var curve = new Float32Array(length),
+        i,
+        x,
+        scale = length - 1;
+
+    for (i = 0; i < length; i++) {
+        x = i / scale;
+
+        if (rotation > 0) {
+            curve[i] = x;
+        } else {
+            curve[i] = 1 - x;
+        }
+    }
+
+    return curve;
+}
+
+function exponential(length, rotation) {
+    var curve = new Float32Array(length),
+        i,
+        x,
+        scale = length - 1,
+        index;
+
+    for (i = 0; i < length; i++) {
+        x = i / scale;
+        index = rotation > 0 ? i : length - 1 - i;
+
+        curve[index] = Math.exp(2 * x - 1) / Math.exp(1);
+    }
+
+    return curve;
+}
+
+//creating a curve to simulate an S-curve with setValueCurveAtTime.
+function sCurve(length, rotation) {
+    var curve = new Float32Array(length),
+        i,
+        phase = rotation > 0 ? Math.PI / 2 : -(Math.PI / 2);
+
+    for (i = 0; i < length; ++i) {
+        curve[i] = Math.sin(Math.PI * i / length - phase) / 2 + 0.5;
+    }
+    return curve;
+}
+
+//creating a curve to simulate a logarithmic curve with setValueCurveAtTime.
+function logarithmic(length, base, rotation) {
+    var curve = new Float32Array(length),
+        index,
+        x = 0,
+        i;
+
+    for (i = 0; i < length; i++) {
+        //index for the curve array.
+        index = rotation > 0 ? i : length - 1 - i;
+
+        x = i / length;
+        curve[index] = Math.log(1 + base * x) / Math.log(1 + base);
+    }
+
+    return curve;
+}
+
+
+/***/ }),
+
+/***/ 1114:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+var __webpack_unused_export__;
+
+
+__webpack_unused_export__ = ({
+    value: true
+});
+exports.h7 = exports.Y1 = exports.Hp = exports.Jl = exports.t$ = exports._h = undefined;
+exports.L7 = createFadeIn;
+exports.Mt = createFadeOut;
+
+var _fadeCurves = __webpack_require__(6226);
+
+var SCURVE = exports._h = "sCurve";
+var LINEAR = exports.t$ = "linear";
+var EXPONENTIAL = exports.Jl = "exponential";
+var LOGARITHMIC = exports.Hp = "logarithmic";
+
+var FADEIN = exports.Y1 = "FadeIn";
+var FADEOUT = exports.h7 = "FadeOut";
+
+function sCurveFadeIn(start, duration) {
+    var curve = (0, _fadeCurves.sCurve)(10000, 1);
+    this.setValueCurveAtTime(curve, start, duration);
+}
+
+function sCurveFadeOut(start, duration) {
+    var curve = (0, _fadeCurves.sCurve)(10000, -1);
+    this.setValueCurveAtTime(curve, start, duration);
+}
+
+function linearFadeIn(start, duration) {
+    this.linearRampToValueAtTime(0, start);
+    this.linearRampToValueAtTime(1, start + duration);
+}
+
+function linearFadeOut(start, duration) {
+    this.linearRampToValueAtTime(1, start);
+    this.linearRampToValueAtTime(0, start + duration);
+}
+
+function exponentialFadeIn(start, duration) {
+    this.exponentialRampToValueAtTime(0.01, start);
+    this.exponentialRampToValueAtTime(1, start + duration);
+}
+
+function exponentialFadeOut(start, duration) {
+    this.exponentialRampToValueAtTime(1, start);
+    this.exponentialRampToValueAtTime(0.01, start + duration);
+}
+
+function logarithmicFadeIn(start, duration) {
+    var curve = (0, _fadeCurves.logarithmic)(10000, 10, 1);
+    this.setValueCurveAtTime(curve, start, duration);
+}
+
+function logarithmicFadeOut(start, duration) {
+    var curve = (0, _fadeCurves.logarithmic)(10000, 10, -1);
+    this.setValueCurveAtTime(curve, start, duration);
+}
+
+function createFadeIn(gain, shape, start, duration) {
+    switch (shape) {
+        case SCURVE:
+            sCurveFadeIn.call(gain, start, duration);
+            break;
+        case LINEAR:
+            linearFadeIn.call(gain, start, duration);
+            break;
+        case EXPONENTIAL:
+            exponentialFadeIn.call(gain, start, duration);
+            break;
+        case LOGARITHMIC:
+            logarithmicFadeIn.call(gain, start, duration);
+            break;
+        default:
+            throw new Error("Unsupported Fade type");
+    }
+}
+
+function createFadeOut(gain, shape, start, duration) {
+    switch (shape) {
+        case SCURVE:
+            sCurveFadeOut.call(gain, start, duration);
+            break;
+        case LINEAR:
+            linearFadeOut.call(gain, start, duration);
+            break;
+        case EXPONENTIAL:
+            exponentialFadeOut.call(gain, start, duration);
+            break;
+        case LOGARITHMIC:
+            logarithmicFadeOut.call(gain, start, duration);
+            break;
+        default:
+            throw new Error("Unsupported Fade type");
+    }
+}
+
+
+/***/ }),
+
+/***/ 9144:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var topLevel = typeof __webpack_require__.g !== 'undefined' ? __webpack_require__.g :
+    typeof window !== 'undefined' ? window : {}
+var minDoc = __webpack_require__(5893);
+
+var doccy;
+
+if (typeof document !== 'undefined') {
+    doccy = document;
+} else {
+    doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
+
+    if (!doccy) {
+        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
+    }
+}
+
+module.exports = doccy;
+
+
+/***/ }),
+
+/***/ 8070:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+/*global window, global*/
+
+var root = typeof window !== 'undefined' ?
+    window : typeof __webpack_require__.g !== 'undefined' ?
+    __webpack_require__.g : {};
+
+module.exports = Individual;
+
+function Individual(key, value) {
+    if (key in root) {
+        return root[key];
+    }
+
+    root[key] = value;
+
+    return value;
+}
+
+
+/***/ }),
+
+/***/ 4167:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var Individual = __webpack_require__(8070);
+
+module.exports = OneVersion;
+
+function OneVersion(moduleName, version, defaultValue) {
+    var key = '__INDIVIDUAL_ONE_VERSION_' + moduleName;
+    var enforceKey = key + '_ENFORCE_SINGLETON';
+
+    var versionValue = Individual(enforceKey, version);
+
+    if (versionValue !== version) {
+        throw new Error('Can only have one copy of ' +
+            moduleName + '.\n' +
+            'You already have version ' + versionValue +
+            ' installed.\n' +
+            'This means you cannot install version ' + version);
+    }
+
+    return Individual(key, defaultValue);
+}
+
+
+/***/ }),
+
+/***/ 849:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var WORKER_ENABLED = !!(__webpack_require__.g === __webpack_require__.g.window && __webpack_require__.g.URL && __webpack_require__.g.Blob && __webpack_require__.g.Worker);
+
+function InlineWorker(func, self) {
+  var _this = this;
+  var functionBody;
+
+  self = self || {};
+
+  if (WORKER_ENABLED) {
+    functionBody = func.toString().trim().match(
+      /^function\s*\w*\s*\([\w\s,]*\)\s*{([\w\W]*?)}$/
+    )[1];
+
+    return new __webpack_require__.g.Worker(__webpack_require__.g.URL.createObjectURL(
+      new __webpack_require__.g.Blob([ functionBody ], { type: "text/javascript" })
+    ));
+  }
+
+  function postMessage(data) {
+    setTimeout(function() {
+      _this.onmessage({ data: data });
+    }, 0);
+  }
+
+  this.self = self;
+  this.self.postMessage = postMessage;
+
+  setTimeout(func.bind(self, self), 0);
+}
+
+InlineWorker.prototype.postMessage = function postMessage(data) {
+  var _this = this;
+
+  setTimeout(function() {
+    _this.self.onmessage({ data: data });
+  }, 0);
+};
+
+module.exports = InlineWorker;
+
+
+/***/ }),
+
+/***/ 6240:
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = function isObject(x) {
+	return typeof x === 'object' && x !== null;
+};
+
+
+/***/ }),
+
+/***/ 1730:
+/***/ ((module) => {
+
 /**
  * lodash (Custom Build) <https://lodash.com/>
  * Build: `lodash modularize exports="npm" -o ./`
@@ -1149,699 +4292,133 @@ function keys(object) {
 
 module.exports = assign;
 
-},{}],"../node_modules/parcel-bundler/src/builtins/_empty.js":[function(require,module,exports) {
 
-},{}],"../node_modules/global/document.js":[function(require,module,exports) {
-var global = arguments[3];
-var topLevel = typeof global !== 'undefined' ? global :
-    typeof window !== 'undefined' ? window : {}
-var minDoc = require('min-document');
+/***/ }),
 
-var doccy;
+/***/ 2098:
+/***/ ((module, exports, __webpack_require__) => {
 
-if (typeof document !== 'undefined') {
-    doccy = document;
-} else {
-    doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'];
-
-    if (!doccy) {
-        doccy = topLevel['__GLOBAL_DOCUMENT_CACHE@4'] = minDoc;
-    }
-}
-
-module.exports = doccy;
-
-},{"min-document":"../node_modules/parcel-bundler/src/builtins/_empty.js"}],"../node_modules/is-object/index.js":[function(require,module,exports) {
-'use strict';
-
-module.exports = function isObject(x) {
-	return typeof x === 'object' && x !== null;
-};
-
-},{}],"../node_modules/virtual-dom/vnode/is-vhook.js":[function(require,module,exports) {
-module.exports = isHook
-
-function isHook(hook) {
-    return hook &&
-      (typeof hook.hook === "function" && !hook.hasOwnProperty("hook") ||
-       typeof hook.unhook === "function" && !hook.hasOwnProperty("unhook"))
-}
-
-},{}],"../node_modules/virtual-dom/vdom/apply-properties.js":[function(require,module,exports) {
-var isObject = require("is-object")
-var isHook = require("../vnode/is-vhook.js")
-
-module.exports = applyProperties
-
-function applyProperties(node, props, previous) {
-    for (var propName in props) {
-        var propValue = props[propName]
-
-        if (propValue === undefined) {
-            removeProperty(node, propName, propValue, previous);
-        } else if (isHook(propValue)) {
-            removeProperty(node, propName, propValue, previous)
-            if (propValue.hook) {
-                propValue.hook(node,
-                    propName,
-                    previous ? previous[propName] : undefined)
-            }
-        } else {
-            if (isObject(propValue)) {
-                patchObject(node, props, previous, propName, propValue);
-            } else {
-                node[propName] = propValue
-            }
-        }
-    }
-}
-
-function removeProperty(node, propName, propValue, previous) {
-    if (previous) {
-        var previousValue = previous[propName]
-
-        if (!isHook(previousValue)) {
-            if (propName === "attributes") {
-                for (var attrName in previousValue) {
-                    node.removeAttribute(attrName)
-                }
-            } else if (propName === "style") {
-                for (var i in previousValue) {
-                    node.style[i] = ""
-                }
-            } else if (typeof previousValue === "string") {
-                node[propName] = ""
-            } else {
-                node[propName] = null
-            }
-        } else if (previousValue.unhook) {
-            previousValue.unhook(node, propName, propValue)
-        }
-    }
-}
-
-function patchObject(node, props, previous, propName, propValue) {
-    var previousValue = previous ? previous[propName] : undefined
-
-    // Set attributes
-    if (propName === "attributes") {
-        for (var attrName in propValue) {
-            var attrValue = propValue[attrName]
-
-            if (attrValue === undefined) {
-                node.removeAttribute(attrName)
-            } else {
-                node.setAttribute(attrName, attrValue)
-            }
-        }
-
-        return
-    }
-
-    if(previousValue && isObject(previousValue) &&
-        getPrototype(previousValue) !== getPrototype(propValue)) {
-        node[propName] = propValue
-        return
-    }
-
-    if (!isObject(node[propName])) {
-        node[propName] = {}
-    }
-
-    var replacer = propName === "style" ? "" : undefined
-
-    for (var k in propValue) {
-        var value = propValue[k]
-        node[propName][k] = (value === undefined) ? replacer : value
-    }
-}
-
-function getPrototype(value) {
-    if (Object.getPrototypeOf) {
-        return Object.getPrototypeOf(value)
-    } else if (value.__proto__) {
-        return value.__proto__
-    } else if (value.constructor) {
-        return value.constructor.prototype
-    }
-}
-
-},{"is-object":"../node_modules/is-object/index.js","../vnode/is-vhook.js":"../node_modules/virtual-dom/vnode/is-vhook.js"}],"../node_modules/virtual-dom/vnode/version.js":[function(require,module,exports) {
-module.exports = "2"
-
-},{}],"../node_modules/virtual-dom/vnode/is-vnode.js":[function(require,module,exports) {
-var version = require("./version")
-
-module.exports = isVirtualNode
-
-function isVirtualNode(x) {
-    return x && x.type === "VirtualNode" && x.version === version
-}
-
-},{"./version":"../node_modules/virtual-dom/vnode/version.js"}],"../node_modules/virtual-dom/vnode/is-vtext.js":[function(require,module,exports) {
-var version = require("./version")
-
-module.exports = isVirtualText
-
-function isVirtualText(x) {
-    return x && x.type === "VirtualText" && x.version === version
-}
-
-},{"./version":"../node_modules/virtual-dom/vnode/version.js"}],"../node_modules/virtual-dom/vnode/is-widget.js":[function(require,module,exports) {
-module.exports = isWidget
-
-function isWidget(w) {
-    return w && w.type === "Widget"
-}
-
-},{}],"../node_modules/virtual-dom/vnode/is-thunk.js":[function(require,module,exports) {
-module.exports = isThunk
-
-function isThunk(t) {
-    return t && t.type === "Thunk"
-}
-
-},{}],"../node_modules/virtual-dom/vnode/handle-thunk.js":[function(require,module,exports) {
-var isVNode = require("./is-vnode")
-var isVText = require("./is-vtext")
-var isWidget = require("./is-widget")
-var isThunk = require("./is-thunk")
-
-module.exports = handleThunk
-
-function handleThunk(a, b) {
-    var renderedA = a
-    var renderedB = b
-
-    if (isThunk(b)) {
-        renderedB = renderThunk(b, a)
-    }
-
-    if (isThunk(a)) {
-        renderedA = renderThunk(a, null)
-    }
-
-    return {
-        a: renderedA,
-        b: renderedB
-    }
-}
-
-function renderThunk(thunk, previous) {
-    var renderedThunk = thunk.vnode
-
-    if (!renderedThunk) {
-        renderedThunk = thunk.vnode = thunk.render(previous)
-    }
-
-    if (!(isVNode(renderedThunk) ||
-            isVText(renderedThunk) ||
-            isWidget(renderedThunk))) {
-        throw new Error("thunk did not return a valid node");
-    }
-
-    return renderedThunk
-}
-
-},{"./is-vnode":"../node_modules/virtual-dom/vnode/is-vnode.js","./is-vtext":"../node_modules/virtual-dom/vnode/is-vtext.js","./is-widget":"../node_modules/virtual-dom/vnode/is-widget.js","./is-thunk":"../node_modules/virtual-dom/vnode/is-thunk.js"}],"../node_modules/virtual-dom/vdom/create-element.js":[function(require,module,exports) {
-var document = require("global/document")
-
-var applyProperties = require("./apply-properties")
-
-var isVNode = require("../vnode/is-vnode.js")
-var isVText = require("../vnode/is-vtext.js")
-var isWidget = require("../vnode/is-widget.js")
-var handleThunk = require("../vnode/handle-thunk.js")
-
-module.exports = createElement
-
-function createElement(vnode, opts) {
-    var doc = opts ? opts.document || document : document
-    var warn = opts ? opts.warn : null
-
-    vnode = handleThunk(vnode).a
-
-    if (isWidget(vnode)) {
-        return vnode.init()
-    } else if (isVText(vnode)) {
-        return doc.createTextNode(vnode.text)
-    } else if (!isVNode(vnode)) {
-        if (warn) {
-            warn("Item is not a valid virtual dom node", vnode)
-        }
-        return null
-    }
-
-    var node = (vnode.namespace === null) ?
-        doc.createElement(vnode.tagName) :
-        doc.createElementNS(vnode.namespace, vnode.tagName)
-
-    var props = vnode.properties
-    applyProperties(node, props)
-
-    var children = vnode.children
-
-    for (var i = 0; i < children.length; i++) {
-        var childNode = createElement(children[i], opts)
-        if (childNode) {
-            node.appendChild(childNode)
-        }
-    }
-
-    return node
-}
-
-},{"global/document":"../node_modules/global/document.js","./apply-properties":"../node_modules/virtual-dom/vdom/apply-properties.js","../vnode/is-vnode.js":"../node_modules/virtual-dom/vnode/is-vnode.js","../vnode/is-vtext.js":"../node_modules/virtual-dom/vnode/is-vtext.js","../vnode/is-widget.js":"../node_modules/virtual-dom/vnode/is-widget.js","../vnode/handle-thunk.js":"../node_modules/virtual-dom/vnode/handle-thunk.js"}],"../node_modules/virtual-dom/create-element.js":[function(require,module,exports) {
-var createElement = require("./vdom/create-element.js")
-
-module.exports = createElement
-
-},{"./vdom/create-element.js":"../node_modules/virtual-dom/vdom/create-element.js"}],"../node_modules/type/value/is.js":[function(require,module,exports) {
-"use strict";
-
-// ES3 safe
-var _undefined = void 0;
-
-module.exports = function (value) { return value !== _undefined && value !== null; };
-
-},{}],"../node_modules/type/object/is.js":[function(require,module,exports) {
-"use strict";
-
-var isValue = require("../value/is");
-
-// prettier-ignore
-var possibleTypes = { "object": true, "function": true, "undefined": true /* document.all */ };
-
-module.exports = function (value) {
-	if (!isValue(value)) return false;
-	return hasOwnProperty.call(possibleTypes, typeof value);
-};
-
-},{"../value/is":"../node_modules/type/value/is.js"}],"../node_modules/type/prototype/is.js":[function(require,module,exports) {
-"use strict";
-
-var isObject = require("../object/is");
-
-module.exports = function (value) {
-	if (!isObject(value)) return false;
-	try {
-		if (!value.constructor) return false;
-		return value.constructor.prototype === value;
-	} catch (error) {
-		return false;
-	}
-};
-
-},{"../object/is":"../node_modules/type/object/is.js"}],"../node_modules/type/function/is.js":[function(require,module,exports) {
-"use strict";
-
-var isPrototype = require("../prototype/is");
-
-module.exports = function (value) {
-	if (typeof value !== "function") return false;
-
-	if (!hasOwnProperty.call(value, "length")) return false;
-
-	try {
-		if (typeof value.length !== "number") return false;
-		if (typeof value.call !== "function") return false;
-		if (typeof value.apply !== "function") return false;
-	} catch (error) {
-		return false;
-	}
-
-	return !isPrototype(value);
-};
-
-},{"../prototype/is":"../node_modules/type/prototype/is.js"}],"../node_modules/type/plain-function/is.js":[function(require,module,exports) {
-"use strict";
-
-var isFunction = require("../function/is");
-
-var classRe = /^\s*class[\s{/}]/, functionToString = Function.prototype.toString;
-
-module.exports = function (value) {
-	if (!isFunction(value)) return false;
-	if (classRe.test(functionToString.call(value))) return false;
-	return true;
-};
-
-},{"../function/is":"../node_modules/type/function/is.js"}],"../node_modules/es5-ext/object/assign/is-implemented.js":[function(require,module,exports) {
-"use strict";
-
-module.exports = function () {
-  var assign = Object.assign,
-    obj;
-  if (typeof assign !== "function") return false;
-  obj = {
-    foo: "raz"
-  };
-  assign(obj, {
-    bar: "dwa"
-  }, {
-    trzy: "trzy"
-  });
-  return obj.foo + obj.bar + obj.trzy === "razdwatrzy";
-};
-},{}],"../node_modules/es5-ext/object/keys/is-implemented.js":[function(require,module,exports) {
-"use strict";
-
-module.exports = function () {
-  try {
-    Object.keys("primitive");
-    return true;
-  } catch (e) {
-    return false;
-  }
-};
-},{}],"../node_modules/es5-ext/function/noop.js":[function(require,module,exports) {
-"use strict";
-
-// eslint-disable-next-line no-empty-function
-module.exports = function () {};
-},{}],"../node_modules/es5-ext/object/is-value.js":[function(require,module,exports) {
-"use strict";
-
-var _undefined = require("../function/noop")(); // Support ES3 engines
-
-module.exports = function (val) {
-  return val !== _undefined && val !== null;
-};
-},{"../function/noop":"../node_modules/es5-ext/function/noop.js"}],"../node_modules/es5-ext/object/keys/shim.js":[function(require,module,exports) {
-"use strict";
-
-var isValue = require("../is-value");
-var keys = Object.keys;
-module.exports = function (object) {
-  return keys(isValue(object) ? Object(object) : object);
-};
-},{"../is-value":"../node_modules/es5-ext/object/is-value.js"}],"../node_modules/es5-ext/object/keys/index.js":[function(require,module,exports) {
-"use strict";
-
-module.exports = require("./is-implemented")() ? Object.keys : require("./shim");
-},{"./is-implemented":"../node_modules/es5-ext/object/keys/is-implemented.js","./shim":"../node_modules/es5-ext/object/keys/shim.js"}],"../node_modules/es5-ext/object/valid-value.js":[function(require,module,exports) {
-"use strict";
-
-var isValue = require("./is-value");
-module.exports = function (value) {
-  if (!isValue(value)) throw new TypeError("Cannot use null or undefined");
-  return value;
-};
-},{"./is-value":"../node_modules/es5-ext/object/is-value.js"}],"../node_modules/es5-ext/object/assign/shim.js":[function(require,module,exports) {
-"use strict";
-
-var keys = require("../keys"),
-  value = require("../valid-value"),
-  max = Math.max;
-module.exports = function (dest, src /*, …srcn*/) {
-  var error,
-    i,
-    length = max(arguments.length, 2),
-    assign;
-  dest = Object(value(dest));
-  assign = function (key) {
-    try {
-      dest[key] = src[key];
-    } catch (e) {
-      if (!error) error = e;
-    }
-  };
-  for (i = 1; i < length; ++i) {
-    src = arguments[i];
-    keys(src).forEach(assign);
-  }
-  if (error !== undefined) throw error;
-  return dest;
-};
-},{"../keys":"../node_modules/es5-ext/object/keys/index.js","../valid-value":"../node_modules/es5-ext/object/valid-value.js"}],"../node_modules/es5-ext/object/assign/index.js":[function(require,module,exports) {
-"use strict";
-
-module.exports = require("./is-implemented")() ? Object.assign : require("./shim");
-},{"./is-implemented":"../node_modules/es5-ext/object/assign/is-implemented.js","./shim":"../node_modules/es5-ext/object/assign/shim.js"}],"../node_modules/es5-ext/object/normalize-options.js":[function(require,module,exports) {
-
-"use strict";
-
-var isValue = require("./is-value");
-var forEach = Array.prototype.forEach,
-  create = Object.create;
-var process = function (src, obj) {
-  var key;
-  for (key in src) obj[key] = src[key];
-};
-
-// eslint-disable-next-line no-unused-vars
-module.exports = function (opts1 /*, …options*/) {
-  var result = create(null);
-  forEach.call(arguments, function (options) {
-    if (!isValue(options)) return;
-    process(Object(options), result);
-  });
-  return result;
-};
-},{"./is-value":"../node_modules/es5-ext/object/is-value.js"}],"../node_modules/es5-ext/string/#/contains/is-implemented.js":[function(require,module,exports) {
-"use strict";
-
-var str = "razdwatrzy";
-module.exports = function () {
-  if (typeof str.contains !== "function") return false;
-  return str.contains("dwa") === true && str.contains("foo") === false;
-};
-},{}],"../node_modules/es5-ext/string/#/contains/shim.js":[function(require,module,exports) {
-"use strict";
-
-var indexOf = String.prototype.indexOf;
-module.exports = function (searchString /*, position*/) {
-  return indexOf.call(this, searchString, arguments[1]) > -1;
-};
-},{}],"../node_modules/es5-ext/string/#/contains/index.js":[function(require,module,exports) {
-"use strict";
-
-module.exports = require("./is-implemented")() ? String.prototype.contains : require("./shim");
-},{"./is-implemented":"../node_modules/es5-ext/string/#/contains/is-implemented.js","./shim":"../node_modules/es5-ext/string/#/contains/shim.js"}],"../node_modules/d/index.js":[function(require,module,exports) {
-"use strict";
-
-var isValue         = require("type/value/is")
-  , isPlainFunction = require("type/plain-function/is")
-  , assign          = require("es5-ext/object/assign")
-  , normalizeOpts   = require("es5-ext/object/normalize-options")
-  , contains        = require("es5-ext/string/#/contains");
-
-var d = (module.exports = function (dscr, value/*, options*/) {
-	var c, e, w, options, desc;
-	if (arguments.length < 2 || typeof dscr !== "string") {
-		options = value;
-		value = dscr;
-		dscr = null;
-	} else {
-		options = arguments[2];
-	}
-	if (isValue(dscr)) {
-		c = contains.call(dscr, "c");
-		e = contains.call(dscr, "e");
-		w = contains.call(dscr, "w");
-	} else {
-		c = w = true;
-		e = false;
-	}
-
-	desc = { value: value, configurable: c, enumerable: e, writable: w };
-	return !options ? desc : assign(normalizeOpts(options), desc);
-});
-
-d.gs = function (dscr, get, set/*, options*/) {
-	var c, e, options, desc;
-	if (typeof dscr !== "string") {
-		options = set;
-		set = get;
-		get = dscr;
-		dscr = null;
-	} else {
-		options = arguments[3];
-	}
-	if (!isValue(get)) {
-		get = undefined;
-	} else if (!isPlainFunction(get)) {
-		options = get;
-		get = set = undefined;
-	} else if (!isValue(set)) {
-		set = undefined;
-	} else if (!isPlainFunction(set)) {
-		options = set;
-		set = undefined;
-	}
-	if (isValue(dscr)) {
-		c = contains.call(dscr, "c");
-		e = contains.call(dscr, "e");
-	} else {
-		c = true;
-		e = false;
-	}
-
-	desc = { get: get, set: set, configurable: c, enumerable: e };
-	return !options ? desc : assign(normalizeOpts(options), desc);
-};
-
-},{"type/value/is":"../node_modules/type/value/is.js","type/plain-function/is":"../node_modules/type/plain-function/is.js","es5-ext/object/assign":"../node_modules/es5-ext/object/assign/index.js","es5-ext/object/normalize-options":"../node_modules/es5-ext/object/normalize-options.js","es5-ext/string/#/contains":"../node_modules/es5-ext/string/#/contains/index.js"}],"../node_modules/es5-ext/object/valid-callable.js":[function(require,module,exports) {
-"use strict";
-
-module.exports = function (fn) {
-  if (typeof fn !== "function") throw new TypeError(fn + " is not a function");
-  return fn;
-};
-},{}],"../node_modules/event-emitter/index.js":[function(require,module,exports) {
-'use strict';
-
-var d        = require('d')
-  , callable = require('es5-ext/object/valid-callable')
-
-  , apply = Function.prototype.apply, call = Function.prototype.call
-  , create = Object.create, defineProperty = Object.defineProperty
-  , defineProperties = Object.defineProperties
-  , hasOwnProperty = Object.prototype.hasOwnProperty
-  , descriptor = { configurable: true, enumerable: false, writable: true }
-
-  , on, once, off, emit, methods, descriptors, base;
-
-on = function (type, listener) {
-	var data;
-
-	callable(listener);
-
-	if (!hasOwnProperty.call(this, '__ee__')) {
-		data = descriptor.value = create(null);
-		defineProperty(this, '__ee__', descriptor);
-		descriptor.value = null;
-	} else {
-		data = this.__ee__;
-	}
-	if (!data[type]) data[type] = listener;
-	else if (typeof data[type] === 'object') data[type].push(listener);
-	else data[type] = [data[type], listener];
-
-	return this;
-};
-
-once = function (type, listener) {
-	var once, self;
-
-	callable(listener);
-	self = this;
-	on.call(this, type, once = function () {
-		off.call(self, type, once);
-		apply.call(listener, this, arguments);
-	});
-
-	once.__eeOnceListener__ = listener;
-	return this;
-};
-
-off = function (type, listener) {
-	var data, listeners, candidate, i;
-
-	callable(listener);
-
-	if (!hasOwnProperty.call(this, '__ee__')) return this;
-	data = this.__ee__;
-	if (!data[type]) return this;
-	listeners = data[type];
-
-	if (typeof listeners === 'object') {
-		for (i = 0; (candidate = listeners[i]); ++i) {
-			if ((candidate === listener) ||
-					(candidate.__eeOnceListener__ === listener)) {
-				if (listeners.length === 2) data[type] = listeners[i ? 0 : 1];
-				else listeners.splice(i, 1);
-			}
-		}
-	} else {
-		if ((listeners === listener) ||
-				(listeners.__eeOnceListener__ === listener)) {
-			delete data[type];
-		}
-	}
-
-	return this;
-};
-
-emit = function (type) {
-	var i, l, listener, listeners, args;
-
-	if (!hasOwnProperty.call(this, '__ee__')) return;
-	listeners = this.__ee__[type];
-	if (!listeners) return;
-
-	if (typeof listeners === 'object') {
-		l = arguments.length;
-		args = new Array(l - 1);
-		for (i = 1; i < l; ++i) args[i - 1] = arguments[i];
-
-		listeners = listeners.slice();
-		for (i = 0; (listener = listeners[i]); ++i) {
-			apply.call(listener, this, args);
-		}
-	} else {
-		switch (arguments.length) {
-		case 1:
-			call.call(listeners, this);
-			break;
-		case 2:
-			call.call(listeners, this, arguments[1]);
-			break;
-		case 3:
-			call.call(listeners, this, arguments[1], arguments[2]);
-			break;
-		default:
-			l = arguments.length;
-			args = new Array(l - 1);
-			for (i = 1; i < l; ++i) {
-				args[i - 1] = arguments[i];
-			}
-			apply.call(listeners, this, args);
-		}
-	}
-};
-
-methods = {
-	on: on,
-	once: once,
-	off: off,
-	emit: emit
-};
-
-descriptors = {
-	on: d(on),
-	once: d(once),
-	off: d(off),
-	emit: d(emit)
-};
-
-base = defineProperties({}, descriptors);
-
-module.exports = exports = function (o) {
-	return (o == null) ? create(base) : defineProperties(Object(o), descriptors);
-};
-exports.methods = methods;
-
-},{"d":"../node_modules/d/index.js","es5-ext/object/valid-callable":"../node_modules/es5-ext/object/valid-callable.js"}],"../node_modules/lodash.defaults/index.js":[function(require,module,exports) {
+/* module decorator */ module = __webpack_require__.nmd(module);
 /**
- * lodash (Custom Build) <https://lodash.com/>
+ * Lodash (Custom Build) <https://lodash.com/>
  * Build: `lodash modularize exports="npm" -o ./`
- * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+ * Copyright OpenJS Foundation and other contributors <https://openjsf.org/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
  * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
  */
+
+/** Used as the size to enable large array optimizations. */
+var LARGE_ARRAY_SIZE = 200;
+
+/** Used to stand-in for `undefined` hash values. */
+var HASH_UNDEFINED = '__lodash_hash_undefined__';
+
+/** Used to detect hot functions by number of calls within a span of milliseconds. */
+var HOT_COUNT = 800,
+    HOT_SPAN = 16;
 
 /** Used as references for various `Number` constants. */
 var MAX_SAFE_INTEGER = 9007199254740991;
 
 /** `Object#toString` result references. */
 var argsTag = '[object Arguments]',
+    arrayTag = '[object Array]',
+    asyncTag = '[object AsyncFunction]',
+    boolTag = '[object Boolean]',
+    dateTag = '[object Date]',
+    errorTag = '[object Error]',
     funcTag = '[object Function]',
-    genTag = '[object GeneratorFunction]';
+    genTag = '[object GeneratorFunction]',
+    mapTag = '[object Map]',
+    numberTag = '[object Number]',
+    nullTag = '[object Null]',
+    objectTag = '[object Object]',
+    proxyTag = '[object Proxy]',
+    regexpTag = '[object RegExp]',
+    setTag = '[object Set]',
+    stringTag = '[object String]',
+    undefinedTag = '[object Undefined]',
+    weakMapTag = '[object WeakMap]';
+
+var arrayBufferTag = '[object ArrayBuffer]',
+    dataViewTag = '[object DataView]',
+    float32Tag = '[object Float32Array]',
+    float64Tag = '[object Float64Array]',
+    int8Tag = '[object Int8Array]',
+    int16Tag = '[object Int16Array]',
+    int32Tag = '[object Int32Array]',
+    uint8Tag = '[object Uint8Array]',
+    uint8ClampedTag = '[object Uint8ClampedArray]',
+    uint16Tag = '[object Uint16Array]',
+    uint32Tag = '[object Uint32Array]';
+
+/**
+ * Used to match `RegExp`
+ * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
+ */
+var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
+
+/** Used to detect host constructors (Safari). */
+var reIsHostCtor = /^\[object .+?Constructor\]$/;
 
 /** Used to detect unsigned integer values. */
 var reIsUint = /^(?:0|[1-9]\d*)$/;
+
+/** Used to identify `toStringTag` values of typed arrays. */
+var typedArrayTags = {};
+typedArrayTags[float32Tag] = typedArrayTags[float64Tag] =
+typedArrayTags[int8Tag] = typedArrayTags[int16Tag] =
+typedArrayTags[int32Tag] = typedArrayTags[uint8Tag] =
+typedArrayTags[uint8ClampedTag] = typedArrayTags[uint16Tag] =
+typedArrayTags[uint32Tag] = true;
+typedArrayTags[argsTag] = typedArrayTags[arrayTag] =
+typedArrayTags[arrayBufferTag] = typedArrayTags[boolTag] =
+typedArrayTags[dataViewTag] = typedArrayTags[dateTag] =
+typedArrayTags[errorTag] = typedArrayTags[funcTag] =
+typedArrayTags[mapTag] = typedArrayTags[numberTag] =
+typedArrayTags[objectTag] = typedArrayTags[regexpTag] =
+typedArrayTags[setTag] = typedArrayTags[stringTag] =
+typedArrayTags[weakMapTag] = false;
+
+/** Detect free variable `global` from Node.js. */
+var freeGlobal = typeof __webpack_require__.g == 'object' && __webpack_require__.g && __webpack_require__.g.Object === Object && __webpack_require__.g;
+
+/** Detect free variable `self`. */
+var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+
+/** Used as a reference to the global object. */
+var root = freeGlobal || freeSelf || Function('return this')();
+
+/** Detect free variable `exports`. */
+var freeExports =  true && exports && !exports.nodeType && exports;
+
+/** Detect free variable `module`. */
+var freeModule = freeExports && "object" == 'object' && module && !module.nodeType && module;
+
+/** Detect the popular CommonJS extension `module.exports`. */
+var moduleExports = freeModule && freeModule.exports === freeExports;
+
+/** Detect free variable `process` from Node.js. */
+var freeProcess = moduleExports && freeGlobal.process;
+
+/** Used to access faster Node.js helpers. */
+var nodeUtil = (function() {
+  try {
+    // Use `util.types` for Node.js 10+.
+    var types = freeModule && freeModule.require && freeModule.require('util').types;
+
+    if (types) {
+      return types;
+    }
+
+    // Legacy `process.binding('util')` for Node.js < 10.
+    return freeProcess && freeProcess.binding && freeProcess.binding('util');
+  } catch (e) {}
+}());
+
+/* Node.js helper references. */
+var nodeIsTypedArray = nodeUtil && nodeUtil.isTypedArray;
 
 /**
  * A faster alternative to `Function#apply`, this function invokes `func`
@@ -1882,24 +4459,550 @@ function baseTimes(n, iteratee) {
   return result;
 }
 
+/**
+ * The base implementation of `_.unary` without support for storing metadata.
+ *
+ * @private
+ * @param {Function} func The function to cap arguments for.
+ * @returns {Function} Returns the new capped function.
+ */
+function baseUnary(func) {
+  return function(value) {
+    return func(value);
+  };
+}
+
+/**
+ * Gets the value at `key` of `object`.
+ *
+ * @private
+ * @param {Object} [object] The object to query.
+ * @param {string} key The key of the property to get.
+ * @returns {*} Returns the property value.
+ */
+function getValue(object, key) {
+  return object == null ? undefined : object[key];
+}
+
+/**
+ * Creates a unary function that invokes `func` with its argument transformed.
+ *
+ * @private
+ * @param {Function} func The function to wrap.
+ * @param {Function} transform The argument transform.
+ * @returns {Function} Returns the new function.
+ */
+function overArg(func, transform) {
+  return function(arg) {
+    return func(transform(arg));
+  };
+}
+
 /** Used for built-in method references. */
-var objectProto = Object.prototype;
+var arrayProto = Array.prototype,
+    funcProto = Function.prototype,
+    objectProto = Object.prototype;
+
+/** Used to detect overreaching core-js shims. */
+var coreJsData = root['__core-js_shared__'];
+
+/** Used to resolve the decompiled source of functions. */
+var funcToString = funcProto.toString;
 
 /** Used to check objects for own properties. */
 var hasOwnProperty = objectProto.hasOwnProperty;
+
+/** Used to detect methods masquerading as native. */
+var maskSrcKey = (function() {
+  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+  return uid ? ('Symbol(src)_1.' + uid) : '';
+}());
 
 /**
  * Used to resolve the
  * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
  * of values.
  */
-var objectToString = objectProto.toString;
+var nativeObjectToString = objectProto.toString;
+
+/** Used to infer the `Object` constructor. */
+var objectCtorString = funcToString.call(Object);
+
+/** Used to detect if a method is native. */
+var reIsNative = RegExp('^' +
+  funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
+  .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
+);
 
 /** Built-in value references. */
-var propertyIsEnumerable = objectProto.propertyIsEnumerable;
+var Buffer = moduleExports ? root.Buffer : undefined,
+    Symbol = root.Symbol,
+    Uint8Array = root.Uint8Array,
+    allocUnsafe = Buffer ? Buffer.allocUnsafe : undefined,
+    getPrototype = overArg(Object.getPrototypeOf, Object),
+    objectCreate = Object.create,
+    propertyIsEnumerable = objectProto.propertyIsEnumerable,
+    splice = arrayProto.splice,
+    symToStringTag = Symbol ? Symbol.toStringTag : undefined;
+
+var defineProperty = (function() {
+  try {
+    var func = getNative(Object, 'defineProperty');
+    func({}, '', {});
+    return func;
+  } catch (e) {}
+}());
 
 /* Built-in method references for those with the same name as other `lodash` methods. */
-var nativeMax = Math.max;
+var nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined,
+    nativeMax = Math.max,
+    nativeNow = Date.now;
+
+/* Built-in method references that are verified to be native. */
+var Map = getNative(root, 'Map'),
+    nativeCreate = getNative(Object, 'create');
+
+/**
+ * The base implementation of `_.create` without support for assigning
+ * properties to the created object.
+ *
+ * @private
+ * @param {Object} proto The object to inherit from.
+ * @returns {Object} Returns the new object.
+ */
+var baseCreate = (function() {
+  function object() {}
+  return function(proto) {
+    if (!isObject(proto)) {
+      return {};
+    }
+    if (objectCreate) {
+      return objectCreate(proto);
+    }
+    object.prototype = proto;
+    var result = new object;
+    object.prototype = undefined;
+    return result;
+  };
+}());
+
+/**
+ * Creates a hash object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function Hash(entries) {
+  var index = -1,
+      length = entries == null ? 0 : entries.length;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+/**
+ * Removes all key-value entries from the hash.
+ *
+ * @private
+ * @name clear
+ * @memberOf Hash
+ */
+function hashClear() {
+  this.__data__ = nativeCreate ? nativeCreate(null) : {};
+  this.size = 0;
+}
+
+/**
+ * Removes `key` and its value from the hash.
+ *
+ * @private
+ * @name delete
+ * @memberOf Hash
+ * @param {Object} hash The hash to modify.
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function hashDelete(key) {
+  var result = this.has(key) && delete this.__data__[key];
+  this.size -= result ? 1 : 0;
+  return result;
+}
+
+/**
+ * Gets the hash value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Hash
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function hashGet(key) {
+  var data = this.__data__;
+  if (nativeCreate) {
+    var result = data[key];
+    return result === HASH_UNDEFINED ? undefined : result;
+  }
+  return hasOwnProperty.call(data, key) ? data[key] : undefined;
+}
+
+/**
+ * Checks if a hash value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Hash
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function hashHas(key) {
+  var data = this.__data__;
+  return nativeCreate ? (data[key] !== undefined) : hasOwnProperty.call(data, key);
+}
+
+/**
+ * Sets the hash `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Hash
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the hash instance.
+ */
+function hashSet(key, value) {
+  var data = this.__data__;
+  this.size += this.has(key) ? 0 : 1;
+  data[key] = (nativeCreate && value === undefined) ? HASH_UNDEFINED : value;
+  return this;
+}
+
+// Add methods to `Hash`.
+Hash.prototype.clear = hashClear;
+Hash.prototype['delete'] = hashDelete;
+Hash.prototype.get = hashGet;
+Hash.prototype.has = hashHas;
+Hash.prototype.set = hashSet;
+
+/**
+ * Creates an list cache object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function ListCache(entries) {
+  var index = -1,
+      length = entries == null ? 0 : entries.length;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+/**
+ * Removes all key-value entries from the list cache.
+ *
+ * @private
+ * @name clear
+ * @memberOf ListCache
+ */
+function listCacheClear() {
+  this.__data__ = [];
+  this.size = 0;
+}
+
+/**
+ * Removes `key` and its value from the list cache.
+ *
+ * @private
+ * @name delete
+ * @memberOf ListCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function listCacheDelete(key) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  if (index < 0) {
+    return false;
+  }
+  var lastIndex = data.length - 1;
+  if (index == lastIndex) {
+    data.pop();
+  } else {
+    splice.call(data, index, 1);
+  }
+  --this.size;
+  return true;
+}
+
+/**
+ * Gets the list cache value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf ListCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function listCacheGet(key) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  return index < 0 ? undefined : data[index][1];
+}
+
+/**
+ * Checks if a list cache value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf ListCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function listCacheHas(key) {
+  return assocIndexOf(this.__data__, key) > -1;
+}
+
+/**
+ * Sets the list cache `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf ListCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the list cache instance.
+ */
+function listCacheSet(key, value) {
+  var data = this.__data__,
+      index = assocIndexOf(data, key);
+
+  if (index < 0) {
+    ++this.size;
+    data.push([key, value]);
+  } else {
+    data[index][1] = value;
+  }
+  return this;
+}
+
+// Add methods to `ListCache`.
+ListCache.prototype.clear = listCacheClear;
+ListCache.prototype['delete'] = listCacheDelete;
+ListCache.prototype.get = listCacheGet;
+ListCache.prototype.has = listCacheHas;
+ListCache.prototype.set = listCacheSet;
+
+/**
+ * Creates a map cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function MapCache(entries) {
+  var index = -1,
+      length = entries == null ? 0 : entries.length;
+
+  this.clear();
+  while (++index < length) {
+    var entry = entries[index];
+    this.set(entry[0], entry[1]);
+  }
+}
+
+/**
+ * Removes all key-value entries from the map.
+ *
+ * @private
+ * @name clear
+ * @memberOf MapCache
+ */
+function mapCacheClear() {
+  this.size = 0;
+  this.__data__ = {
+    'hash': new Hash,
+    'map': new (Map || ListCache),
+    'string': new Hash
+  };
+}
+
+/**
+ * Removes `key` and its value from the map.
+ *
+ * @private
+ * @name delete
+ * @memberOf MapCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function mapCacheDelete(key) {
+  var result = getMapData(this, key)['delete'](key);
+  this.size -= result ? 1 : 0;
+  return result;
+}
+
+/**
+ * Gets the map value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf MapCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function mapCacheGet(key) {
+  return getMapData(this, key).get(key);
+}
+
+/**
+ * Checks if a map value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf MapCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function mapCacheHas(key) {
+  return getMapData(this, key).has(key);
+}
+
+/**
+ * Sets the map `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf MapCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the map cache instance.
+ */
+function mapCacheSet(key, value) {
+  var data = getMapData(this, key),
+      size = data.size;
+
+  data.set(key, value);
+  this.size += data.size == size ? 0 : 1;
+  return this;
+}
+
+// Add methods to `MapCache`.
+MapCache.prototype.clear = mapCacheClear;
+MapCache.prototype['delete'] = mapCacheDelete;
+MapCache.prototype.get = mapCacheGet;
+MapCache.prototype.has = mapCacheHas;
+MapCache.prototype.set = mapCacheSet;
+
+/**
+ * Creates a stack cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+function Stack(entries) {
+  var data = this.__data__ = new ListCache(entries);
+  this.size = data.size;
+}
+
+/**
+ * Removes all key-value entries from the stack.
+ *
+ * @private
+ * @name clear
+ * @memberOf Stack
+ */
+function stackClear() {
+  this.__data__ = new ListCache;
+  this.size = 0;
+}
+
+/**
+ * Removes `key` and its value from the stack.
+ *
+ * @private
+ * @name delete
+ * @memberOf Stack
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+function stackDelete(key) {
+  var data = this.__data__,
+      result = data['delete'](key);
+
+  this.size = data.size;
+  return result;
+}
+
+/**
+ * Gets the stack value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Stack
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+function stackGet(key) {
+  return this.__data__.get(key);
+}
+
+/**
+ * Checks if a stack value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Stack
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+function stackHas(key) {
+  return this.__data__.has(key);
+}
+
+/**
+ * Sets the stack `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Stack
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the stack cache instance.
+ */
+function stackSet(key, value) {
+  var data = this.__data__;
+  if (data instanceof ListCache) {
+    var pairs = data.__data__;
+    if (!Map || (pairs.length < LARGE_ARRAY_SIZE - 1)) {
+      pairs.push([key, value]);
+      this.size = ++data.size;
+      return this;
+    }
+    data = this.__data__ = new MapCache(pairs);
+  }
+  data.set(key, value);
+  this.size = data.size;
+  return this;
+}
+
+// Add methods to `Stack`.
+Stack.prototype.clear = stackClear;
+Stack.prototype['delete'] = stackDelete;
+Stack.prototype.get = stackGet;
+Stack.prototype.has = stackHas;
+Stack.prototype.set = stackSet;
 
 /**
  * Creates an array of the enumerable property names of the array-like `value`.
@@ -1910,18 +5013,26 @@ var nativeMax = Math.max;
  * @returns {Array} Returns the array of property names.
  */
 function arrayLikeKeys(value, inherited) {
-  // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
-  // Safari 9 makes `arguments.length` enumerable in strict mode.
-  var result = (isArray(value) || isArguments(value))
-    ? baseTimes(value.length, String)
-    : [];
-
-  var length = result.length,
-      skipIndexes = !!length;
+  var isArr = isArray(value),
+      isArg = !isArr && isArguments(value),
+      isBuff = !isArr && !isArg && isBuffer(value),
+      isType = !isArr && !isArg && !isBuff && isTypedArray(value),
+      skipIndexes = isArr || isArg || isBuff || isType,
+      result = skipIndexes ? baseTimes(value.length, String) : [],
+      length = result.length;
 
   for (var key in value) {
     if ((inherited || hasOwnProperty.call(value, key)) &&
-        !(skipIndexes && (key == 'length' || isIndex(key, length)))) {
+        !(skipIndexes && (
+           // Safari 9 has enumerable `arguments.length` in strict mode.
+           key == 'length' ||
+           // Node.js 0.10 has enumerable non-index properties on buffers.
+           (isBuff && (key == 'offset' || key == 'parent')) ||
+           // PhantomJS 2 has enumerable non-index properties on typed arrays.
+           (isType && (key == 'buffer' || key == 'byteLength' || key == 'byteOffset')) ||
+           // Skip index properties.
+           isIndex(key, length)
+        ))) {
       result.push(key);
     }
   }
@@ -1929,21 +5040,19 @@ function arrayLikeKeys(value, inherited) {
 }
 
 /**
- * Used by `_.defaults` to customize its `_.assignIn` use.
+ * This function is like `assignValue` except that it doesn't assign
+ * `undefined` values.
  *
  * @private
- * @param {*} objValue The destination value.
- * @param {*} srcValue The source value.
+ * @param {Object} object The object to modify.
  * @param {string} key The key of the property to assign.
- * @param {Object} object The parent object of `objValue`.
- * @returns {*} Returns the value to assign.
+ * @param {*} value The value to assign.
  */
-function assignInDefaults(objValue, srcValue, key, object) {
-  if (objValue === undefined ||
-      (eq(objValue, objectProto[key]) && !hasOwnProperty.call(object, key))) {
-    return srcValue;
+function assignMergeValue(object, key, value) {
+  if ((value !== undefined && !eq(object[key], value)) ||
+      (value === undefined && !(key in object))) {
+    baseAssignValue(object, key, value);
   }
-  return objValue;
 }
 
 /**
@@ -1960,8 +5069,116 @@ function assignValue(object, key, value) {
   var objValue = object[key];
   if (!(hasOwnProperty.call(object, key) && eq(objValue, value)) ||
       (value === undefined && !(key in object))) {
+    baseAssignValue(object, key, value);
+  }
+}
+
+/**
+ * Gets the index at which the `key` is found in `array` of key-value pairs.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} key The key to search for.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+function assocIndexOf(array, key) {
+  var length = array.length;
+  while (length--) {
+    if (eq(array[length][0], key)) {
+      return length;
+    }
+  }
+  return -1;
+}
+
+/**
+ * The base implementation of `assignValue` and `assignMergeValue` without
+ * value checks.
+ *
+ * @private
+ * @param {Object} object The object to modify.
+ * @param {string} key The key of the property to assign.
+ * @param {*} value The value to assign.
+ */
+function baseAssignValue(object, key, value) {
+  if (key == '__proto__' && defineProperty) {
+    defineProperty(object, key, {
+      'configurable': true,
+      'enumerable': true,
+      'value': value,
+      'writable': true
+    });
+  } else {
     object[key] = value;
   }
+}
+
+/**
+ * The base implementation of `baseForOwn` which iterates over `object`
+ * properties returned by `keysFunc` and invokes `iteratee` for each property.
+ * Iteratee functions may exit iteration early by explicitly returning `false`.
+ *
+ * @private
+ * @param {Object} object The object to iterate over.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @param {Function} keysFunc The function to get the keys of `object`.
+ * @returns {Object} Returns `object`.
+ */
+var baseFor = createBaseFor();
+
+/**
+ * The base implementation of `getTag` without fallbacks for buggy environments.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+function baseGetTag(value) {
+  if (value == null) {
+    return value === undefined ? undefinedTag : nullTag;
+  }
+  return (symToStringTag && symToStringTag in Object(value))
+    ? getRawTag(value)
+    : objectToString(value);
+}
+
+/**
+ * The base implementation of `_.isArguments`.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ */
+function baseIsArguments(value) {
+  return isObjectLike(value) && baseGetTag(value) == argsTag;
+}
+
+/**
+ * The base implementation of `_.isNative` without bad shim checks.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a native function,
+ *  else `false`.
+ */
+function baseIsNative(value) {
+  if (!isObject(value) || isMasked(value)) {
+    return false;
+  }
+  var pattern = isFunction(value) ? reIsNative : reIsHostCtor;
+  return pattern.test(toSource(value));
+}
+
+/**
+ * The base implementation of `_.isTypedArray` without Node.js optimizations.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
+ */
+function baseIsTypedArray(value) {
+  return isObjectLike(value) &&
+    isLength(value.length) && !!typedArrayTags[baseGetTag(value)];
 }
 
 /**
@@ -1987,6 +5204,116 @@ function baseKeysIn(object) {
 }
 
 /**
+ * The base implementation of `_.merge` without support for multiple sources.
+ *
+ * @private
+ * @param {Object} object The destination object.
+ * @param {Object} source The source object.
+ * @param {number} srcIndex The index of `source`.
+ * @param {Function} [customizer] The function to customize merged values.
+ * @param {Object} [stack] Tracks traversed source values and their merged
+ *  counterparts.
+ */
+function baseMerge(object, source, srcIndex, customizer, stack) {
+  if (object === source) {
+    return;
+  }
+  baseFor(source, function(srcValue, key) {
+    stack || (stack = new Stack);
+    if (isObject(srcValue)) {
+      baseMergeDeep(object, source, key, srcIndex, baseMerge, customizer, stack);
+    }
+    else {
+      var newValue = customizer
+        ? customizer(safeGet(object, key), srcValue, (key + ''), object, source, stack)
+        : undefined;
+
+      if (newValue === undefined) {
+        newValue = srcValue;
+      }
+      assignMergeValue(object, key, newValue);
+    }
+  }, keysIn);
+}
+
+/**
+ * A specialized version of `baseMerge` for arrays and objects which performs
+ * deep merges and tracks traversed objects enabling objects with circular
+ * references to be merged.
+ *
+ * @private
+ * @param {Object} object The destination object.
+ * @param {Object} source The source object.
+ * @param {string} key The key of the value to merge.
+ * @param {number} srcIndex The index of `source`.
+ * @param {Function} mergeFunc The function to merge values.
+ * @param {Function} [customizer] The function to customize assigned values.
+ * @param {Object} [stack] Tracks traversed source values and their merged
+ *  counterparts.
+ */
+function baseMergeDeep(object, source, key, srcIndex, mergeFunc, customizer, stack) {
+  var objValue = safeGet(object, key),
+      srcValue = safeGet(source, key),
+      stacked = stack.get(srcValue);
+
+  if (stacked) {
+    assignMergeValue(object, key, stacked);
+    return;
+  }
+  var newValue = customizer
+    ? customizer(objValue, srcValue, (key + ''), object, source, stack)
+    : undefined;
+
+  var isCommon = newValue === undefined;
+
+  if (isCommon) {
+    var isArr = isArray(srcValue),
+        isBuff = !isArr && isBuffer(srcValue),
+        isTyped = !isArr && !isBuff && isTypedArray(srcValue);
+
+    newValue = srcValue;
+    if (isArr || isBuff || isTyped) {
+      if (isArray(objValue)) {
+        newValue = objValue;
+      }
+      else if (isArrayLikeObject(objValue)) {
+        newValue = copyArray(objValue);
+      }
+      else if (isBuff) {
+        isCommon = false;
+        newValue = cloneBuffer(srcValue, true);
+      }
+      else if (isTyped) {
+        isCommon = false;
+        newValue = cloneTypedArray(srcValue, true);
+      }
+      else {
+        newValue = [];
+      }
+    }
+    else if (isPlainObject(srcValue) || isArguments(srcValue)) {
+      newValue = objValue;
+      if (isArguments(objValue)) {
+        newValue = toPlainObject(objValue);
+      }
+      else if (!isObject(objValue) || isFunction(objValue)) {
+        newValue = initCloneObject(srcValue);
+      }
+    }
+    else {
+      isCommon = false;
+    }
+  }
+  if (isCommon) {
+    // Recursively merge objects and arrays (susceptible to call stack limits).
+    stack.set(srcValue, newValue);
+    mergeFunc(newValue, srcValue, srcIndex, customizer, stack);
+    stack['delete'](srcValue);
+  }
+  assignMergeValue(object, key, newValue);
+}
+
+/**
  * The base implementation of `_.rest` which doesn't validate or coerce arguments.
  *
  * @private
@@ -1995,24 +5322,88 @@ function baseKeysIn(object) {
  * @returns {Function} Returns the new function.
  */
 function baseRest(func, start) {
-  start = nativeMax(start === undefined ? (func.length - 1) : start, 0);
-  return function() {
-    var args = arguments,
-        index = -1,
-        length = nativeMax(args.length - start, 0),
-        array = Array(length);
+  return setToString(overRest(func, start, identity), func + '');
+}
 
-    while (++index < length) {
-      array[index] = args[start + index];
-    }
-    index = -1;
-    var otherArgs = Array(start + 1);
-    while (++index < start) {
-      otherArgs[index] = args[index];
-    }
-    otherArgs[start] = array;
-    return apply(func, this, otherArgs);
-  };
+/**
+ * The base implementation of `setToString` without support for hot loop shorting.
+ *
+ * @private
+ * @param {Function} func The function to modify.
+ * @param {Function} string The `toString` result.
+ * @returns {Function} Returns `func`.
+ */
+var baseSetToString = !defineProperty ? identity : function(func, string) {
+  return defineProperty(func, 'toString', {
+    'configurable': true,
+    'enumerable': false,
+    'value': constant(string),
+    'writable': true
+  });
+};
+
+/**
+ * Creates a clone of  `buffer`.
+ *
+ * @private
+ * @param {Buffer} buffer The buffer to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Buffer} Returns the cloned buffer.
+ */
+function cloneBuffer(buffer, isDeep) {
+  if (isDeep) {
+    return buffer.slice();
+  }
+  var length = buffer.length,
+      result = allocUnsafe ? allocUnsafe(length) : new buffer.constructor(length);
+
+  buffer.copy(result);
+  return result;
+}
+
+/**
+ * Creates a clone of `arrayBuffer`.
+ *
+ * @private
+ * @param {ArrayBuffer} arrayBuffer The array buffer to clone.
+ * @returns {ArrayBuffer} Returns the cloned array buffer.
+ */
+function cloneArrayBuffer(arrayBuffer) {
+  var result = new arrayBuffer.constructor(arrayBuffer.byteLength);
+  new Uint8Array(result).set(new Uint8Array(arrayBuffer));
+  return result;
+}
+
+/**
+ * Creates a clone of `typedArray`.
+ *
+ * @private
+ * @param {Object} typedArray The typed array to clone.
+ * @param {boolean} [isDeep] Specify a deep clone.
+ * @returns {Object} Returns the cloned typed array.
+ */
+function cloneTypedArray(typedArray, isDeep) {
+  var buffer = isDeep ? cloneArrayBuffer(typedArray.buffer) : typedArray.buffer;
+  return new typedArray.constructor(buffer, typedArray.byteOffset, typedArray.length);
+}
+
+/**
+ * Copies the values of `source` to `array`.
+ *
+ * @private
+ * @param {Array} source The array to copy values from.
+ * @param {Array} [array=[]] The array to copy values to.
+ * @returns {Array} Returns `array`.
+ */
+function copyArray(source, array) {
+  var index = -1,
+      length = source.length;
+
+  array || (array = Array(length));
+  while (++index < length) {
+    array[index] = source[index];
+  }
+  return array;
 }
 
 /**
@@ -2026,6 +5417,7 @@ function baseRest(func, start) {
  * @returns {Object} Returns `object`.
  */
 function copyObject(source, props, object, customizer) {
+  var isNew = !object;
   object || (object = {});
 
   var index = -1,
@@ -2038,7 +5430,14 @@ function copyObject(source, props, object, customizer) {
       ? customizer(object[key], source[key], key, object, source)
       : undefined;
 
-    assignValue(object, key, newValue === undefined ? source[key] : newValue);
+    if (newValue === undefined) {
+      newValue = source[key];
+    }
+    if (isNew) {
+      baseAssignValue(object, key, newValue);
+    } else {
+      assignValue(object, key, newValue);
+    }
   }
   return object;
 }
@@ -2077,6 +5476,122 @@ function createAssigner(assigner) {
 }
 
 /**
+ * Creates a base function for methods like `_.forIn` and `_.forOwn`.
+ *
+ * @private
+ * @param {boolean} [fromRight] Specify iterating from right to left.
+ * @returns {Function} Returns the new base function.
+ */
+function createBaseFor(fromRight) {
+  return function(object, iteratee, keysFunc) {
+    var index = -1,
+        iterable = Object(object),
+        props = keysFunc(object),
+        length = props.length;
+
+    while (length--) {
+      var key = props[fromRight ? length : ++index];
+      if (iteratee(iterable[key], key, iterable) === false) {
+        break;
+      }
+    }
+    return object;
+  };
+}
+
+/**
+ * Used by `_.defaultsDeep` to customize its `_.merge` use to merge source
+ * objects into destination objects that are passed thru.
+ *
+ * @private
+ * @param {*} objValue The destination value.
+ * @param {*} srcValue The source value.
+ * @param {string} key The key of the property to merge.
+ * @param {Object} object The parent object of `objValue`.
+ * @param {Object} source The parent object of `srcValue`.
+ * @param {Object} [stack] Tracks traversed source values and their merged
+ *  counterparts.
+ * @returns {*} Returns the value to assign.
+ */
+function customDefaultsMerge(objValue, srcValue, key, object, source, stack) {
+  if (isObject(objValue) && isObject(srcValue)) {
+    // Recursively merge objects and arrays (susceptible to call stack limits).
+    stack.set(srcValue, objValue);
+    baseMerge(objValue, srcValue, undefined, customDefaultsMerge, stack);
+    stack['delete'](srcValue);
+  }
+  return objValue;
+}
+
+/**
+ * Gets the data for `map`.
+ *
+ * @private
+ * @param {Object} map The map to query.
+ * @param {string} key The reference key.
+ * @returns {*} Returns the map data.
+ */
+function getMapData(map, key) {
+  var data = map.__data__;
+  return isKeyable(key)
+    ? data[typeof key == 'string' ? 'string' : 'hash']
+    : data.map;
+}
+
+/**
+ * Gets the native function at `key` of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {string} key The key of the method to get.
+ * @returns {*} Returns the function if it's native, else `undefined`.
+ */
+function getNative(object, key) {
+  var value = getValue(object, key);
+  return baseIsNative(value) ? value : undefined;
+}
+
+/**
+ * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the raw `toStringTag`.
+ */
+function getRawTag(value) {
+  var isOwn = hasOwnProperty.call(value, symToStringTag),
+      tag = value[symToStringTag];
+
+  try {
+    value[symToStringTag] = undefined;
+    var unmasked = true;
+  } catch (e) {}
+
+  var result = nativeObjectToString.call(value);
+  if (unmasked) {
+    if (isOwn) {
+      value[symToStringTag] = tag;
+    } else {
+      delete value[symToStringTag];
+    }
+  }
+  return result;
+}
+
+/**
+ * Initializes an object clone.
+ *
+ * @private
+ * @param {Object} object The object to clone.
+ * @returns {Object} Returns the initialized clone.
+ */
+function initCloneObject(object) {
+  return (typeof object.constructor == 'function' && !isPrototype(object))
+    ? baseCreate(getPrototype(object))
+    : {};
+}
+
+/**
  * Checks if `value` is a valid array-like index.
  *
  * @private
@@ -2085,10 +5600,13 @@ function createAssigner(assigner) {
  * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
  */
 function isIndex(value, length) {
+  var type = typeof value;
   length = length == null ? MAX_SAFE_INTEGER : length;
+
   return !!length &&
-    (typeof value == 'number' || reIsUint.test(value)) &&
-    (value > -1 && value % 1 == 0 && value < length);
+    (type == 'number' ||
+      (type != 'symbol' && reIsUint.test(value))) &&
+        (value > -1 && value % 1 == 0 && value < length);
 }
 
 /**
@@ -2113,6 +5631,31 @@ function isIterateeCall(value, index, object) {
     return eq(object[index], value);
   }
   return false;
+}
+
+/**
+ * Checks if `value` is suitable for use as unique object key.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is suitable, else `false`.
+ */
+function isKeyable(value) {
+  var type = typeof value;
+  return (type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean')
+    ? (value !== '__proto__')
+    : (value === null);
+}
+
+/**
+ * Checks if `func` has its source masked.
+ *
+ * @private
+ * @param {Function} func The function to check.
+ * @returns {boolean} Returns `true` if `func` is masked, else `false`.
+ */
+function isMasked(func) {
+  return !!maskSrcKey && (maskSrcKey in func);
 }
 
 /**
@@ -2146,6 +5689,125 @@ function nativeKeysIn(object) {
     }
   }
   return result;
+}
+
+/**
+ * Converts `value` to a string using `Object.prototype.toString`.
+ *
+ * @private
+ * @param {*} value The value to convert.
+ * @returns {string} Returns the converted string.
+ */
+function objectToString(value) {
+  return nativeObjectToString.call(value);
+}
+
+/**
+ * A specialized version of `baseRest` which transforms the rest array.
+ *
+ * @private
+ * @param {Function} func The function to apply a rest parameter to.
+ * @param {number} [start=func.length-1] The start position of the rest parameter.
+ * @param {Function} transform The rest array transform.
+ * @returns {Function} Returns the new function.
+ */
+function overRest(func, start, transform) {
+  start = nativeMax(start === undefined ? (func.length - 1) : start, 0);
+  return function() {
+    var args = arguments,
+        index = -1,
+        length = nativeMax(args.length - start, 0),
+        array = Array(length);
+
+    while (++index < length) {
+      array[index] = args[start + index];
+    }
+    index = -1;
+    var otherArgs = Array(start + 1);
+    while (++index < start) {
+      otherArgs[index] = args[index];
+    }
+    otherArgs[start] = transform(array);
+    return apply(func, this, otherArgs);
+  };
+}
+
+/**
+ * Gets the value at `key`, unless `key` is "__proto__" or "constructor".
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {string} key The key of the property to get.
+ * @returns {*} Returns the property value.
+ */
+function safeGet(object, key) {
+  if (key === 'constructor' && typeof object[key] === 'function') {
+    return;
+  }
+
+  if (key == '__proto__') {
+    return;
+  }
+
+  return object[key];
+}
+
+/**
+ * Sets the `toString` method of `func` to return `string`.
+ *
+ * @private
+ * @param {Function} func The function to modify.
+ * @param {Function} string The `toString` result.
+ * @returns {Function} Returns `func`.
+ */
+var setToString = shortOut(baseSetToString);
+
+/**
+ * Creates a function that'll short out and invoke `identity` instead
+ * of `func` when it's called `HOT_COUNT` or more times in `HOT_SPAN`
+ * milliseconds.
+ *
+ * @private
+ * @param {Function} func The function to restrict.
+ * @returns {Function} Returns the new shortable function.
+ */
+function shortOut(func) {
+  var count = 0,
+      lastCalled = 0;
+
+  return function() {
+    var stamp = nativeNow(),
+        remaining = HOT_SPAN - (stamp - lastCalled);
+
+    lastCalled = stamp;
+    if (remaining > 0) {
+      if (++count >= HOT_COUNT) {
+        return arguments[0];
+      }
+    } else {
+      count = 0;
+    }
+    return func.apply(undefined, arguments);
+  };
+}
+
+/**
+ * Converts `func` to its source code.
+ *
+ * @private
+ * @param {Function} func The function to convert.
+ * @returns {string} Returns the source code.
+ */
+function toSource(func) {
+  if (func != null) {
+    try {
+      return funcToString.call(func);
+    } catch (e) {}
+    try {
+      return (func + '');
+    } catch (e) {}
+  }
+  return '';
 }
 
 /**
@@ -2202,11 +5864,10 @@ function eq(value, other) {
  * _.isArguments([1, 2, 3]);
  * // => false
  */
-function isArguments(value) {
-  // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
-  return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
-    (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
-}
+var isArguments = baseIsArguments(function() { return arguments; }()) ? baseIsArguments : function(value) {
+  return isObjectLike(value) && hasOwnProperty.call(value, 'callee') &&
+    !propertyIsEnumerable.call(value, 'callee');
+};
 
 /**
  * Checks if `value` is classified as an `Array` object.
@@ -2292,6 +5953,25 @@ function isArrayLikeObject(value) {
 }
 
 /**
+ * Checks if `value` is a buffer.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.3.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a buffer, else `false`.
+ * @example
+ *
+ * _.isBuffer(new Buffer(2));
+ * // => true
+ *
+ * _.isBuffer(new Uint8Array(2));
+ * // => false
+ */
+var isBuffer = nativeIsBuffer || stubFalse;
+
+/**
  * Checks if `value` is classified as a `Function` object.
  *
  * @static
@@ -2309,10 +5989,13 @@ function isArrayLikeObject(value) {
  * // => false
  */
 function isFunction(value) {
+  if (!isObject(value)) {
+    return false;
+  }
   // The use of `Object#toString` avoids issues with the `typeof` operator
-  // in Safari 8-9 which returns 'object' for typed array and other constructors.
-  var tag = isObject(value) ? objectToString.call(value) : '';
-  return tag == funcTag || tag == genTag;
+  // in Safari 9 which returns 'object' for typed arrays and other constructors.
+  var tag = baseGetTag(value);
+  return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
 }
 
 /**
@@ -2373,7 +6056,7 @@ function isLength(value) {
  */
 function isObject(value) {
   var type = typeof value;
-  return !!value && (type == 'object' || type == 'function');
+  return value != null && (type == 'object' || type == 'function');
 }
 
 /**
@@ -2401,66 +6084,119 @@ function isObject(value) {
  * // => false
  */
 function isObjectLike(value) {
-  return !!value && typeof value == 'object';
+  return value != null && typeof value == 'object';
 }
 
 /**
- * This method is like `_.assignIn` except that it accepts `customizer`
- * which is invoked to produce the assigned values. If `customizer` returns
- * `undefined`, assignment is handled by the method instead. The `customizer`
- * is invoked with five arguments: (objValue, srcValue, key, object, source).
- *
- * **Note:** This method mutates `object`.
+ * Checks if `value` is a plain object, that is, an object created by the
+ * `Object` constructor or one with a `[[Prototype]]` of `null`.
  *
  * @static
  * @memberOf _
- * @since 4.0.0
- * @alias extendWith
- * @category Object
- * @param {Object} object The destination object.
- * @param {...Object} sources The source objects.
- * @param {Function} [customizer] The function to customize assigned values.
- * @returns {Object} Returns `object`.
- * @see _.assignWith
+ * @since 0.8.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a plain object, else `false`.
  * @example
  *
- * function customizer(objValue, srcValue) {
- *   return _.isUndefined(objValue) ? srcValue : objValue;
+ * function Foo() {
+ *   this.a = 1;
  * }
  *
- * var defaults = _.partialRight(_.assignInWith, customizer);
+ * _.isPlainObject(new Foo);
+ * // => false
  *
- * defaults({ 'a': 1 }, { 'b': 2 }, { 'a': 3 });
- * // => { 'a': 1, 'b': 2 }
+ * _.isPlainObject([1, 2, 3]);
+ * // => false
+ *
+ * _.isPlainObject({ 'x': 0, 'y': 0 });
+ * // => true
+ *
+ * _.isPlainObject(Object.create(null));
+ * // => true
  */
-var assignInWith = createAssigner(function(object, source, srcIndex, customizer) {
-  copyObject(source, keysIn(source), object, customizer);
-});
+function isPlainObject(value) {
+  if (!isObjectLike(value) || baseGetTag(value) != objectTag) {
+    return false;
+  }
+  var proto = getPrototype(value);
+  if (proto === null) {
+    return true;
+  }
+  var Ctor = hasOwnProperty.call(proto, 'constructor') && proto.constructor;
+  return typeof Ctor == 'function' && Ctor instanceof Ctor &&
+    funcToString.call(Ctor) == objectCtorString;
+}
 
 /**
- * Assigns own and inherited enumerable string keyed properties of source
- * objects to the destination object for all destination properties that
- * resolve to `undefined`. Source objects are applied from left to right.
- * Once a property is set, additional values of the same property are ignored.
+ * Checks if `value` is classified as a typed array.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
+ * @example
+ *
+ * _.isTypedArray(new Uint8Array);
+ * // => true
+ *
+ * _.isTypedArray([]);
+ * // => false
+ */
+var isTypedArray = nodeIsTypedArray ? baseUnary(nodeIsTypedArray) : baseIsTypedArray;
+
+/**
+ * Converts `value` to a plain object flattening inherited enumerable string
+ * keyed properties of `value` to own properties of the plain object.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.0.0
+ * @category Lang
+ * @param {*} value The value to convert.
+ * @returns {Object} Returns the converted plain object.
+ * @example
+ *
+ * function Foo() {
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.assign({ 'a': 1 }, new Foo);
+ * // => { 'a': 1, 'b': 2 }
+ *
+ * _.assign({ 'a': 1 }, _.toPlainObject(new Foo));
+ * // => { 'a': 1, 'b': 2, 'c': 3 }
+ */
+function toPlainObject(value) {
+  return copyObject(value, keysIn(value));
+}
+
+/**
+ * This method is like `_.defaults` except that it recursively assigns
+ * default properties.
  *
  * **Note:** This method mutates `object`.
  *
  * @static
- * @since 0.1.0
  * @memberOf _
+ * @since 3.10.0
  * @category Object
  * @param {Object} object The destination object.
  * @param {...Object} [sources] The source objects.
  * @returns {Object} Returns `object`.
- * @see _.defaultsDeep
+ * @see _.defaults
  * @example
  *
- * _.defaults({ 'a': 1 }, { 'b': 2 }, { 'a': 3 });
- * // => { 'a': 1, 'b': 2 }
+ * _.defaultsDeep({ 'a': { 'b': 2 } }, { 'a': { 'b': 1, 'c': 3 } });
+ * // => { 'a': { 'b': 2, 'c': 3 } }
  */
-var defaults = baseRest(function(args) {
-  args.push(undefined, assignInDefaults);
-  return apply(assignInWith, undefined, args);
+var defaultsDeep = baseRest(function(args) {
+  args.push(undefined, customDefaultsMerge);
+  return apply(mergeWith, undefined, args);
 });
 
 /**
@@ -2490,2074 +6226,111 @@ function keysIn(object) {
   return isArrayLike(object) ? arrayLikeKeys(object, true) : baseKeysIn(object);
 }
 
-module.exports = defaults;
-
-},{}],"../node_modules/x-is-array/index.js":[function(require,module,exports) {
-var nativeIsArray = Array.isArray
-var toString = Object.prototype.toString
-
-module.exports = nativeIsArray || isArray
-
-function isArray(obj) {
-    return toString.call(obj) === "[object Array]"
-}
-
-},{}],"../node_modules/virtual-dom/vnode/vnode.js":[function(require,module,exports) {
-var version = require("./version")
-var isVNode = require("./is-vnode")
-var isWidget = require("./is-widget")
-var isThunk = require("./is-thunk")
-var isVHook = require("./is-vhook")
-
-module.exports = VirtualNode
-
-var noProperties = {}
-var noChildren = []
-
-function VirtualNode(tagName, properties, children, key, namespace) {
-    this.tagName = tagName
-    this.properties = properties || noProperties
-    this.children = children || noChildren
-    this.key = key != null ? String(key) : undefined
-    this.namespace = (typeof namespace === "string") ? namespace : null
-
-    var count = (children && children.length) || 0
-    var descendants = 0
-    var hasWidgets = false
-    var hasThunks = false
-    var descendantHooks = false
-    var hooks
-
-    for (var propName in properties) {
-        if (properties.hasOwnProperty(propName)) {
-            var property = properties[propName]
-            if (isVHook(property) && property.unhook) {
-                if (!hooks) {
-                    hooks = {}
-                }
-
-                hooks[propName] = property
-            }
-        }
-    }
-
-    for (var i = 0; i < count; i++) {
-        var child = children[i]
-        if (isVNode(child)) {
-            descendants += child.count || 0
-
-            if (!hasWidgets && child.hasWidgets) {
-                hasWidgets = true
-            }
-
-            if (!hasThunks && child.hasThunks) {
-                hasThunks = true
-            }
-
-            if (!descendantHooks && (child.hooks || child.descendantHooks)) {
-                descendantHooks = true
-            }
-        } else if (!hasWidgets && isWidget(child)) {
-            if (typeof child.destroy === "function") {
-                hasWidgets = true
-            }
-        } else if (!hasThunks && isThunk(child)) {
-            hasThunks = true;
-        }
-    }
-
-    this.count = count + descendants
-    this.hasWidgets = hasWidgets
-    this.hasThunks = hasThunks
-    this.hooks = hooks
-    this.descendantHooks = descendantHooks
-}
-
-VirtualNode.prototype.version = version
-VirtualNode.prototype.type = "VirtualNode"
-
-},{"./version":"../node_modules/virtual-dom/vnode/version.js","./is-vnode":"../node_modules/virtual-dom/vnode/is-vnode.js","./is-widget":"../node_modules/virtual-dom/vnode/is-widget.js","./is-thunk":"../node_modules/virtual-dom/vnode/is-thunk.js","./is-vhook":"../node_modules/virtual-dom/vnode/is-vhook.js"}],"../node_modules/virtual-dom/vnode/vtext.js":[function(require,module,exports) {
-var version = require("./version")
-
-module.exports = VirtualText
-
-function VirtualText(text) {
-    this.text = String(text)
-}
-
-VirtualText.prototype.version = version
-VirtualText.prototype.type = "VirtualText"
-
-},{"./version":"../node_modules/virtual-dom/vnode/version.js"}],"../node_modules/browser-split/index.js":[function(require,module,exports) {
-/*!
- * Cross-Browser Split 1.1.1
- * Copyright 2007-2012 Steven Levithan <stevenlevithan.com>
- * Available under the MIT License
- * ECMAScript compliant, uniform cross-browser split method
- */
-
 /**
- * Splits a string into an array of strings using a regex or string separator. Matches of the
- * separator are not included in the result array. However, if `separator` is a regex that contains
- * capturing groups, backreferences are spliced into the result each time `separator` is matched.
- * Fixes browser bugs compared to the native `String.prototype.split` and can be used reliably
- * cross-browser.
- * @param {String} str String to split.
- * @param {RegExp|String} separator Regex or string to use for separating the string.
- * @param {Number} [limit] Maximum number of items to include in the result array.
- * @returns {Array} Array of substrings.
+ * This method is like `_.merge` except that it accepts `customizer` which
+ * is invoked to produce the merged values of the destination and source
+ * properties. If `customizer` returns `undefined`, merging is handled by the
+ * method instead. The `customizer` is invoked with six arguments:
+ * (objValue, srcValue, key, object, source, stack).
+ *
+ * **Note:** This method mutates `object`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Object
+ * @param {Object} object The destination object.
+ * @param {...Object} sources The source objects.
+ * @param {Function} customizer The function to customize assigned values.
+ * @returns {Object} Returns `object`.
  * @example
  *
- * // Basic use
- * split('a b c d', ' ');
- * // -> ['a', 'b', 'c', 'd']
+ * function customizer(objValue, srcValue) {
+ *   if (_.isArray(objValue)) {
+ *     return objValue.concat(srcValue);
+ *   }
+ * }
  *
- * // With limit
- * split('a b c d', ' ', 2);
- * // -> ['a', 'b']
+ * var object = { 'a': [1], 'b': [2] };
+ * var other = { 'a': [3], 'b': [4] };
  *
- * // Backreferences in result array
- * split('..word1 word2..', /([a-z]+)(\d+)/i);
- * // -> ['..', 'word', '1', ' ', 'word', '2', '..']
+ * _.mergeWith(object, other, customizer);
+ * // => { 'a': [1, 3], 'b': [2, 4] }
  */
-module.exports = (function split(undef) {
+var mergeWith = createAssigner(function(object, source, srcIndex, customizer) {
+  baseMerge(object, source, srcIndex, customizer);
+});
 
-  var nativeSplit = String.prototype.split,
-    compliantExecNpcg = /()??/.exec("")[1] === undef,
-    // NPCG: nonparticipating capturing group
-    self;
-
-  self = function(str, separator, limit) {
-    // If `separator` is not a regex, use `nativeSplit`
-    if (Object.prototype.toString.call(separator) !== "[object RegExp]") {
-      return nativeSplit.call(str, separator, limit);
-    }
-    var output = [],
-      flags = (separator.ignoreCase ? "i" : "") + (separator.multiline ? "m" : "") + (separator.extended ? "x" : "") + // Proposed for ES6
-      (separator.sticky ? "y" : ""),
-      // Firefox 3+
-      lastLastIndex = 0,
-      // Make `global` and avoid `lastIndex` issues by working with a copy
-      separator = new RegExp(separator.source, flags + "g"),
-      separator2, match, lastIndex, lastLength;
-    str += ""; // Type-convert
-    if (!compliantExecNpcg) {
-      // Doesn't need flags gy, but they don't hurt
-      separator2 = new RegExp("^" + separator.source + "$(?!\\s)", flags);
-    }
-    /* Values for `limit`, per the spec:
-     * If undefined: 4294967295 // Math.pow(2, 32) - 1
-     * If 0, Infinity, or NaN: 0
-     * If positive number: limit = Math.floor(limit); if (limit > 4294967295) limit -= 4294967296;
-     * If negative number: 4294967296 - Math.floor(Math.abs(limit))
-     * If other: Type-convert, then use the above rules
-     */
-    limit = limit === undef ? -1 >>> 0 : // Math.pow(2, 32) - 1
-    limit >>> 0; // ToUint32(limit)
-    while (match = separator.exec(str)) {
-      // `separator.lastIndex` is not reliable cross-browser
-      lastIndex = match.index + match[0].length;
-      if (lastIndex > lastLastIndex) {
-        output.push(str.slice(lastLastIndex, match.index));
-        // Fix browsers whose `exec` methods don't consistently return `undefined` for
-        // nonparticipating capturing groups
-        if (!compliantExecNpcg && match.length > 1) {
-          match[0].replace(separator2, function() {
-            for (var i = 1; i < arguments.length - 2; i++) {
-              if (arguments[i] === undef) {
-                match[i] = undef;
-              }
-            }
-          });
-        }
-        if (match.length > 1 && match.index < str.length) {
-          Array.prototype.push.apply(output, match.slice(1));
-        }
-        lastLength = match[0].length;
-        lastLastIndex = lastIndex;
-        if (output.length >= limit) {
-          break;
-        }
-      }
-      if (separator.lastIndex === match.index) {
-        separator.lastIndex++; // Avoid an infinite loop
-      }
-    }
-    if (lastLastIndex === str.length) {
-      if (lastLength || !separator.test("")) {
-        output.push("");
-      }
-    } else {
-      output.push(str.slice(lastLastIndex));
-    }
-    return output.length > limit ? output.slice(0, limit) : output;
-  };
-
-  return self;
-})();
-
-},{}],"../node_modules/virtual-dom/virtual-hyperscript/parse-tag.js":[function(require,module,exports) {
-'use strict';
-
-var split = require('browser-split');
-
-var classIdSplit = /([\.#]?[a-zA-Z0-9\u007F-\uFFFF_:-]+)/;
-var notClassId = /^\.|#/;
-
-module.exports = parseTag;
-
-function parseTag(tag, props) {
-    if (!tag) {
-        return 'DIV';
-    }
-
-    var noId = !(props.hasOwnProperty('id'));
-
-    var tagParts = split(tag, classIdSplit);
-    var tagName = null;
-
-    if (notClassId.test(tagParts[1])) {
-        tagName = 'DIV';
-    }
-
-    var classes, part, type, i;
-
-    for (i = 0; i < tagParts.length; i++) {
-        part = tagParts[i];
-
-        if (!part) {
-            continue;
-        }
-
-        type = part.charAt(0);
-
-        if (!tagName) {
-            tagName = part;
-        } else if (type === '.') {
-            classes = classes || [];
-            classes.push(part.substring(1, part.length));
-        } else if (type === '#' && noId) {
-            props.id = part.substring(1, part.length);
-        }
-    }
-
-    if (classes) {
-        if (props.className) {
-            classes.push(props.className);
-        }
-
-        props.className = classes.join(' ');
-    }
-
-    return props.namespace ? tagName : tagName.toUpperCase();
-}
-
-},{"browser-split":"../node_modules/browser-split/index.js"}],"../node_modules/virtual-dom/virtual-hyperscript/hooks/soft-set-hook.js":[function(require,module,exports) {
-'use strict';
-
-module.exports = SoftSetHook;
-
-function SoftSetHook(value) {
-    if (!(this instanceof SoftSetHook)) {
-        return new SoftSetHook(value);
-    }
-
-    this.value = value;
-}
-
-SoftSetHook.prototype.hook = function (node, propertyName) {
-    if (node[propertyName] !== this.value) {
-        node[propertyName] = this.value;
-    }
-};
-
-},{}],"../node_modules/individual/index.js":[function(require,module,exports) {
-var global = arguments[3];
-'use strict';
-
-/*global window, global*/
-
-var root = typeof window !== 'undefined' ?
-    window : typeof global !== 'undefined' ?
-    global : {};
-
-module.exports = Individual;
-
-function Individual(key, value) {
-    if (key in root) {
-        return root[key];
-    }
-
-    root[key] = value;
-
+/**
+ * Creates a function that returns `value`.
+ *
+ * @static
+ * @memberOf _
+ * @since 2.4.0
+ * @category Util
+ * @param {*} value The value to return from the new function.
+ * @returns {Function} Returns the new constant function.
+ * @example
+ *
+ * var objects = _.times(2, _.constant({ 'a': 1 }));
+ *
+ * console.log(objects);
+ * // => [{ 'a': 1 }, { 'a': 1 }]
+ *
+ * console.log(objects[0] === objects[1]);
+ * // => true
+ */
+function constant(value) {
+  return function() {
     return value;
+  };
 }
 
-},{}],"../node_modules/individual/one-version.js":[function(require,module,exports) {
-'use strict';
-
-var Individual = require('./index.js');
-
-module.exports = OneVersion;
-
-function OneVersion(moduleName, version, defaultValue) {
-    var key = '__INDIVIDUAL_ONE_VERSION_' + moduleName;
-    var enforceKey = key + '_ENFORCE_SINGLETON';
-
-    var versionValue = Individual(enforceKey, version);
-
-    if (versionValue !== version) {
-        throw new Error('Can only have one copy of ' +
-            moduleName + '.\n' +
-            'You already have version ' + versionValue +
-            ' installed.\n' +
-            'This means you cannot install version ' + version);
-    }
-
-    return Individual(key, defaultValue);
-}
-
-},{"./index.js":"../node_modules/individual/index.js"}],"../node_modules/ev-store/index.js":[function(require,module,exports) {
-'use strict';
-
-var OneVersionConstraint = require('individual/one-version');
-
-var MY_VERSION = '7';
-OneVersionConstraint('ev-store', MY_VERSION);
-
-var hashKey = '__EV_STORE_KEY@' + MY_VERSION;
-
-module.exports = EvStore;
-
-function EvStore(elem) {
-    var hash = elem[hashKey];
-
-    if (!hash) {
-        hash = elem[hashKey] = {};
-    }
-
-    return hash;
-}
-
-},{"individual/one-version":"../node_modules/individual/one-version.js"}],"../node_modules/virtual-dom/virtual-hyperscript/hooks/ev-hook.js":[function(require,module,exports) {
-'use strict';
-
-var EvStore = require('ev-store');
-
-module.exports = EvHook;
-
-function EvHook(value) {
-    if (!(this instanceof EvHook)) {
-        return new EvHook(value);
-    }
-
-    this.value = value;
-}
-
-EvHook.prototype.hook = function (node, propertyName) {
-    var es = EvStore(node);
-    var propName = propertyName.substr(3);
-
-    es[propName] = this.value;
-};
-
-EvHook.prototype.unhook = function(node, propertyName) {
-    var es = EvStore(node);
-    var propName = propertyName.substr(3);
-
-    es[propName] = undefined;
-};
-
-},{"ev-store":"../node_modules/ev-store/index.js"}],"../node_modules/virtual-dom/virtual-hyperscript/index.js":[function(require,module,exports) {
-'use strict';
-
-var isArray = require('x-is-array');
-
-var VNode = require('../vnode/vnode.js');
-var VText = require('../vnode/vtext.js');
-var isVNode = require('../vnode/is-vnode');
-var isVText = require('../vnode/is-vtext');
-var isWidget = require('../vnode/is-widget');
-var isHook = require('../vnode/is-vhook');
-var isVThunk = require('../vnode/is-thunk');
-
-var parseTag = require('./parse-tag.js');
-var softSetHook = require('./hooks/soft-set-hook.js');
-var evHook = require('./hooks/ev-hook.js');
-
-module.exports = h;
-
-function h(tagName, properties, children) {
-    var childNodes = [];
-    var tag, props, key, namespace;
-
-    if (!children && isChildren(properties)) {
-        children = properties;
-        props = {};
-    }
-
-    props = props || properties || {};
-    tag = parseTag(tagName, props);
-
-    // support keys
-    if (props.hasOwnProperty('key')) {
-        key = props.key;
-        props.key = undefined;
-    }
-
-    // support namespace
-    if (props.hasOwnProperty('namespace')) {
-        namespace = props.namespace;
-        props.namespace = undefined;
-    }
-
-    // fix cursor bug
-    if (tag === 'INPUT' &&
-        !namespace &&
-        props.hasOwnProperty('value') &&
-        props.value !== undefined &&
-        !isHook(props.value)
-    ) {
-        props.value = softSetHook(props.value);
-    }
-
-    transformProperties(props);
-
-    if (children !== undefined && children !== null) {
-        addChild(children, childNodes, tag, props);
-    }
-
-
-    return new VNode(tag, props, childNodes, key, namespace);
-}
-
-function addChild(c, childNodes, tag, props) {
-    if (typeof c === 'string') {
-        childNodes.push(new VText(c));
-    } else if (typeof c === 'number') {
-        childNodes.push(new VText(String(c)));
-    } else if (isChild(c)) {
-        childNodes.push(c);
-    } else if (isArray(c)) {
-        for (var i = 0; i < c.length; i++) {
-            addChild(c[i], childNodes, tag, props);
-        }
-    } else if (c === null || c === undefined) {
-        return;
-    } else {
-        throw UnexpectedVirtualElement({
-            foreignObject: c,
-            parentVnode: {
-                tagName: tag,
-                properties: props
-            }
-        });
-    }
-}
-
-function transformProperties(props) {
-    for (var propName in props) {
-        if (props.hasOwnProperty(propName)) {
-            var value = props[propName];
-
-            if (isHook(value)) {
-                continue;
-            }
-
-            if (propName.substr(0, 3) === 'ev-') {
-                // add ev-foo support
-                props[propName] = evHook(value);
-            }
-        }
-    }
-}
-
-function isChild(x) {
-    return isVNode(x) || isVText(x) || isWidget(x) || isVThunk(x);
-}
-
-function isChildren(x) {
-    return typeof x === 'string' || isArray(x) || isChild(x);
-}
-
-function UnexpectedVirtualElement(data) {
-    var err = new Error();
-
-    err.type = 'virtual-hyperscript.unexpected.virtual-element';
-    err.message = 'Unexpected virtual child passed to h().\n' +
-        'Expected a VNode / Vthunk / VWidget / string but:\n' +
-        'got:\n' +
-        errorString(data.foreignObject) +
-        '.\n' +
-        'The parent vnode is:\n' +
-        errorString(data.parentVnode)
-        '\n' +
-        'Suggested fix: change your `h(..., [ ... ])` callsite.';
-    err.foreignObject = data.foreignObject;
-    err.parentVnode = data.parentVnode;
-
-    return err;
-}
-
-function errorString(obj) {
-    try {
-        return JSON.stringify(obj, null, '    ');
-    } catch (e) {
-        return String(obj);
-    }
-}
-
-},{"x-is-array":"../node_modules/x-is-array/index.js","../vnode/vnode.js":"../node_modules/virtual-dom/vnode/vnode.js","../vnode/vtext.js":"../node_modules/virtual-dom/vnode/vtext.js","../vnode/is-vnode":"../node_modules/virtual-dom/vnode/is-vnode.js","../vnode/is-vtext":"../node_modules/virtual-dom/vnode/is-vtext.js","../vnode/is-widget":"../node_modules/virtual-dom/vnode/is-widget.js","../vnode/is-vhook":"../node_modules/virtual-dom/vnode/is-vhook.js","../vnode/is-thunk":"../node_modules/virtual-dom/vnode/is-thunk.js","./parse-tag.js":"../node_modules/virtual-dom/virtual-hyperscript/parse-tag.js","./hooks/soft-set-hook.js":"../node_modules/virtual-dom/virtual-hyperscript/hooks/soft-set-hook.js","./hooks/ev-hook.js":"../node_modules/virtual-dom/virtual-hyperscript/hooks/ev-hook.js"}],"../node_modules/virtual-dom/h.js":[function(require,module,exports) {
-var h = require("./virtual-hyperscript/index.js")
-
-module.exports = h
-
-},{"./virtual-hyperscript/index.js":"../node_modules/virtual-dom/virtual-hyperscript/index.js"}],"../node_modules/virtual-dom/vnode/vpatch.js":[function(require,module,exports) {
-var version = require("./version")
-
-VirtualPatch.NONE = 0
-VirtualPatch.VTEXT = 1
-VirtualPatch.VNODE = 2
-VirtualPatch.WIDGET = 3
-VirtualPatch.PROPS = 4
-VirtualPatch.ORDER = 5
-VirtualPatch.INSERT = 6
-VirtualPatch.REMOVE = 7
-VirtualPatch.THUNK = 8
-
-module.exports = VirtualPatch
-
-function VirtualPatch(type, vNode, patch) {
-    this.type = Number(type)
-    this.vNode = vNode
-    this.patch = patch
-}
-
-VirtualPatch.prototype.version = version
-VirtualPatch.prototype.type = "VirtualPatch"
-
-},{"./version":"../node_modules/virtual-dom/vnode/version.js"}],"../node_modules/virtual-dom/vtree/diff-props.js":[function(require,module,exports) {
-var isObject = require("is-object")
-var isHook = require("../vnode/is-vhook")
-
-module.exports = diffProps
-
-function diffProps(a, b) {
-    var diff
-
-    for (var aKey in a) {
-        if (!(aKey in b)) {
-            diff = diff || {}
-            diff[aKey] = undefined
-        }
-
-        var aValue = a[aKey]
-        var bValue = b[aKey]
-
-        if (aValue === bValue) {
-            continue
-        } else if (isObject(aValue) && isObject(bValue)) {
-            if (getPrototype(bValue) !== getPrototype(aValue)) {
-                diff = diff || {}
-                diff[aKey] = bValue
-            } else if (isHook(bValue)) {
-                 diff = diff || {}
-                 diff[aKey] = bValue
-            } else {
-                var objectDiff = diffProps(aValue, bValue)
-                if (objectDiff) {
-                    diff = diff || {}
-                    diff[aKey] = objectDiff
-                }
-            }
-        } else {
-            diff = diff || {}
-            diff[aKey] = bValue
-        }
-    }
-
-    for (var bKey in b) {
-        if (!(bKey in a)) {
-            diff = diff || {}
-            diff[bKey] = b[bKey]
-        }
-    }
-
-    return diff
-}
-
-function getPrototype(value) {
-  if (Object.getPrototypeOf) {
-    return Object.getPrototypeOf(value)
-  } else if (value.__proto__) {
-    return value.__proto__
-  } else if (value.constructor) {
-    return value.constructor.prototype
-  }
-}
-
-},{"is-object":"../node_modules/is-object/index.js","../vnode/is-vhook":"../node_modules/virtual-dom/vnode/is-vhook.js"}],"../node_modules/virtual-dom/vtree/diff.js":[function(require,module,exports) {
-var isArray = require("x-is-array")
-
-var VPatch = require("../vnode/vpatch")
-var isVNode = require("../vnode/is-vnode")
-var isVText = require("../vnode/is-vtext")
-var isWidget = require("../vnode/is-widget")
-var isThunk = require("../vnode/is-thunk")
-var handleThunk = require("../vnode/handle-thunk")
-
-var diffProps = require("./diff-props")
-
-module.exports = diff
-
-function diff(a, b) {
-    var patch = { a: a }
-    walk(a, b, patch, 0)
-    return patch
-}
-
-function walk(a, b, patch, index) {
-    if (a === b) {
-        return
-    }
-
-    var apply = patch[index]
-    var applyClear = false
-
-    if (isThunk(a) || isThunk(b)) {
-        thunks(a, b, patch, index)
-    } else if (b == null) {
-
-        // If a is a widget we will add a remove patch for it
-        // Otherwise any child widgets/hooks must be destroyed.
-        // This prevents adding two remove patches for a widget.
-        if (!isWidget(a)) {
-            clearState(a, patch, index)
-            apply = patch[index]
-        }
-
-        apply = appendPatch(apply, new VPatch(VPatch.REMOVE, a, b))
-    } else if (isVNode(b)) {
-        if (isVNode(a)) {
-            if (a.tagName === b.tagName &&
-                a.namespace === b.namespace &&
-                a.key === b.key) {
-                var propsPatch = diffProps(a.properties, b.properties)
-                if (propsPatch) {
-                    apply = appendPatch(apply,
-                        new VPatch(VPatch.PROPS, a, propsPatch))
-                }
-                apply = diffChildren(a, b, patch, apply, index)
-            } else {
-                apply = appendPatch(apply, new VPatch(VPatch.VNODE, a, b))
-                applyClear = true
-            }
-        } else {
-            apply = appendPatch(apply, new VPatch(VPatch.VNODE, a, b))
-            applyClear = true
-        }
-    } else if (isVText(b)) {
-        if (!isVText(a)) {
-            apply = appendPatch(apply, new VPatch(VPatch.VTEXT, a, b))
-            applyClear = true
-        } else if (a.text !== b.text) {
-            apply = appendPatch(apply, new VPatch(VPatch.VTEXT, a, b))
-        }
-    } else if (isWidget(b)) {
-        if (!isWidget(a)) {
-            applyClear = true
-        }
-
-        apply = appendPatch(apply, new VPatch(VPatch.WIDGET, a, b))
-    }
-
-    if (apply) {
-        patch[index] = apply
-    }
-
-    if (applyClear) {
-        clearState(a, patch, index)
-    }
-}
-
-function diffChildren(a, b, patch, apply, index) {
-    var aChildren = a.children
-    var orderedSet = reorder(aChildren, b.children)
-    var bChildren = orderedSet.children
-
-    var aLen = aChildren.length
-    var bLen = bChildren.length
-    var len = aLen > bLen ? aLen : bLen
-
-    for (var i = 0; i < len; i++) {
-        var leftNode = aChildren[i]
-        var rightNode = bChildren[i]
-        index += 1
-
-        if (!leftNode) {
-            if (rightNode) {
-                // Excess nodes in b need to be added
-                apply = appendPatch(apply,
-                    new VPatch(VPatch.INSERT, null, rightNode))
-            }
-        } else {
-            walk(leftNode, rightNode, patch, index)
-        }
-
-        if (isVNode(leftNode) && leftNode.count) {
-            index += leftNode.count
-        }
-    }
-
-    if (orderedSet.moves) {
-        // Reorder nodes last
-        apply = appendPatch(apply, new VPatch(
-            VPatch.ORDER,
-            a,
-            orderedSet.moves
-        ))
-    }
-
-    return apply
-}
-
-function clearState(vNode, patch, index) {
-    // TODO: Make this a single walk, not two
-    unhook(vNode, patch, index)
-    destroyWidgets(vNode, patch, index)
-}
-
-// Patch records for all destroyed widgets must be added because we need
-// a DOM node reference for the destroy function
-function destroyWidgets(vNode, patch, index) {
-    if (isWidget(vNode)) {
-        if (typeof vNode.destroy === "function") {
-            patch[index] = appendPatch(
-                patch[index],
-                new VPatch(VPatch.REMOVE, vNode, null)
-            )
-        }
-    } else if (isVNode(vNode) && (vNode.hasWidgets || vNode.hasThunks)) {
-        var children = vNode.children
-        var len = children.length
-        for (var i = 0; i < len; i++) {
-            var child = children[i]
-            index += 1
-
-            destroyWidgets(child, patch, index)
-
-            if (isVNode(child) && child.count) {
-                index += child.count
-            }
-        }
-    } else if (isThunk(vNode)) {
-        thunks(vNode, null, patch, index)
-    }
-}
-
-// Create a sub-patch for thunks
-function thunks(a, b, patch, index) {
-    var nodes = handleThunk(a, b)
-    var thunkPatch = diff(nodes.a, nodes.b)
-    if (hasPatches(thunkPatch)) {
-        patch[index] = new VPatch(VPatch.THUNK, null, thunkPatch)
-    }
-}
-
-function hasPatches(patch) {
-    for (var index in patch) {
-        if (index !== "a") {
-            return true
-        }
-    }
-
-    return false
-}
-
-// Execute hooks when two nodes are identical
-function unhook(vNode, patch, index) {
-    if (isVNode(vNode)) {
-        if (vNode.hooks) {
-            patch[index] = appendPatch(
-                patch[index],
-                new VPatch(
-                    VPatch.PROPS,
-                    vNode,
-                    undefinedKeys(vNode.hooks)
-                )
-            )
-        }
-
-        if (vNode.descendantHooks || vNode.hasThunks) {
-            var children = vNode.children
-            var len = children.length
-            for (var i = 0; i < len; i++) {
-                var child = children[i]
-                index += 1
-
-                unhook(child, patch, index)
-
-                if (isVNode(child) && child.count) {
-                    index += child.count
-                }
-            }
-        }
-    } else if (isThunk(vNode)) {
-        thunks(vNode, null, patch, index)
-    }
-}
-
-function undefinedKeys(obj) {
-    var result = {}
-
-    for (var key in obj) {
-        result[key] = undefined
-    }
-
-    return result
-}
-
-// List diff, naive left to right reordering
-function reorder(aChildren, bChildren) {
-    // O(M) time, O(M) memory
-    var bChildIndex = keyIndex(bChildren)
-    var bKeys = bChildIndex.keys
-    var bFree = bChildIndex.free
-
-    if (bFree.length === bChildren.length) {
-        return {
-            children: bChildren,
-            moves: null
-        }
-    }
-
-    // O(N) time, O(N) memory
-    var aChildIndex = keyIndex(aChildren)
-    var aKeys = aChildIndex.keys
-    var aFree = aChildIndex.free
-
-    if (aFree.length === aChildren.length) {
-        return {
-            children: bChildren,
-            moves: null
-        }
-    }
-
-    // O(MAX(N, M)) memory
-    var newChildren = []
-
-    var freeIndex = 0
-    var freeCount = bFree.length
-    var deletedItems = 0
-
-    // Iterate through a and match a node in b
-    // O(N) time,
-    for (var i = 0 ; i < aChildren.length; i++) {
-        var aItem = aChildren[i]
-        var itemIndex
-
-        if (aItem.key) {
-            if (bKeys.hasOwnProperty(aItem.key)) {
-                // Match up the old keys
-                itemIndex = bKeys[aItem.key]
-                newChildren.push(bChildren[itemIndex])
-
-            } else {
-                // Remove old keyed items
-                itemIndex = i - deletedItems++
-                newChildren.push(null)
-            }
-        } else {
-            // Match the item in a with the next free item in b
-            if (freeIndex < freeCount) {
-                itemIndex = bFree[freeIndex++]
-                newChildren.push(bChildren[itemIndex])
-            } else {
-                // There are no free items in b to match with
-                // the free items in a, so the extra free nodes
-                // are deleted.
-                itemIndex = i - deletedItems++
-                newChildren.push(null)
-            }
-        }
-    }
-
-    var lastFreeIndex = freeIndex >= bFree.length ?
-        bChildren.length :
-        bFree[freeIndex]
-
-    // Iterate through b and append any new keys
-    // O(M) time
-    for (var j = 0; j < bChildren.length; j++) {
-        var newItem = bChildren[j]
-
-        if (newItem.key) {
-            if (!aKeys.hasOwnProperty(newItem.key)) {
-                // Add any new keyed items
-                // We are adding new items to the end and then sorting them
-                // in place. In future we should insert new items in place.
-                newChildren.push(newItem)
-            }
-        } else if (j >= lastFreeIndex) {
-            // Add any leftover non-keyed items
-            newChildren.push(newItem)
-        }
-    }
-
-    var simulate = newChildren.slice()
-    var simulateIndex = 0
-    var removes = []
-    var inserts = []
-    var simulateItem
-
-    for (var k = 0; k < bChildren.length;) {
-        var wantedItem = bChildren[k]
-        simulateItem = simulate[simulateIndex]
-
-        // remove items
-        while (simulateItem === null && simulate.length) {
-            removes.push(remove(simulate, simulateIndex, null))
-            simulateItem = simulate[simulateIndex]
-        }
-
-        if (!simulateItem || simulateItem.key !== wantedItem.key) {
-            // if we need a key in this position...
-            if (wantedItem.key) {
-                if (simulateItem && simulateItem.key) {
-                    // if an insert doesn't put this key in place, it needs to move
-                    if (bKeys[simulateItem.key] !== k + 1) {
-                        removes.push(remove(simulate, simulateIndex, simulateItem.key))
-                        simulateItem = simulate[simulateIndex]
-                        // if the remove didn't put the wanted item in place, we need to insert it
-                        if (!simulateItem || simulateItem.key !== wantedItem.key) {
-                            inserts.push({key: wantedItem.key, to: k})
-                        }
-                        // items are matching, so skip ahead
-                        else {
-                            simulateIndex++
-                        }
-                    }
-                    else {
-                        inserts.push({key: wantedItem.key, to: k})
-                    }
-                }
-                else {
-                    inserts.push({key: wantedItem.key, to: k})
-                }
-                k++
-            }
-            // a key in simulate has no matching wanted key, remove it
-            else if (simulateItem && simulateItem.key) {
-                removes.push(remove(simulate, simulateIndex, simulateItem.key))
-            }
-        }
-        else {
-            simulateIndex++
-            k++
-        }
-    }
-
-    // remove all the remaining nodes from simulate
-    while(simulateIndex < simulate.length) {
-        simulateItem = simulate[simulateIndex]
-        removes.push(remove(simulate, simulateIndex, simulateItem && simulateItem.key))
-    }
-
-    // If the only moves we have are deletes then we can just
-    // let the delete patch remove these items.
-    if (removes.length === deletedItems && !inserts.length) {
-        return {
-            children: newChildren,
-            moves: null
-        }
-    }
-
-    return {
-        children: newChildren,
-        moves: {
-            removes: removes,
-            inserts: inserts
-        }
-    }
-}
-
-function remove(arr, index, key) {
-    arr.splice(index, 1)
-
-    return {
-        from: index,
-        key: key
-    }
-}
-
-function keyIndex(children) {
-    var keys = {}
-    var free = []
-    var length = children.length
-
-    for (var i = 0; i < length; i++) {
-        var child = children[i]
-
-        if (child.key) {
-            keys[child.key] = i
-        } else {
-            free.push(i)
-        }
-    }
-
-    return {
-        keys: keys,     // A hash of key name to index
-        free: free      // An array of unkeyed item indices
-    }
-}
-
-function appendPatch(apply, patch) {
-    if (apply) {
-        if (isArray(apply)) {
-            apply.push(patch)
-        } else {
-            apply = [apply, patch]
-        }
-
-        return apply
-    } else {
-        return patch
-    }
-}
-
-},{"x-is-array":"../node_modules/x-is-array/index.js","../vnode/vpatch":"../node_modules/virtual-dom/vnode/vpatch.js","../vnode/is-vnode":"../node_modules/virtual-dom/vnode/is-vnode.js","../vnode/is-vtext":"../node_modules/virtual-dom/vnode/is-vtext.js","../vnode/is-widget":"../node_modules/virtual-dom/vnode/is-widget.js","../vnode/is-thunk":"../node_modules/virtual-dom/vnode/is-thunk.js","../vnode/handle-thunk":"../node_modules/virtual-dom/vnode/handle-thunk.js","./diff-props":"../node_modules/virtual-dom/vtree/diff-props.js"}],"../node_modules/virtual-dom/diff.js":[function(require,module,exports) {
-var diff = require("./vtree/diff.js")
-
-module.exports = diff
-
-},{"./vtree/diff.js":"../node_modules/virtual-dom/vtree/diff.js"}],"../node_modules/virtual-dom/vdom/dom-index.js":[function(require,module,exports) {
-// Maps a virtual DOM tree onto a real DOM tree in an efficient manner.
-// We don't want to read all of the DOM nodes in the tree so we use
-// the in-order tree indexing to eliminate recursion down certain branches.
-// We only recurse into a DOM node if we know that it contains a child of
-// interest.
-
-var noChild = {}
-
-module.exports = domIndex
-
-function domIndex(rootNode, tree, indices, nodes) {
-    if (!indices || indices.length === 0) {
-        return {}
-    } else {
-        indices.sort(ascending)
-        return recurse(rootNode, tree, indices, nodes, 0)
-    }
-}
-
-function recurse(rootNode, tree, indices, nodes, rootIndex) {
-    nodes = nodes || {}
-
-
-    if (rootNode) {
-        if (indexInRange(indices, rootIndex, rootIndex)) {
-            nodes[rootIndex] = rootNode
-        }
-
-        var vChildren = tree.children
-
-        if (vChildren) {
-
-            var childNodes = rootNode.childNodes
-
-            for (var i = 0; i < tree.children.length; i++) {
-                rootIndex += 1
-
-                var vChild = vChildren[i] || noChild
-                var nextIndex = rootIndex + (vChild.count || 0)
-
-                // skip recursion down the tree if there are no nodes down here
-                if (indexInRange(indices, rootIndex, nextIndex)) {
-                    recurse(childNodes[i], vChild, indices, nodes, rootIndex)
-                }
-
-                rootIndex = nextIndex
-            }
-        }
-    }
-
-    return nodes
-}
-
-// Binary search for an index in the interval [left, right]
-function indexInRange(indices, left, right) {
-    if (indices.length === 0) {
-        return false
-    }
-
-    var minIndex = 0
-    var maxIndex = indices.length - 1
-    var currentIndex
-    var currentItem
-
-    while (minIndex <= maxIndex) {
-        currentIndex = ((maxIndex + minIndex) / 2) >> 0
-        currentItem = indices[currentIndex]
-
-        if (minIndex === maxIndex) {
-            return currentItem >= left && currentItem <= right
-        } else if (currentItem < left) {
-            minIndex = currentIndex + 1
-        } else  if (currentItem > right) {
-            maxIndex = currentIndex - 1
-        } else {
-            return true
-        }
-    }
-
-    return false;
-}
-
-function ascending(a, b) {
-    return a > b ? 1 : -1
-}
-
-},{}],"../node_modules/virtual-dom/vdom/update-widget.js":[function(require,module,exports) {
-var isWidget = require("../vnode/is-widget.js")
-
-module.exports = updateWidget
-
-function updateWidget(a, b) {
-    if (isWidget(a) && isWidget(b)) {
-        if ("name" in a && "name" in b) {
-            return a.id === b.id
-        } else {
-            return a.init === b.init
-        }
-    }
-
-    return false
-}
-
-},{"../vnode/is-widget.js":"../node_modules/virtual-dom/vnode/is-widget.js"}],"../node_modules/virtual-dom/vdom/patch-op.js":[function(require,module,exports) {
-var applyProperties = require("./apply-properties")
-
-var isWidget = require("../vnode/is-widget.js")
-var VPatch = require("../vnode/vpatch.js")
-
-var updateWidget = require("./update-widget")
-
-module.exports = applyPatch
-
-function applyPatch(vpatch, domNode, renderOptions) {
-    var type = vpatch.type
-    var vNode = vpatch.vNode
-    var patch = vpatch.patch
-
-    switch (type) {
-        case VPatch.REMOVE:
-            return removeNode(domNode, vNode)
-        case VPatch.INSERT:
-            return insertNode(domNode, patch, renderOptions)
-        case VPatch.VTEXT:
-            return stringPatch(domNode, vNode, patch, renderOptions)
-        case VPatch.WIDGET:
-            return widgetPatch(domNode, vNode, patch, renderOptions)
-        case VPatch.VNODE:
-            return vNodePatch(domNode, vNode, patch, renderOptions)
-        case VPatch.ORDER:
-            reorderChildren(domNode, patch)
-            return domNode
-        case VPatch.PROPS:
-            applyProperties(domNode, patch, vNode.properties)
-            return domNode
-        case VPatch.THUNK:
-            return replaceRoot(domNode,
-                renderOptions.patch(domNode, patch, renderOptions))
-        default:
-            return domNode
-    }
-}
-
-function removeNode(domNode, vNode) {
-    var parentNode = domNode.parentNode
-
-    if (parentNode) {
-        parentNode.removeChild(domNode)
-    }
-
-    destroyWidget(domNode, vNode);
-
-    return null
-}
-
-function insertNode(parentNode, vNode, renderOptions) {
-    var newNode = renderOptions.render(vNode, renderOptions)
-
-    if (parentNode) {
-        parentNode.appendChild(newNode)
-    }
-
-    return parentNode
-}
-
-function stringPatch(domNode, leftVNode, vText, renderOptions) {
-    var newNode
-
-    if (domNode.nodeType === 3) {
-        domNode.replaceData(0, domNode.length, vText.text)
-        newNode = domNode
-    } else {
-        var parentNode = domNode.parentNode
-        newNode = renderOptions.render(vText, renderOptions)
-
-        if (parentNode && newNode !== domNode) {
-            parentNode.replaceChild(newNode, domNode)
-        }
-    }
-
-    return newNode
-}
-
-function widgetPatch(domNode, leftVNode, widget, renderOptions) {
-    var updating = updateWidget(leftVNode, widget)
-    var newNode
-
-    if (updating) {
-        newNode = widget.update(leftVNode, domNode) || domNode
-    } else {
-        newNode = renderOptions.render(widget, renderOptions)
-    }
-
-    var parentNode = domNode.parentNode
-
-    if (parentNode && newNode !== domNode) {
-        parentNode.replaceChild(newNode, domNode)
-    }
-
-    if (!updating) {
-        destroyWidget(domNode, leftVNode)
-    }
-
-    return newNode
-}
-
-function vNodePatch(domNode, leftVNode, vNode, renderOptions) {
-    var parentNode = domNode.parentNode
-    var newNode = renderOptions.render(vNode, renderOptions)
-
-    if (parentNode && newNode !== domNode) {
-        parentNode.replaceChild(newNode, domNode)
-    }
-
-    return newNode
-}
-
-function destroyWidget(domNode, w) {
-    if (typeof w.destroy === "function" && isWidget(w)) {
-        w.destroy(domNode)
-    }
-}
-
-function reorderChildren(domNode, moves) {
-    var childNodes = domNode.childNodes
-    var keyMap = {}
-    var node
-    var remove
-    var insert
-
-    for (var i = 0; i < moves.removes.length; i++) {
-        remove = moves.removes[i]
-        node = childNodes[remove.from]
-        if (remove.key) {
-            keyMap[remove.key] = node
-        }
-        domNode.removeChild(node)
-    }
-
-    var length = childNodes.length
-    for (var j = 0; j < moves.inserts.length; j++) {
-        insert = moves.inserts[j]
-        node = keyMap[insert.key]
-        // this is the weirdest bug i've ever seen in webkit
-        domNode.insertBefore(node, insert.to >= length++ ? null : childNodes[insert.to])
-    }
-}
-
-function replaceRoot(oldRoot, newRoot) {
-    if (oldRoot && newRoot && oldRoot !== newRoot && oldRoot.parentNode) {
-        oldRoot.parentNode.replaceChild(newRoot, oldRoot)
-    }
-
-    return newRoot;
-}
-
-},{"./apply-properties":"../node_modules/virtual-dom/vdom/apply-properties.js","../vnode/is-widget.js":"../node_modules/virtual-dom/vnode/is-widget.js","../vnode/vpatch.js":"../node_modules/virtual-dom/vnode/vpatch.js","./update-widget":"../node_modules/virtual-dom/vdom/update-widget.js"}],"../node_modules/virtual-dom/vdom/patch.js":[function(require,module,exports) {
-var document = require("global/document")
-var isArray = require("x-is-array")
-
-var render = require("./create-element")
-var domIndex = require("./dom-index")
-var patchOp = require("./patch-op")
-module.exports = patch
-
-function patch(rootNode, patches, renderOptions) {
-    renderOptions = renderOptions || {}
-    renderOptions.patch = renderOptions.patch && renderOptions.patch !== patch
-        ? renderOptions.patch
-        : patchRecursive
-    renderOptions.render = renderOptions.render || render
-
-    return renderOptions.patch(rootNode, patches, renderOptions)
-}
-
-function patchRecursive(rootNode, patches, renderOptions) {
-    var indices = patchIndices(patches)
-
-    if (indices.length === 0) {
-        return rootNode
-    }
-
-    var index = domIndex(rootNode, patches.a, indices)
-    var ownerDocument = rootNode.ownerDocument
-
-    if (!renderOptions.document && ownerDocument !== document) {
-        renderOptions.document = ownerDocument
-    }
-
-    for (var i = 0; i < indices.length; i++) {
-        var nodeIndex = indices[i]
-        rootNode = applyPatch(rootNode,
-            index[nodeIndex],
-            patches[nodeIndex],
-            renderOptions)
-    }
-
-    return rootNode
-}
-
-function applyPatch(rootNode, domNode, patchList, renderOptions) {
-    if (!domNode) {
-        return rootNode
-    }
-
-    var newNode
-
-    if (isArray(patchList)) {
-        for (var i = 0; i < patchList.length; i++) {
-            newNode = patchOp(patchList[i], domNode, renderOptions)
-
-            if (domNode === rootNode) {
-                rootNode = newNode
-            }
-        }
-    } else {
-        newNode = patchOp(patchList, domNode, renderOptions)
-
-        if (domNode === rootNode) {
-            rootNode = newNode
-        }
-    }
-
-    return rootNode
-}
-
-function patchIndices(patches) {
-    var indices = []
-
-    for (var key in patches) {
-        if (key !== "a") {
-            indices.push(Number(key))
-        }
-    }
-
-    return indices
-}
-
-},{"global/document":"../node_modules/global/document.js","x-is-array":"../node_modules/x-is-array/index.js","./create-element":"../node_modules/virtual-dom/vdom/create-element.js","./dom-index":"../node_modules/virtual-dom/vdom/dom-index.js","./patch-op":"../node_modules/virtual-dom/vdom/patch-op.js"}],"../node_modules/virtual-dom/patch.js":[function(require,module,exports) {
-var patch = require("./vdom/patch.js")
-
-module.exports = patch
-
-},{"./vdom/patch.js":"../node_modules/virtual-dom/vdom/patch.js"}],"../node_modules/inline-worker/index.js":[function(require,module,exports) {
-var global = arguments[3];
-var WORKER_ENABLED = !!(global === global.window && global.URL && global.Blob && global.Worker);
-
-function InlineWorker(func, self) {
-  var _this = this;
-  var functionBody;
-
-  self = self || {};
-
-  if (WORKER_ENABLED) {
-    functionBody = func.toString().trim().match(
-      /^function\s*\w*\s*\([\w\s,]*\)\s*{([\w\W]*?)}$/
-    )[1];
-
-    return new global.Worker(global.URL.createObjectURL(
-      new global.Blob([ functionBody ], { type: "text/javascript" })
-    ));
-  }
-
-  function postMessage(data) {
-    setTimeout(function() {
-      _this.onmessage({ data: data });
-    }, 0);
-  }
-
-  this.self = self;
-  this.self.postMessage = postMessage;
-
-  setTimeout(func.bind(self, self), 0);
-}
-
-InlineWorker.prototype.postMessage = function postMessage(data) {
-  var _this = this;
-
-  setTimeout(function() {
-    _this.self.onmessage({ data: data });
-  }, 0);
-};
-
-module.exports = InlineWorker;
-
-},{}],"../node_modules/waveform-playlist/lib/utils/conversions.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.samplesToSeconds = samplesToSeconds;
-exports.secondsToSamples = secondsToSamples;
-exports.samplesToPixels = samplesToPixels;
-exports.pixelsToSamples = pixelsToSamples;
-exports.pixelsToSeconds = pixelsToSeconds;
-exports.secondsToPixels = secondsToPixels;
-function samplesToSeconds(samples, sampleRate) {
-  return samples / sampleRate;
-}
-
-function secondsToSamples(seconds, sampleRate) {
-  return Math.ceil(seconds * sampleRate);
-}
-
-function samplesToPixels(samples, resolution) {
-  return Math.floor(samples / resolution);
-}
-
-function pixelsToSamples(pixels, resolution) {
-  return Math.floor(pixels * resolution);
-}
-
-function pixelsToSeconds(pixels, resolution, sampleRate) {
-  return pixels * resolution / sampleRate;
-}
-
-function secondsToPixels(seconds, resolution, sampleRate) {
-  return Math.ceil(seconds * sampleRate / resolution);
-}
-},{}],"../node_modules/waveform-playlist/lib/track/loader/Loader.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.STATE_FINISHED = exports.STATE_DECODING = exports.STATE_LOADING = exports.STATE_UNINITIALIZED = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _eventEmitter = require('event-emitter');
-
-var _eventEmitter2 = _interopRequireDefault(_eventEmitter);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var STATE_UNINITIALIZED = exports.STATE_UNINITIALIZED = 0;
-var STATE_LOADING = exports.STATE_LOADING = 1;
-var STATE_DECODING = exports.STATE_DECODING = 2;
-var STATE_FINISHED = exports.STATE_FINISHED = 3;
-
-var _class = function () {
-  function _class(src, audioContext) {
-    var ee = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : (0, _eventEmitter2.default)();
-
-    _classCallCheck(this, _class);
-
-    this.src = src;
-    this.ac = audioContext;
-    this.audioRequestState = STATE_UNINITIALIZED;
-    this.ee = ee;
-  }
-
-  _createClass(_class, [{
-    key: 'setStateChange',
-    value: function setStateChange(state) {
-      this.audioRequestState = state;
-      this.ee.emit('audiorequeststatechange', this.audioRequestState, this.src);
-    }
-  }, {
-    key: 'fileProgress',
-    value: function fileProgress(e) {
-      var percentComplete = 0;
-
-      if (this.audioRequestState === STATE_UNINITIALIZED) {
-        this.setStateChange(STATE_LOADING);
-      }
-
-      if (e.lengthComputable) {
-        percentComplete = e.loaded / e.total * 100;
-      }
-
-      this.ee.emit('loadprogress', percentComplete, this.src);
-    }
-  }, {
-    key: 'fileLoad',
-    value: function fileLoad(e) {
-      var _this = this;
-
-      var audioData = e.target.response || e.target.result;
-
-      this.setStateChange(STATE_DECODING);
-
-      return new Promise(function (resolve, reject) {
-        _this.ac.decodeAudioData(audioData, function (audioBuffer) {
-          _this.audioBuffer = audioBuffer;
-          _this.setStateChange(STATE_FINISHED);
-
-          resolve(audioBuffer);
-        }, function (err) {
-          if (err === null) {
-            // Safari issues with null error
-            reject(Error('MediaDecodeAudioDataUnknownContentType'));
-          } else {
-            reject(err);
-          }
-        });
-      });
-    }
-  }]);
-
-  return _class;
-}();
-
-exports.default = _class;
-},{"event-emitter":"../node_modules/event-emitter/index.js"}],"../node_modules/waveform-playlist/lib/track/loader/BlobLoader.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
-
-var _Loader2 = require('./Loader');
-
-var _Loader3 = _interopRequireDefault(_Loader2);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var _class = function (_Loader) {
-  _inherits(_class, _Loader);
-
-  function _class() {
-    _classCallCheck(this, _class);
-
-    return _possibleConstructorReturn(this, (_class.__proto__ || Object.getPrototypeOf(_class)).apply(this, arguments));
-  }
-
-  _createClass(_class, [{
-    key: 'load',
-
-
-    /*
-    * Loads an audio file via a FileReader
-    */
-    value: function load() {
-      var _this2 = this;
-
-      return new Promise(function (resolve, reject) {
-        if (_this2.src.type.match(/audio.*/) ||
-        // added for problems with Firefox mime types + ogg.
-        _this2.src.type.match(/video\/ogg/)) {
-          var fr = new FileReader();
-
-          fr.readAsArrayBuffer(_this2.src);
-
-          fr.addEventListener('progress', function (e) {
-            _get(_class.prototype.__proto__ || Object.getPrototypeOf(_class.prototype), 'fileProgress', _this2).call(_this2, e);
-          });
-
-          fr.addEventListener('load', function (e) {
-            var decoderPromise = _get(_class.prototype.__proto__ || Object.getPrototypeOf(_class.prototype), 'fileLoad', _this2).call(_this2, e);
-
-            decoderPromise.then(function (audioBuffer) {
-              resolve(audioBuffer);
-            }).catch(reject);
-          });
-
-          fr.addEventListener('error', reject);
-        } else {
-          reject(Error('Unsupported file type ' + _this2.src.type));
-        }
-      });
-    }
-  }]);
-
-  return _class;
-}(_Loader3.default);
-
-exports.default = _class;
-},{"./Loader":"../node_modules/waveform-playlist/lib/track/loader/Loader.js"}],"../node_modules/waveform-playlist/lib/track/loader/IdentityLoader.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _Loader2 = require('./Loader');
-
-var _Loader3 = _interopRequireDefault(_Loader2);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var IdentityLoader = function (_Loader) {
-  _inherits(IdentityLoader, _Loader);
-
-  function IdentityLoader() {
-    _classCallCheck(this, IdentityLoader);
-
-    return _possibleConstructorReturn(this, (IdentityLoader.__proto__ || Object.getPrototypeOf(IdentityLoader)).apply(this, arguments));
-  }
-
-  _createClass(IdentityLoader, [{
-    key: 'load',
-    value: function load() {
-      return Promise.resolve(this.src);
-    }
-  }]);
-
-  return IdentityLoader;
-}(_Loader3.default);
-
-exports.default = IdentityLoader;
-},{"./Loader":"../node_modules/waveform-playlist/lib/track/loader/Loader.js"}],"../node_modules/waveform-playlist/lib/track/loader/XHRLoader.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
-
-var _Loader2 = require('./Loader');
-
-var _Loader3 = _interopRequireDefault(_Loader2);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var _class = function (_Loader) {
-  _inherits(_class, _Loader);
-
-  function _class() {
-    _classCallCheck(this, _class);
-
-    return _possibleConstructorReturn(this, (_class.__proto__ || Object.getPrototypeOf(_class)).apply(this, arguments));
-  }
-
-  _createClass(_class, [{
-    key: 'load',
-
-
-    /**
-     * Loads an audio file via XHR.
-     */
-    value: function load() {
-      var _this2 = this;
-
-      return new Promise(function (resolve, reject) {
-        var xhr = new XMLHttpRequest();
-
-        xhr.open('GET', _this2.src, true);
-        xhr.responseType = 'arraybuffer';
-        xhr.send();
-
-        xhr.addEventListener('progress', function (e) {
-          _get(_class.prototype.__proto__ || Object.getPrototypeOf(_class.prototype), 'fileProgress', _this2).call(_this2, e);
-        });
-
-        xhr.addEventListener('load', function (e) {
-          var decoderPromise = _get(_class.prototype.__proto__ || Object.getPrototypeOf(_class.prototype), 'fileLoad', _this2).call(_this2, e);
-
-          decoderPromise.then(function (audioBuffer) {
-            resolve(audioBuffer);
-          }).catch(reject);
-        });
-
-        xhr.addEventListener('error', function () {
-          reject(Error('Track ' + _this2.src + ' failed to load'));
-        });
-      });
-    }
-  }]);
-
-  return _class;
-}(_Loader3.default);
-
-exports.default = _class;
-},{"./Loader":"../node_modules/waveform-playlist/lib/track/loader/Loader.js"}],"../node_modules/waveform-playlist/lib/track/loader/LoaderFactory.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _BlobLoader = require('./BlobLoader');
-
-var _BlobLoader2 = _interopRequireDefault(_BlobLoader);
-
-var _IdentityLoader = require('./IdentityLoader');
-
-var _IdentityLoader2 = _interopRequireDefault(_IdentityLoader);
-
-var _XHRLoader = require('./XHRLoader');
-
-var _XHRLoader2 = _interopRequireDefault(_XHRLoader);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var _class = function () {
-  function _class() {
-    _classCallCheck(this, _class);
-  }
-
-  _createClass(_class, null, [{
-    key: 'createLoader',
-    value: function createLoader(src, audioContext, ee) {
-      if (src instanceof Blob) {
-        return new _BlobLoader2.default(src, audioContext, ee);
-      } else if (src instanceof AudioBuffer) {
-        return new _IdentityLoader2.default(src, audioContext, ee);
-      } else if (typeof src === 'string') {
-        return new _XHRLoader2.default(src, audioContext, ee);
-      }
-
-      throw new Error('Unsupported src type');
-    }
-  }]);
-
-  return _class;
-}();
-
-exports.default = _class;
-},{"./BlobLoader":"../node_modules/waveform-playlist/lib/track/loader/BlobLoader.js","./IdentityLoader":"../node_modules/waveform-playlist/lib/track/loader/IdentityLoader.js","./XHRLoader":"../node_modules/waveform-playlist/lib/track/loader/XHRLoader.js"}],"../node_modules/waveform-playlist/lib/render/ScrollHook.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _conversions = require('../utils/conversions');
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-/*
- * virtual-dom hook for scrolling the track container.
+/**
+ * This method returns the first argument it receives.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Util
+ * @param {*} value Any value.
+ * @returns {*} Returns `value`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ *
+ * console.log(_.identity(object) === object);
+ * // => true
  */
-var _class = function () {
-  function _class(playlist) {
-    _classCallCheck(this, _class);
+function identity(value) {
+  return value;
+}
 
-    this.playlist = playlist;
-  }
+/**
+ * This method returns `false`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.13.0
+ * @category Util
+ * @returns {boolean} Returns `false`.
+ * @example
+ *
+ * _.times(2, _.stubFalse);
+ * // => [false, false]
+ */
+function stubFalse() {
+  return false;
+}
 
-  _createClass(_class, [{
-    key: 'hook',
-    value: function hook(node) {
-      var playlist = this.playlist;
-      if (!playlist.isScrolling) {
-        var el = node;
+module.exports = defaultsDeep;
 
-        if (playlist.isAutomaticScroll) {
-          var rect = node.getBoundingClientRect();
-          var controlWidth = playlist.controls.show ? playlist.controls.width : 0;
-          var width = (0, _conversions.pixelsToSeconds)(rect.width - controlWidth, playlist.samplesPerPixel, playlist.sampleRate);
 
-          var timePoint = playlist.isPlaying() ? playlist.playbackSeconds : playlist.getTimeSelection().start;
+/***/ }),
 
-          if (timePoint < playlist.scrollLeft || timePoint >= playlist.scrollLeft + width) {
-            playlist.scrollLeft = Math.min(timePoint, playlist.duration - width);
-          }
-        }
+/***/ 3520:
+/***/ ((module) => {
 
-        var left = (0, _conversions.secondsToPixels)(playlist.scrollLeft, playlist.samplesPerPixel, playlist.sampleRate);
-
-        el.scrollLeft = left;
-      }
-    }
-  }]);
-
-  return _class;
-}();
-
-exports.default = _class;
-},{"../utils/conversions":"../node_modules/waveform-playlist/lib/utils/conversions.js"}],"../node_modules/waveform-playlist/lib/render/TimeScaleHook.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-/*
-* virtual-dom hook for rendering the time scale canvas.
-*/
-var _class = function () {
-  function _class(tickInfo, offset, samplesPerPixel, duration, colors) {
-    _classCallCheck(this, _class);
-
-    this.tickInfo = tickInfo;
-    this.offset = offset;
-    this.samplesPerPixel = samplesPerPixel;
-    this.duration = duration;
-    this.colors = colors;
-  }
-
-  _createClass(_class, [{
-    key: 'hook',
-    value: function hook(canvas, prop, prev) {
-      var _this = this;
-
-      // canvas is up to date
-      if (prev !== undefined && prev.offset === this.offset && prev.duration === this.duration && prev.samplesPerPixel === this.samplesPerPixel) {
-        return;
-      }
-
-      var width = canvas.width;
-      var height = canvas.height;
-      var ctx = canvas.getContext('2d');
-
-      ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = this.colors.timeColor;
-
-      Object.keys(this.tickInfo).forEach(function (x) {
-        var scaleHeight = _this.tickInfo[x];
-        var scaleY = height - scaleHeight;
-        ctx.fillRect(x, scaleY, 1, scaleHeight);
-      });
-    }
-  }]);
-
-  return _class;
-}();
-
-exports.default = _class;
-},{}],"../node_modules/waveform-playlist/lib/TimeScale.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _h = require('virtual-dom/h');
-
-var _h2 = _interopRequireDefault(_h);
-
-var _conversions = require('./utils/conversions');
-
-var _TimeScaleHook = require('./render/TimeScaleHook');
-
-var _TimeScaleHook2 = _interopRequireDefault(_TimeScaleHook);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var TimeScale = function () {
-  function TimeScale(duration, offset, samplesPerPixel, sampleRate) {
-    var marginLeft = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
-    var colors = arguments[5];
-
-    _classCallCheck(this, TimeScale);
-
-    this.duration = duration;
-    this.offset = offset;
-    this.samplesPerPixel = samplesPerPixel;
-    this.sampleRate = sampleRate;
-    this.marginLeft = marginLeft;
-    this.colors = colors;
-
-    this.timeinfo = {
-      20000: {
-        marker: 30000,
-        bigStep: 10000,
-        smallStep: 5000,
-        secondStep: 5
-      },
-      12000: {
-        marker: 15000,
-        bigStep: 5000,
-        smallStep: 1000,
-        secondStep: 1
-      },
-      10000: {
-        marker: 10000,
-        bigStep: 5000,
-        smallStep: 1000,
-        secondStep: 1
-      },
-      5000: {
-        marker: 5000,
-        bigStep: 1000,
-        smallStep: 500,
-        secondStep: 1 / 2
-      },
-      2500: {
-        marker: 2000,
-        bigStep: 1000,
-        smallStep: 500,
-        secondStep: 1 / 2
-      },
-      1500: {
-        marker: 2000,
-        bigStep: 1000,
-        smallStep: 200,
-        secondStep: 1 / 5
-      },
-      700: {
-        marker: 1000,
-        bigStep: 500,
-        smallStep: 100,
-        secondStep: 1 / 10
-      }
-    };
-  }
-
-  _createClass(TimeScale, [{
-    key: 'getScaleInfo',
-    value: function getScaleInfo(resolution) {
-      var keys = Object.keys(this.timeinfo).map(function (item) {
-        return parseInt(item, 10);
-      });
-
-      // make sure keys are numerically sorted.
-      keys = keys.sort(function (a, b) {
-        return a - b;
-      });
-
-      for (var i = 0; i < keys.length; i += 1) {
-        if (resolution <= keys[i]) {
-          return this.timeinfo[keys[i]];
-        }
-      }
-
-      return this.timeinfo[keys[0]];
-    }
-
-    /*
-      Return time in format mm:ss
-    */
-
-  }, {
-    key: 'render',
-    value: function render() {
-      var widthX = (0, _conversions.secondsToPixels)(this.duration, this.samplesPerPixel, this.sampleRate);
-      var pixPerSec = this.sampleRate / this.samplesPerPixel;
-      var pixOffset = (0, _conversions.secondsToPixels)(this.offset, this.samplesPerPixel, this.sampleRate);
-      var scaleInfo = this.getScaleInfo(this.samplesPerPixel);
-      var canvasInfo = {};
-      var timeMarkers = [];
-      var end = widthX + pixOffset;
-      var counter = 0;
-
-      for (var i = 0; i < end; i += pixPerSec * scaleInfo.secondStep) {
-        var pixIndex = Math.floor(i);
-        var pix = pixIndex - pixOffset;
-
-        if (pixIndex >= pixOffset) {
-          // put a timestamp every 30 seconds.
-          if (scaleInfo.marker && counter % scaleInfo.marker === 0) {
-            timeMarkers.push((0, _h2.default)('div.time', {
-              attributes: {
-                style: 'position: absolute; left: ' + pix + 'px;'
-              }
-            }, [TimeScale.formatTime(counter)]));
-
-            canvasInfo[pix] = 10;
-          } else if (scaleInfo.bigStep && counter % scaleInfo.bigStep === 0) {
-            canvasInfo[pix] = 5;
-          } else if (scaleInfo.smallStep && counter % scaleInfo.smallStep === 0) {
-            canvasInfo[pix] = 2;
-          }
-        }
-
-        counter += 1000 * scaleInfo.secondStep;
-      }
-
-      return (0, _h2.default)('div.playlist-time-scale', {
-        attributes: {
-          style: 'position: relative; left: 0; right: 0; margin-left: ' + this.marginLeft + 'px;'
-        }
-      }, [timeMarkers, (0, _h2.default)('canvas', {
-        attributes: {
-          width: widthX,
-          height: 30,
-          style: 'position: absolute; left: 0; right: 0; top: 0; bottom: 0;'
-        },
-        hook: new _TimeScaleHook2.default(canvasInfo, this.offset, this.samplesPerPixel, this.duration, this.colors)
-      })]);
-    }
-  }], [{
-    key: 'formatTime',
-    value: function formatTime(milliseconds) {
-      var seconds = milliseconds / 1000;
-      var s = seconds % 60;
-      var m = (seconds - s) / 60;
-
-      if (s < 10) {
-        s = '0' + s;
-      }
-
-      return m + ':' + s;
-    }
-  }]);
-
-  return TimeScale;
-}();
-
-exports.default = TimeScale;
-},{"virtual-dom/h":"../node_modules/virtual-dom/h.js","./utils/conversions":"../node_modules/waveform-playlist/lib/utils/conversions.js","./render/TimeScaleHook":"../node_modules/waveform-playlist/lib/render/TimeScaleHook.js"}],"../node_modules/lodash.forown/index.js":[function(require,module,exports) {
 /**
  * lodash (Custom Build) <https://lodash.com/>
  * Build: `lodash modularize exports="npm" -o ./`
@@ -5061,1217 +6834,3078 @@ function identity(value) {
 
 module.exports = forOwn;
 
-},{}],"../node_modules/waveform-playlist/node_modules/uuid/rng-browser.js":[function(require,module,exports) {
-var global = arguments[3];
 
-var rng;
+/***/ }),
 
-var crypto = global.crypto || global.msCrypto; // for IE 11
-if (crypto && crypto.getRandomValues) {
-  // WHATWG crypto-based RNG - http://wiki.whatwg.org/wiki/Crypto
-  // Moderately fast, high quality
-  var _rnds8 = new Uint8Array(16);
-  rng = function whatwgRNG() {
-    crypto.getRandomValues(_rnds8);
-    return _rnds8;
-  };
-}
+/***/ 372:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-if (!rng) {
-  // Math.random()-based (RNG)
-  //
-  // If all else fails, use Math.random().  It's fast, but is of unspecified
-  // quality.
-  var  _rnds = new Array(16);
-  rng = function() {
-    for (var i = 0, r; i < 16; i++) {
-      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
-      _rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
-    }
-
-    return _rnds;
-  };
-}
-
-module.exports = rng;
+"use strict";
 
 
-},{}],"../node_modules/waveform-playlist/node_modules/uuid/uuid.js":[function(require,module,exports) {
-//     uuid.js
-//
-//     Copyright (c) 2010-2012 Robert Kieffer
-//     MIT License - http://opensource.org/licenses/mit-license.php
+var isPrototype = __webpack_require__(6060);
 
-// Unique ID creation requires a high quality random # generator.  We feature
-// detect to determine the best RNG source, normalizing to a function that
-// returns 128-bits of randomness, since that's what's usually required
-var _rng = require('./rng');
+module.exports = function (value) {
+	if (typeof value !== "function") return false;
 
-// Maps for number <-> hex string conversion
-var _byteToHex = [];
-var _hexToByte = {};
-for (var i = 0; i < 256; i++) {
-  _byteToHex[i] = (i + 0x100).toString(16).substr(1);
-  _hexToByte[_byteToHex[i]] = i;
-}
+	if (!hasOwnProperty.call(value, "length")) return false;
 
-// **`parse()` - Parse a UUID into it's component bytes**
-function parse(s, buf, offset) {
-  var i = (buf && offset) || 0, ii = 0;
+	try {
+		if (typeof value.length !== "number") return false;
+		if (typeof value.call !== "function") return false;
+		if (typeof value.apply !== "function") return false;
+	} catch (error) {
+		return false;
+	}
 
-  buf = buf || [];
-  s.toLowerCase().replace(/[0-9a-f]{2}/g, function(oct) {
-    if (ii < 16) { // Don't overflow!
-      buf[i + ii++] = _hexToByte[oct];
-    }
-  });
+	return !isPrototype(value);
+};
 
-  // Zero out remaining bytes if string was short
-  while (ii < 16) {
-    buf[i + ii++] = 0;
-  }
 
-  return buf;
-}
+/***/ }),
 
-// **`unparse()` - Convert UUID byte array (ala parse()) into a string**
-function unparse(buf, offset) {
-  var i = offset || 0, bth = _byteToHex;
-  return  bth[buf[i++]] + bth[buf[i++]] +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] + '-' +
-          bth[buf[i++]] + bth[buf[i++]] +
-          bth[buf[i++]] + bth[buf[i++]] +
-          bth[buf[i++]] + bth[buf[i++]];
-}
+/***/ 3940:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-// **`v1()` - Generate time-based UUID**
-//
-// Inspired by https://github.com/LiosK/UUID.js
-// and http://docs.python.org/library/uuid.html
+"use strict";
 
-// random #'s we need to init node and clockseq
-var _seedBytes = _rng();
 
-// Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
-var _nodeId = [
-  _seedBytes[0] | 0x01,
-  _seedBytes[1], _seedBytes[2], _seedBytes[3], _seedBytes[4], _seedBytes[5]
-];
+var isValue = __webpack_require__(5618);
 
-// Per 4.2.2, randomize (14 bit) clockseq
-var _clockseq = (_seedBytes[6] << 8 | _seedBytes[7]) & 0x3fff;
+// prettier-ignore
+var possibleTypes = { "object": true, "function": true, "undefined": true /* document.all */ };
 
-// Previous uuid creation time
-var _lastMSecs = 0, _lastNSecs = 0;
+module.exports = function (value) {
+	if (!isValue(value)) return false;
+	return hasOwnProperty.call(possibleTypes, typeof value);
+};
 
-// See https://github.com/broofa/node-uuid for API details
-function v1(options, buf, offset) {
-  var i = buf && offset || 0;
-  var b = buf || [];
 
-  options = options || {};
+/***/ }),
 
-  var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq;
+/***/ 7205:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-  // UUID timestamps are 100 nano-second units since the Gregorian epoch,
-  // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
-  // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
-  // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
-  var msecs = options.msecs !== undefined ? options.msecs : new Date().getTime();
+"use strict";
 
-  // Per 4.2.1.2, use count of uuid's generated during the current clock
-  // cycle to simulate higher resolution clock
-  var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1;
 
-  // Time since last uuid creation (in msecs)
-  var dt = (msecs - _lastMSecs) + (nsecs - _lastNSecs)/10000;
+var isFunction = __webpack_require__(372);
 
-  // Per 4.2.1.2, Bump clockseq on clock regression
-  if (dt < 0 && options.clockseq === undefined) {
-    clockseq = clockseq + 1 & 0x3fff;
-  }
+var classRe = /^\s*class[\s{/}]/, functionToString = Function.prototype.toString;
 
-  // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
-  // time interval
-  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
-    nsecs = 0;
-  }
+module.exports = function (value) {
+	if (!isFunction(value)) return false;
+	if (classRe.test(functionToString.call(value))) return false;
+	return true;
+};
 
-  // Per 4.2.1.2 Throw error if too many uuids are requested
-  if (nsecs >= 10000) {
-    throw new Error('uuid.v1(): Can\'t create more than 10M uuids/sec');
-  }
 
-  _lastMSecs = msecs;
-  _lastNSecs = nsecs;
-  _clockseq = clockseq;
+/***/ }),
 
-  // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
-  msecs += 12219292800000;
+/***/ 6060:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-  // `time_low`
-  var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
-  b[i++] = tl >>> 24 & 0xff;
-  b[i++] = tl >>> 16 & 0xff;
-  b[i++] = tl >>> 8 & 0xff;
-  b[i++] = tl & 0xff;
+"use strict";
 
-  // `time_mid`
-  var tmh = (msecs / 0x100000000 * 10000) & 0xfffffff;
-  b[i++] = tmh >>> 8 & 0xff;
-  b[i++] = tmh & 0xff;
 
-  // `time_high_and_version`
-  b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
-  b[i++] = tmh >>> 16 & 0xff;
+var isObject = __webpack_require__(3940);
 
-  // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
-  b[i++] = clockseq >>> 8 | 0x80;
+module.exports = function (value) {
+	if (!isObject(value)) return false;
+	try {
+		if (!value.constructor) return false;
+		return value.constructor.prototype === value;
+	} catch (error) {
+		return false;
+	}
+};
 
-  // `clock_seq_low`
-  b[i++] = clockseq & 0xff;
 
-  // `node`
-  var node = options.node || _nodeId;
-  for (var n = 0; n < 6; n++) {
-    b[i + n] = node[n];
-  }
+/***/ }),
 
-  return buf ? buf : unparse(b);
-}
+/***/ 5618:
+/***/ ((module) => {
 
-// **`v4()` - Generate random UUID**
+"use strict";
 
-// See https://github.com/broofa/node-uuid for API details
-function v4(options, buf, offset) {
-  // Deprecated - 'format' argument, as supported in v1.2
-  var i = buf && offset || 0;
 
-  if (typeof(options) == 'string') {
-    buf = options == 'binary' ? new Array(16) : null;
-    options = null;
-  }
-  options = options || {};
+// ES3 safe
+var _undefined = void 0;
 
-  var rnds = options.random || (options.rng || _rng)();
+module.exports = function (value) { return value !== _undefined && value !== null; };
 
-  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
-  rnds[6] = (rnds[6] & 0x0f) | 0x40;
-  rnds[8] = (rnds[8] & 0x3f) | 0x80;
 
-  // Copy bytes to buffer, if provided
-  if (buf) {
-    for (var ii = 0; ii < 16; ii++) {
-      buf[i + ii] = rnds[ii];
-    }
-  }
+/***/ }),
 
-  return buf || unparse(rnds);
-}
+/***/ 4935:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-// Export public API
-var uuid = v4;
-uuid.v1 = v1;
-uuid.v4 = v4;
-uuid.parse = parse;
-uuid.unparse = unparse;
+var createElement = __webpack_require__(3513)
 
-module.exports = uuid;
+module.exports = createElement
 
-},{"./rng":"../node_modules/waveform-playlist/node_modules/uuid/rng-browser.js"}],"../node_modules/webaudio-peaks/index.js":[function(require,module,exports) {
-'use strict';
 
-//http://jsperf.com/typed-array-min-max/2
-//plain for loop for finding min/max is way faster than anything else.
-/**
-* @param {TypedArray} array - Subarray of audio to calculate peaks from.
-*/
-function findMinMax(array) {
-    var min = Infinity;
-    var max = -Infinity;
-    var i = 0;
-    var len = array.length;
-    var curr;
+/***/ }),
 
-    for(; i < len; i++) {
-        curr = array[i];
-        if (min > curr) {
-            min = curr;
+/***/ 7921:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var diff = __webpack_require__(3072)
+
+module.exports = diff
+
+
+/***/ }),
+
+/***/ 347:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var h = __webpack_require__(8744)
+
+module.exports = h
+
+
+/***/ }),
+
+/***/ 9720:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var patch = __webpack_require__(6943)
+
+module.exports = patch
+
+
+/***/ }),
+
+/***/ 6672:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var isObject = __webpack_require__(6240)
+var isHook = __webpack_require__(7265)
+
+module.exports = applyProperties
+
+function applyProperties(node, props, previous) {
+    for (var propName in props) {
+        var propValue = props[propName]
+
+        if (propValue === undefined) {
+            removeProperty(node, propName, propValue, previous);
+        } else if (isHook(propValue)) {
+            removeProperty(node, propName, propValue, previous)
+            if (propValue.hook) {
+                propValue.hook(node,
+                    propName,
+                    previous ? previous[propName] : undefined)
+            }
+        } else {
+            if (isObject(propValue)) {
+                patchObject(node, props, previous, propName, propValue);
+            } else {
+                node[propName] = propValue
+            }
         }
-        if (max < curr) {
-            max = curr;
+    }
+}
+
+function removeProperty(node, propName, propValue, previous) {
+    if (previous) {
+        var previousValue = previous[propName]
+
+        if (!isHook(previousValue)) {
+            if (propName === "attributes") {
+                for (var attrName in previousValue) {
+                    node.removeAttribute(attrName)
+                }
+            } else if (propName === "style") {
+                for (var i in previousValue) {
+                    node.style[i] = ""
+                }
+            } else if (typeof previousValue === "string") {
+                node[propName] = ""
+            } else {
+                node[propName] = null
+            }
+        } else if (previousValue.unhook) {
+            previousValue.unhook(node, propName, propValue)
+        }
+    }
+}
+
+function patchObject(node, props, previous, propName, propValue) {
+    var previousValue = previous ? previous[propName] : undefined
+
+    // Set attributes
+    if (propName === "attributes") {
+        for (var attrName in propValue) {
+            var attrValue = propValue[attrName]
+
+            if (attrValue === undefined) {
+                node.removeAttribute(attrName)
+            } else {
+                node.setAttribute(attrName, attrValue)
+            }
+        }
+
+        return
+    }
+
+    if(previousValue && isObject(previousValue) &&
+        getPrototype(previousValue) !== getPrototype(propValue)) {
+        node[propName] = propValue
+        return
+    }
+
+    if (!isObject(node[propName])) {
+        node[propName] = {}
+    }
+
+    var replacer = propName === "style" ? "" : undefined
+
+    for (var k in propValue) {
+        var value = propValue[k]
+        node[propName][k] = (value === undefined) ? replacer : value
+    }
+}
+
+function getPrototype(value) {
+    if (Object.getPrototypeOf) {
+        return Object.getPrototypeOf(value)
+    } else if (value.__proto__) {
+        return value.__proto__
+    } else if (value.constructor) {
+        return value.constructor.prototype
+    }
+}
+
+
+/***/ }),
+
+/***/ 3513:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var document = __webpack_require__(9144)
+
+var applyProperties = __webpack_require__(6672)
+
+var isVNode = __webpack_require__(5170)
+var isVText = __webpack_require__(6221)
+var isWidget = __webpack_require__(4097)
+var handleThunk = __webpack_require__(6078)
+
+module.exports = createElement
+
+function createElement(vnode, opts) {
+    var doc = opts ? opts.document || document : document
+    var warn = opts ? opts.warn : null
+
+    vnode = handleThunk(vnode).a
+
+    if (isWidget(vnode)) {
+        return vnode.init()
+    } else if (isVText(vnode)) {
+        return doc.createTextNode(vnode.text)
+    } else if (!isVNode(vnode)) {
+        if (warn) {
+            warn("Item is not a valid virtual dom node", vnode)
+        }
+        return null
+    }
+
+    var node = (vnode.namespace === null) ?
+        doc.createElement(vnode.tagName) :
+        doc.createElementNS(vnode.namespace, vnode.tagName)
+
+    var props = vnode.properties
+    applyProperties(node, props)
+
+    var children = vnode.children
+
+    for (var i = 0; i < children.length; i++) {
+        var childNode = createElement(children[i], opts)
+        if (childNode) {
+            node.appendChild(childNode)
+        }
+    }
+
+    return node
+}
+
+
+/***/ }),
+
+/***/ 8992:
+/***/ ((module) => {
+
+// Maps a virtual DOM tree onto a real DOM tree in an efficient manner.
+// We don't want to read all of the DOM nodes in the tree so we use
+// the in-order tree indexing to eliminate recursion down certain branches.
+// We only recurse into a DOM node if we know that it contains a child of
+// interest.
+
+var noChild = {}
+
+module.exports = domIndex
+
+function domIndex(rootNode, tree, indices, nodes) {
+    if (!indices || indices.length === 0) {
+        return {}
+    } else {
+        indices.sort(ascending)
+        return recurse(rootNode, tree, indices, nodes, 0)
+    }
+}
+
+function recurse(rootNode, tree, indices, nodes, rootIndex) {
+    nodes = nodes || {}
+
+
+    if (rootNode) {
+        if (indexInRange(indices, rootIndex, rootIndex)) {
+            nodes[rootIndex] = rootNode
+        }
+
+        var vChildren = tree.children
+
+        if (vChildren) {
+
+            var childNodes = rootNode.childNodes
+
+            for (var i = 0; i < tree.children.length; i++) {
+                rootIndex += 1
+
+                var vChild = vChildren[i] || noChild
+                var nextIndex = rootIndex + (vChild.count || 0)
+
+                // skip recursion down the tree if there are no nodes down here
+                if (indexInRange(indices, rootIndex, nextIndex)) {
+                    recurse(childNodes[i], vChild, indices, nodes, rootIndex)
+                }
+
+                rootIndex = nextIndex
+            }
+        }
+    }
+
+    return nodes
+}
+
+// Binary search for an index in the interval [left, right]
+function indexInRange(indices, left, right) {
+    if (indices.length === 0) {
+        return false
+    }
+
+    var minIndex = 0
+    var maxIndex = indices.length - 1
+    var currentIndex
+    var currentItem
+
+    while (minIndex <= maxIndex) {
+        currentIndex = ((maxIndex + minIndex) / 2) >> 0
+        currentItem = indices[currentIndex]
+
+        if (minIndex === maxIndex) {
+            return currentItem >= left && currentItem <= right
+        } else if (currentItem < left) {
+            minIndex = currentIndex + 1
+        } else  if (currentItem > right) {
+            maxIndex = currentIndex - 1
+        } else {
+            return true
+        }
+    }
+
+    return false;
+}
+
+function ascending(a, b) {
+    return a > b ? 1 : -1
+}
+
+
+/***/ }),
+
+/***/ 9120:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var applyProperties = __webpack_require__(6672)
+
+var isWidget = __webpack_require__(4097)
+var VPatch = __webpack_require__(8057)
+
+var updateWidget = __webpack_require__(6670)
+
+module.exports = applyPatch
+
+function applyPatch(vpatch, domNode, renderOptions) {
+    var type = vpatch.type
+    var vNode = vpatch.vNode
+    var patch = vpatch.patch
+
+    switch (type) {
+        case VPatch.REMOVE:
+            return removeNode(domNode, vNode)
+        case VPatch.INSERT:
+            return insertNode(domNode, patch, renderOptions)
+        case VPatch.VTEXT:
+            return stringPatch(domNode, vNode, patch, renderOptions)
+        case VPatch.WIDGET:
+            return widgetPatch(domNode, vNode, patch, renderOptions)
+        case VPatch.VNODE:
+            return vNodePatch(domNode, vNode, patch, renderOptions)
+        case VPatch.ORDER:
+            reorderChildren(domNode, patch)
+            return domNode
+        case VPatch.PROPS:
+            applyProperties(domNode, patch, vNode.properties)
+            return domNode
+        case VPatch.THUNK:
+            return replaceRoot(domNode,
+                renderOptions.patch(domNode, patch, renderOptions))
+        default:
+            return domNode
+    }
+}
+
+function removeNode(domNode, vNode) {
+    var parentNode = domNode.parentNode
+
+    if (parentNode) {
+        parentNode.removeChild(domNode)
+    }
+
+    destroyWidget(domNode, vNode);
+
+    return null
+}
+
+function insertNode(parentNode, vNode, renderOptions) {
+    var newNode = renderOptions.render(vNode, renderOptions)
+
+    if (parentNode) {
+        parentNode.appendChild(newNode)
+    }
+
+    return parentNode
+}
+
+function stringPatch(domNode, leftVNode, vText, renderOptions) {
+    var newNode
+
+    if (domNode.nodeType === 3) {
+        domNode.replaceData(0, domNode.length, vText.text)
+        newNode = domNode
+    } else {
+        var parentNode = domNode.parentNode
+        newNode = renderOptions.render(vText, renderOptions)
+
+        if (parentNode && newNode !== domNode) {
+            parentNode.replaceChild(newNode, domNode)
+        }
+    }
+
+    return newNode
+}
+
+function widgetPatch(domNode, leftVNode, widget, renderOptions) {
+    var updating = updateWidget(leftVNode, widget)
+    var newNode
+
+    if (updating) {
+        newNode = widget.update(leftVNode, domNode) || domNode
+    } else {
+        newNode = renderOptions.render(widget, renderOptions)
+    }
+
+    var parentNode = domNode.parentNode
+
+    if (parentNode && newNode !== domNode) {
+        parentNode.replaceChild(newNode, domNode)
+    }
+
+    if (!updating) {
+        destroyWidget(domNode, leftVNode)
+    }
+
+    return newNode
+}
+
+function vNodePatch(domNode, leftVNode, vNode, renderOptions) {
+    var parentNode = domNode.parentNode
+    var newNode = renderOptions.render(vNode, renderOptions)
+
+    if (parentNode && newNode !== domNode) {
+        parentNode.replaceChild(newNode, domNode)
+    }
+
+    return newNode
+}
+
+function destroyWidget(domNode, w) {
+    if (typeof w.destroy === "function" && isWidget(w)) {
+        w.destroy(domNode)
+    }
+}
+
+function reorderChildren(domNode, moves) {
+    var childNodes = domNode.childNodes
+    var keyMap = {}
+    var node
+    var remove
+    var insert
+
+    for (var i = 0; i < moves.removes.length; i++) {
+        remove = moves.removes[i]
+        node = childNodes[remove.from]
+        if (remove.key) {
+            keyMap[remove.key] = node
+        }
+        domNode.removeChild(node)
+    }
+
+    var length = childNodes.length
+    for (var j = 0; j < moves.inserts.length; j++) {
+        insert = moves.inserts[j]
+        node = keyMap[insert.key]
+        // this is the weirdest bug i've ever seen in webkit
+        domNode.insertBefore(node, insert.to >= length++ ? null : childNodes[insert.to])
+    }
+}
+
+function replaceRoot(oldRoot, newRoot) {
+    if (oldRoot && newRoot && oldRoot !== newRoot && oldRoot.parentNode) {
+        oldRoot.parentNode.replaceChild(newRoot, oldRoot)
+    }
+
+    return newRoot;
+}
+
+
+/***/ }),
+
+/***/ 6943:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var document = __webpack_require__(9144)
+var isArray = __webpack_require__(7362)
+
+var render = __webpack_require__(3513)
+var domIndex = __webpack_require__(8992)
+var patchOp = __webpack_require__(9120)
+module.exports = patch
+
+function patch(rootNode, patches, renderOptions) {
+    renderOptions = renderOptions || {}
+    renderOptions.patch = renderOptions.patch && renderOptions.patch !== patch
+        ? renderOptions.patch
+        : patchRecursive
+    renderOptions.render = renderOptions.render || render
+
+    return renderOptions.patch(rootNode, patches, renderOptions)
+}
+
+function patchRecursive(rootNode, patches, renderOptions) {
+    var indices = patchIndices(patches)
+
+    if (indices.length === 0) {
+        return rootNode
+    }
+
+    var index = domIndex(rootNode, patches.a, indices)
+    var ownerDocument = rootNode.ownerDocument
+
+    if (!renderOptions.document && ownerDocument !== document) {
+        renderOptions.document = ownerDocument
+    }
+
+    for (var i = 0; i < indices.length; i++) {
+        var nodeIndex = indices[i]
+        rootNode = applyPatch(rootNode,
+            index[nodeIndex],
+            patches[nodeIndex],
+            renderOptions)
+    }
+
+    return rootNode
+}
+
+function applyPatch(rootNode, domNode, patchList, renderOptions) {
+    if (!domNode) {
+        return rootNode
+    }
+
+    var newNode
+
+    if (isArray(patchList)) {
+        for (var i = 0; i < patchList.length; i++) {
+            newNode = patchOp(patchList[i], domNode, renderOptions)
+
+            if (domNode === rootNode) {
+                rootNode = newNode
+            }
+        }
+    } else {
+        newNode = patchOp(patchList, domNode, renderOptions)
+
+        if (domNode === rootNode) {
+            rootNode = newNode
+        }
+    }
+
+    return rootNode
+}
+
+function patchIndices(patches) {
+    var indices = []
+
+    for (var key in patches) {
+        if (key !== "a") {
+            indices.push(Number(key))
+        }
+    }
+
+    return indices
+}
+
+
+/***/ }),
+
+/***/ 6670:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var isWidget = __webpack_require__(4097)
+
+module.exports = updateWidget
+
+function updateWidget(a, b) {
+    if (isWidget(a) && isWidget(b)) {
+        if ("name" in a && "name" in b) {
+            return a.id === b.id
+        } else {
+            return a.init === b.init
+        }
+    }
+
+    return false
+}
+
+
+/***/ }),
+
+/***/ 6505:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var EvStore = __webpack_require__(8832);
+
+module.exports = EvHook;
+
+function EvHook(value) {
+    if (!(this instanceof EvHook)) {
+        return new EvHook(value);
+    }
+
+    this.value = value;
+}
+
+EvHook.prototype.hook = function (node, propertyName) {
+    var es = EvStore(node);
+    var propName = propertyName.substr(3);
+
+    es[propName] = this.value;
+};
+
+EvHook.prototype.unhook = function(node, propertyName) {
+    var es = EvStore(node);
+    var propName = propertyName.substr(3);
+
+    es[propName] = undefined;
+};
+
+
+/***/ }),
+
+/***/ 7199:
+/***/ ((module) => {
+
+"use strict";
+
+
+module.exports = SoftSetHook;
+
+function SoftSetHook(value) {
+    if (!(this instanceof SoftSetHook)) {
+        return new SoftSetHook(value);
+    }
+
+    this.value = value;
+}
+
+SoftSetHook.prototype.hook = function (node, propertyName) {
+    if (node[propertyName] !== this.value) {
+        node[propertyName] = this.value;
+    }
+};
+
+
+/***/ }),
+
+/***/ 8744:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var isArray = __webpack_require__(7362);
+
+var VNode = __webpack_require__(4282);
+var VText = __webpack_require__(4268);
+var isVNode = __webpack_require__(5170);
+var isVText = __webpack_require__(6221);
+var isWidget = __webpack_require__(4097);
+var isHook = __webpack_require__(7265);
+var isVThunk = __webpack_require__(6741);
+
+var parseTag = __webpack_require__(1948);
+var softSetHook = __webpack_require__(7199);
+var evHook = __webpack_require__(6505);
+
+module.exports = h;
+
+function h(tagName, properties, children) {
+    var childNodes = [];
+    var tag, props, key, namespace;
+
+    if (!children && isChildren(properties)) {
+        children = properties;
+        props = {};
+    }
+
+    props = props || properties || {};
+    tag = parseTag(tagName, props);
+
+    // support keys
+    if (props.hasOwnProperty('key')) {
+        key = props.key;
+        props.key = undefined;
+    }
+
+    // support namespace
+    if (props.hasOwnProperty('namespace')) {
+        namespace = props.namespace;
+        props.namespace = undefined;
+    }
+
+    // fix cursor bug
+    if (tag === 'INPUT' &&
+        !namespace &&
+        props.hasOwnProperty('value') &&
+        props.value !== undefined &&
+        !isHook(props.value)
+    ) {
+        props.value = softSetHook(props.value);
+    }
+
+    transformProperties(props);
+
+    if (children !== undefined && children !== null) {
+        addChild(children, childNodes, tag, props);
+    }
+
+
+    return new VNode(tag, props, childNodes, key, namespace);
+}
+
+function addChild(c, childNodes, tag, props) {
+    if (typeof c === 'string') {
+        childNodes.push(new VText(c));
+    } else if (typeof c === 'number') {
+        childNodes.push(new VText(String(c)));
+    } else if (isChild(c)) {
+        childNodes.push(c);
+    } else if (isArray(c)) {
+        for (var i = 0; i < c.length; i++) {
+            addChild(c[i], childNodes, tag, props);
+        }
+    } else if (c === null || c === undefined) {
+        return;
+    } else {
+        throw UnexpectedVirtualElement({
+            foreignObject: c,
+            parentVnode: {
+                tagName: tag,
+                properties: props
+            }
+        });
+    }
+}
+
+function transformProperties(props) {
+    for (var propName in props) {
+        if (props.hasOwnProperty(propName)) {
+            var value = props[propName];
+
+            if (isHook(value)) {
+                continue;
+            }
+
+            if (propName.substr(0, 3) === 'ev-') {
+                // add ev-foo support
+                props[propName] = evHook(value);
+            }
+        }
+    }
+}
+
+function isChild(x) {
+    return isVNode(x) || isVText(x) || isWidget(x) || isVThunk(x);
+}
+
+function isChildren(x) {
+    return typeof x === 'string' || isArray(x) || isChild(x);
+}
+
+function UnexpectedVirtualElement(data) {
+    var err = new Error();
+
+    err.type = 'virtual-hyperscript.unexpected.virtual-element';
+    err.message = 'Unexpected virtual child passed to h().\n' +
+        'Expected a VNode / Vthunk / VWidget / string but:\n' +
+        'got:\n' +
+        errorString(data.foreignObject) +
+        '.\n' +
+        'The parent vnode is:\n' +
+        errorString(data.parentVnode)
+        '\n' +
+        'Suggested fix: change your `h(..., [ ... ])` callsite.';
+    err.foreignObject = data.foreignObject;
+    err.parentVnode = data.parentVnode;
+
+    return err;
+}
+
+function errorString(obj) {
+    try {
+        return JSON.stringify(obj, null, '    ');
+    } catch (e) {
+        return String(obj);
+    }
+}
+
+
+/***/ }),
+
+/***/ 1948:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+var split = __webpack_require__(6824);
+
+var classIdSplit = /([\.#]?[a-zA-Z0-9\u007F-\uFFFF_:-]+)/;
+var notClassId = /^\.|#/;
+
+module.exports = parseTag;
+
+function parseTag(tag, props) {
+    if (!tag) {
+        return 'DIV';
+    }
+
+    var noId = !(props.hasOwnProperty('id'));
+
+    var tagParts = split(tag, classIdSplit);
+    var tagName = null;
+
+    if (notClassId.test(tagParts[1])) {
+        tagName = 'DIV';
+    }
+
+    var classes, part, type, i;
+
+    for (i = 0; i < tagParts.length; i++) {
+        part = tagParts[i];
+
+        if (!part) {
+            continue;
+        }
+
+        type = part.charAt(0);
+
+        if (!tagName) {
+            tagName = part;
+        } else if (type === '.') {
+            classes = classes || [];
+            classes.push(part.substring(1, part.length));
+        } else if (type === '#' && noId) {
+            props.id = part.substring(1, part.length);
+        }
+    }
+
+    if (classes) {
+        if (props.className) {
+            classes.push(props.className);
+        }
+
+        props.className = classes.join(' ');
+    }
+
+    return props.namespace ? tagName : tagName.toUpperCase();
+}
+
+
+/***/ }),
+
+/***/ 6078:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var isVNode = __webpack_require__(5170)
+var isVText = __webpack_require__(6221)
+var isWidget = __webpack_require__(4097)
+var isThunk = __webpack_require__(6741)
+
+module.exports = handleThunk
+
+function handleThunk(a, b) {
+    var renderedA = a
+    var renderedB = b
+
+    if (isThunk(b)) {
+        renderedB = renderThunk(b, a)
+    }
+
+    if (isThunk(a)) {
+        renderedA = renderThunk(a, null)
+    }
+
+    return {
+        a: renderedA,
+        b: renderedB
+    }
+}
+
+function renderThunk(thunk, previous) {
+    var renderedThunk = thunk.vnode
+
+    if (!renderedThunk) {
+        renderedThunk = thunk.vnode = thunk.render(previous)
+    }
+
+    if (!(isVNode(renderedThunk) ||
+            isVText(renderedThunk) ||
+            isWidget(renderedThunk))) {
+        throw new Error("thunk did not return a valid node");
+    }
+
+    return renderedThunk
+}
+
+
+/***/ }),
+
+/***/ 6741:
+/***/ ((module) => {
+
+module.exports = isThunk
+
+function isThunk(t) {
+    return t && t.type === "Thunk"
+}
+
+
+/***/ }),
+
+/***/ 7265:
+/***/ ((module) => {
+
+module.exports = isHook
+
+function isHook(hook) {
+    return hook &&
+      (typeof hook.hook === "function" && !hook.hasOwnProperty("hook") ||
+       typeof hook.unhook === "function" && !hook.hasOwnProperty("unhook"))
+}
+
+
+/***/ }),
+
+/***/ 5170:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var version = __webpack_require__(9962)
+
+module.exports = isVirtualNode
+
+function isVirtualNode(x) {
+    return x && x.type === "VirtualNode" && x.version === version
+}
+
+
+/***/ }),
+
+/***/ 6221:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var version = __webpack_require__(9962)
+
+module.exports = isVirtualText
+
+function isVirtualText(x) {
+    return x && x.type === "VirtualText" && x.version === version
+}
+
+
+/***/ }),
+
+/***/ 4097:
+/***/ ((module) => {
+
+module.exports = isWidget
+
+function isWidget(w) {
+    return w && w.type === "Widget"
+}
+
+
+/***/ }),
+
+/***/ 9962:
+/***/ ((module) => {
+
+module.exports = "2"
+
+
+/***/ }),
+
+/***/ 4282:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var version = __webpack_require__(9962)
+var isVNode = __webpack_require__(5170)
+var isWidget = __webpack_require__(4097)
+var isThunk = __webpack_require__(6741)
+var isVHook = __webpack_require__(7265)
+
+module.exports = VirtualNode
+
+var noProperties = {}
+var noChildren = []
+
+function VirtualNode(tagName, properties, children, key, namespace) {
+    this.tagName = tagName
+    this.properties = properties || noProperties
+    this.children = children || noChildren
+    this.key = key != null ? String(key) : undefined
+    this.namespace = (typeof namespace === "string") ? namespace : null
+
+    var count = (children && children.length) || 0
+    var descendants = 0
+    var hasWidgets = false
+    var hasThunks = false
+    var descendantHooks = false
+    var hooks
+
+    for (var propName in properties) {
+        if (properties.hasOwnProperty(propName)) {
+            var property = properties[propName]
+            if (isVHook(property) && property.unhook) {
+                if (!hooks) {
+                    hooks = {}
+                }
+
+                hooks[propName] = property
+            }
+        }
+    }
+
+    for (var i = 0; i < count; i++) {
+        var child = children[i]
+        if (isVNode(child)) {
+            descendants += child.count || 0
+
+            if (!hasWidgets && child.hasWidgets) {
+                hasWidgets = true
+            }
+
+            if (!hasThunks && child.hasThunks) {
+                hasThunks = true
+            }
+
+            if (!descendantHooks && (child.hooks || child.descendantHooks)) {
+                descendantHooks = true
+            }
+        } else if (!hasWidgets && isWidget(child)) {
+            if (typeof child.destroy === "function") {
+                hasWidgets = true
+            }
+        } else if (!hasThunks && isThunk(child)) {
+            hasThunks = true;
+        }
+    }
+
+    this.count = count + descendants
+    this.hasWidgets = hasWidgets
+    this.hasThunks = hasThunks
+    this.hooks = hooks
+    this.descendantHooks = descendantHooks
+}
+
+VirtualNode.prototype.version = version
+VirtualNode.prototype.type = "VirtualNode"
+
+
+/***/ }),
+
+/***/ 8057:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var version = __webpack_require__(9962)
+
+VirtualPatch.NONE = 0
+VirtualPatch.VTEXT = 1
+VirtualPatch.VNODE = 2
+VirtualPatch.WIDGET = 3
+VirtualPatch.PROPS = 4
+VirtualPatch.ORDER = 5
+VirtualPatch.INSERT = 6
+VirtualPatch.REMOVE = 7
+VirtualPatch.THUNK = 8
+
+module.exports = VirtualPatch
+
+function VirtualPatch(type, vNode, patch) {
+    this.type = Number(type)
+    this.vNode = vNode
+    this.patch = patch
+}
+
+VirtualPatch.prototype.version = version
+VirtualPatch.prototype.type = "VirtualPatch"
+
+
+/***/ }),
+
+/***/ 4268:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var version = __webpack_require__(9962)
+
+module.exports = VirtualText
+
+function VirtualText(text) {
+    this.text = String(text)
+}
+
+VirtualText.prototype.version = version
+VirtualText.prototype.type = "VirtualText"
+
+
+/***/ }),
+
+/***/ 9973:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var isObject = __webpack_require__(6240)
+var isHook = __webpack_require__(7265)
+
+module.exports = diffProps
+
+function diffProps(a, b) {
+    var diff
+
+    for (var aKey in a) {
+        if (!(aKey in b)) {
+            diff = diff || {}
+            diff[aKey] = undefined
+        }
+
+        var aValue = a[aKey]
+        var bValue = b[aKey]
+
+        if (aValue === bValue) {
+            continue
+        } else if (isObject(aValue) && isObject(bValue)) {
+            if (getPrototype(bValue) !== getPrototype(aValue)) {
+                diff = diff || {}
+                diff[aKey] = bValue
+            } else if (isHook(bValue)) {
+                 diff = diff || {}
+                 diff[aKey] = bValue
+            } else {
+                var objectDiff = diffProps(aValue, bValue)
+                if (objectDiff) {
+                    diff = diff || {}
+                    diff[aKey] = objectDiff
+                }
+            }
+        } else {
+            diff = diff || {}
+            diff[aKey] = bValue
+        }
+    }
+
+    for (var bKey in b) {
+        if (!(bKey in a)) {
+            diff = diff || {}
+            diff[bKey] = b[bKey]
+        }
+    }
+
+    return diff
+}
+
+function getPrototype(value) {
+  if (Object.getPrototypeOf) {
+    return Object.getPrototypeOf(value)
+  } else if (value.__proto__) {
+    return value.__proto__
+  } else if (value.constructor) {
+    return value.constructor.prototype
+  }
+}
+
+
+/***/ }),
+
+/***/ 3072:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var isArray = __webpack_require__(7362)
+
+var VPatch = __webpack_require__(8057)
+var isVNode = __webpack_require__(5170)
+var isVText = __webpack_require__(6221)
+var isWidget = __webpack_require__(4097)
+var isThunk = __webpack_require__(6741)
+var handleThunk = __webpack_require__(6078)
+
+var diffProps = __webpack_require__(9973)
+
+module.exports = diff
+
+function diff(a, b) {
+    var patch = { a: a }
+    walk(a, b, patch, 0)
+    return patch
+}
+
+function walk(a, b, patch, index) {
+    if (a === b) {
+        return
+    }
+
+    var apply = patch[index]
+    var applyClear = false
+
+    if (isThunk(a) || isThunk(b)) {
+        thunks(a, b, patch, index)
+    } else if (b == null) {
+
+        // If a is a widget we will add a remove patch for it
+        // Otherwise any child widgets/hooks must be destroyed.
+        // This prevents adding two remove patches for a widget.
+        if (!isWidget(a)) {
+            clearState(a, patch, index)
+            apply = patch[index]
+        }
+
+        apply = appendPatch(apply, new VPatch(VPatch.REMOVE, a, b))
+    } else if (isVNode(b)) {
+        if (isVNode(a)) {
+            if (a.tagName === b.tagName &&
+                a.namespace === b.namespace &&
+                a.key === b.key) {
+                var propsPatch = diffProps(a.properties, b.properties)
+                if (propsPatch) {
+                    apply = appendPatch(apply,
+                        new VPatch(VPatch.PROPS, a, propsPatch))
+                }
+                apply = diffChildren(a, b, patch, apply, index)
+            } else {
+                apply = appendPatch(apply, new VPatch(VPatch.VNODE, a, b))
+                applyClear = true
+            }
+        } else {
+            apply = appendPatch(apply, new VPatch(VPatch.VNODE, a, b))
+            applyClear = true
+        }
+    } else if (isVText(b)) {
+        if (!isVText(a)) {
+            apply = appendPatch(apply, new VPatch(VPatch.VTEXT, a, b))
+            applyClear = true
+        } else if (a.text !== b.text) {
+            apply = appendPatch(apply, new VPatch(VPatch.VTEXT, a, b))
+        }
+    } else if (isWidget(b)) {
+        if (!isWidget(a)) {
+            applyClear = true
+        }
+
+        apply = appendPatch(apply, new VPatch(VPatch.WIDGET, a, b))
+    }
+
+    if (apply) {
+        patch[index] = apply
+    }
+
+    if (applyClear) {
+        clearState(a, patch, index)
+    }
+}
+
+function diffChildren(a, b, patch, apply, index) {
+    var aChildren = a.children
+    var orderedSet = reorder(aChildren, b.children)
+    var bChildren = orderedSet.children
+
+    var aLen = aChildren.length
+    var bLen = bChildren.length
+    var len = aLen > bLen ? aLen : bLen
+
+    for (var i = 0; i < len; i++) {
+        var leftNode = aChildren[i]
+        var rightNode = bChildren[i]
+        index += 1
+
+        if (!leftNode) {
+            if (rightNode) {
+                // Excess nodes in b need to be added
+                apply = appendPatch(apply,
+                    new VPatch(VPatch.INSERT, null, rightNode))
+            }
+        } else {
+            walk(leftNode, rightNode, patch, index)
+        }
+
+        if (isVNode(leftNode) && leftNode.count) {
+            index += leftNode.count
+        }
+    }
+
+    if (orderedSet.moves) {
+        // Reorder nodes last
+        apply = appendPatch(apply, new VPatch(
+            VPatch.ORDER,
+            a,
+            orderedSet.moves
+        ))
+    }
+
+    return apply
+}
+
+function clearState(vNode, patch, index) {
+    // TODO: Make this a single walk, not two
+    unhook(vNode, patch, index)
+    destroyWidgets(vNode, patch, index)
+}
+
+// Patch records for all destroyed widgets must be added because we need
+// a DOM node reference for the destroy function
+function destroyWidgets(vNode, patch, index) {
+    if (isWidget(vNode)) {
+        if (typeof vNode.destroy === "function") {
+            patch[index] = appendPatch(
+                patch[index],
+                new VPatch(VPatch.REMOVE, vNode, null)
+            )
+        }
+    } else if (isVNode(vNode) && (vNode.hasWidgets || vNode.hasThunks)) {
+        var children = vNode.children
+        var len = children.length
+        for (var i = 0; i < len; i++) {
+            var child = children[i]
+            index += 1
+
+            destroyWidgets(child, patch, index)
+
+            if (isVNode(child) && child.count) {
+                index += child.count
+            }
+        }
+    } else if (isThunk(vNode)) {
+        thunks(vNode, null, patch, index)
+    }
+}
+
+// Create a sub-patch for thunks
+function thunks(a, b, patch, index) {
+    var nodes = handleThunk(a, b)
+    var thunkPatch = diff(nodes.a, nodes.b)
+    if (hasPatches(thunkPatch)) {
+        patch[index] = new VPatch(VPatch.THUNK, null, thunkPatch)
+    }
+}
+
+function hasPatches(patch) {
+    for (var index in patch) {
+        if (index !== "a") {
+            return true
+        }
+    }
+
+    return false
+}
+
+// Execute hooks when two nodes are identical
+function unhook(vNode, patch, index) {
+    if (isVNode(vNode)) {
+        if (vNode.hooks) {
+            patch[index] = appendPatch(
+                patch[index],
+                new VPatch(
+                    VPatch.PROPS,
+                    vNode,
+                    undefinedKeys(vNode.hooks)
+                )
+            )
+        }
+
+        if (vNode.descendantHooks || vNode.hasThunks) {
+            var children = vNode.children
+            var len = children.length
+            for (var i = 0; i < len; i++) {
+                var child = children[i]
+                index += 1
+
+                unhook(child, patch, index)
+
+                if (isVNode(child) && child.count) {
+                    index += child.count
+                }
+            }
+        }
+    } else if (isThunk(vNode)) {
+        thunks(vNode, null, patch, index)
+    }
+}
+
+function undefinedKeys(obj) {
+    var result = {}
+
+    for (var key in obj) {
+        result[key] = undefined
+    }
+
+    return result
+}
+
+// List diff, naive left to right reordering
+function reorder(aChildren, bChildren) {
+    // O(M) time, O(M) memory
+    var bChildIndex = keyIndex(bChildren)
+    var bKeys = bChildIndex.keys
+    var bFree = bChildIndex.free
+
+    if (bFree.length === bChildren.length) {
+        return {
+            children: bChildren,
+            moves: null
+        }
+    }
+
+    // O(N) time, O(N) memory
+    var aChildIndex = keyIndex(aChildren)
+    var aKeys = aChildIndex.keys
+    var aFree = aChildIndex.free
+
+    if (aFree.length === aChildren.length) {
+        return {
+            children: bChildren,
+            moves: null
+        }
+    }
+
+    // O(MAX(N, M)) memory
+    var newChildren = []
+
+    var freeIndex = 0
+    var freeCount = bFree.length
+    var deletedItems = 0
+
+    // Iterate through a and match a node in b
+    // O(N) time,
+    for (var i = 0 ; i < aChildren.length; i++) {
+        var aItem = aChildren[i]
+        var itemIndex
+
+        if (aItem.key) {
+            if (bKeys.hasOwnProperty(aItem.key)) {
+                // Match up the old keys
+                itemIndex = bKeys[aItem.key]
+                newChildren.push(bChildren[itemIndex])
+
+            } else {
+                // Remove old keyed items
+                itemIndex = i - deletedItems++
+                newChildren.push(null)
+            }
+        } else {
+            // Match the item in a with the next free item in b
+            if (freeIndex < freeCount) {
+                itemIndex = bFree[freeIndex++]
+                newChildren.push(bChildren[itemIndex])
+            } else {
+                // There are no free items in b to match with
+                // the free items in a, so the extra free nodes
+                // are deleted.
+                itemIndex = i - deletedItems++
+                newChildren.push(null)
+            }
+        }
+    }
+
+    var lastFreeIndex = freeIndex >= bFree.length ?
+        bChildren.length :
+        bFree[freeIndex]
+
+    // Iterate through b and append any new keys
+    // O(M) time
+    for (var j = 0; j < bChildren.length; j++) {
+        var newItem = bChildren[j]
+
+        if (newItem.key) {
+            if (!aKeys.hasOwnProperty(newItem.key)) {
+                // Add any new keyed items
+                // We are adding new items to the end and then sorting them
+                // in place. In future we should insert new items in place.
+                newChildren.push(newItem)
+            }
+        } else if (j >= lastFreeIndex) {
+            // Add any leftover non-keyed items
+            newChildren.push(newItem)
+        }
+    }
+
+    var simulate = newChildren.slice()
+    var simulateIndex = 0
+    var removes = []
+    var inserts = []
+    var simulateItem
+
+    for (var k = 0; k < bChildren.length;) {
+        var wantedItem = bChildren[k]
+        simulateItem = simulate[simulateIndex]
+
+        // remove items
+        while (simulateItem === null && simulate.length) {
+            removes.push(remove(simulate, simulateIndex, null))
+            simulateItem = simulate[simulateIndex]
+        }
+
+        if (!simulateItem || simulateItem.key !== wantedItem.key) {
+            // if we need a key in this position...
+            if (wantedItem.key) {
+                if (simulateItem && simulateItem.key) {
+                    // if an insert doesn't put this key in place, it needs to move
+                    if (bKeys[simulateItem.key] !== k + 1) {
+                        removes.push(remove(simulate, simulateIndex, simulateItem.key))
+                        simulateItem = simulate[simulateIndex]
+                        // if the remove didn't put the wanted item in place, we need to insert it
+                        if (!simulateItem || simulateItem.key !== wantedItem.key) {
+                            inserts.push({key: wantedItem.key, to: k})
+                        }
+                        // items are matching, so skip ahead
+                        else {
+                            simulateIndex++
+                        }
+                    }
+                    else {
+                        inserts.push({key: wantedItem.key, to: k})
+                    }
+                }
+                else {
+                    inserts.push({key: wantedItem.key, to: k})
+                }
+                k++
+            }
+            // a key in simulate has no matching wanted key, remove it
+            else if (simulateItem && simulateItem.key) {
+                removes.push(remove(simulate, simulateIndex, simulateItem.key))
+            }
+        }
+        else {
+            simulateIndex++
+            k++
+        }
+    }
+
+    // remove all the remaining nodes from simulate
+    while(simulateIndex < simulate.length) {
+        simulateItem = simulate[simulateIndex]
+        removes.push(remove(simulate, simulateIndex, simulateItem && simulateItem.key))
+    }
+
+    // If the only moves we have are deletes then we can just
+    // let the delete patch remove these items.
+    if (removes.length === deletedItems && !inserts.length) {
+        return {
+            children: newChildren,
+            moves: null
         }
     }
 
     return {
-        min: min,
-        max: max
-    };
+        children: newChildren,
+        moves: {
+            removes: removes,
+            inserts: inserts
+        }
+    }
 }
 
-/**
-* @param {Number} n - peak to convert from float to Int8, Int16 etc.
-* @param {Number} bits - convert to #bits two's complement signed integer
-*/
-function convert(n, bits) {
-    var max = Math.pow(2, bits-1);
-    var v = n < 0 ? n * max : n * max - 1;
-    return Math.max(-max, Math.min(max-1, v));
+function remove(arr, index, key) {
+    arr.splice(index, 1)
+
+    return {
+        from: index,
+        key: key
+    }
 }
 
-/**
-* @param {TypedArray} channel - Audio track frames to calculate peaks from.
-* @param {Number} samplesPerPixel - Audio frames per peak
-*/
-function extractPeaks(channel, samplesPerPixel, bits) {
-    var i;
-    var chanLength = channel.length;
-    var numPeaks = Math.ceil(chanLength / samplesPerPixel);
-    var start;
-    var end;
-    var segment;
-    var max; 
-    var min;
-    var extrema;
+function keyIndex(children) {
+    var keys = {}
+    var free = []
+    var length = children.length
 
-    //create interleaved array of min,max
-    var peaks = new (new Function(`return Int${bits}Array`)())(numPeaks*2);
+    for (var i = 0; i < length; i++) {
+        var child = children[i]
 
-    for (i = 0; i < numPeaks; i++) {
-
-        start = i * samplesPerPixel;
-        end = (i + 1) * samplesPerPixel > chanLength ? chanLength : (i + 1) * samplesPerPixel;
-
-        segment = channel.subarray(start, end);
-        extrema = findMinMax(segment);
-        min = convert(extrema.min, bits);
-        max = convert(extrema.max, bits);
-
-        peaks[i*2] = min;
-        peaks[i*2+1] = max;
+        if (child.key) {
+            keys[child.key] = i
+        } else {
+            free.push(i)
+        }
     }
 
-    return peaks;
+    return {
+        keys: keys,     // A hash of key name to index
+        free: free      // An array of unkeyed item indices
+    }
+}
+
+function appendPatch(apply, patch) {
+    if (apply) {
+        if (isArray(apply)) {
+            apply.push(patch)
+        } else {
+            apply = [apply, patch]
+        }
+
+        return apply
+    } else {
+        return patch
+    }
+}
+
+
+/***/ }),
+
+/***/ 4991:
+/***/ ((module) => {
+
+"use strict";
+
+
+/**
+ * @param {TypedArray} array - Subarray of audio to calculate peaks from.
+ */
+function findMinMax(array) {
+  var min = Infinity;
+  var max = -Infinity;
+  var i = 0;
+  var len = array.length;
+  var curr;
+
+  for (; i < len; i++) {
+    curr = array[i];
+    if (min > curr) {
+      min = curr;
+    }
+    if (max < curr) {
+      max = curr;
+    }
+  }
+
+  return {
+    min: min,
+    max: max
+  };
+}
+
+/**
+ * @param {Number} n - peak to convert from float to Int8, Int16 etc.
+ * @param {Number} bits - convert to #bits two's complement signed integer
+ */
+function convert(n, bits) {
+  var max = Math.pow(2, bits - 1);
+  var v = n < 0 ? n * max : n * (max - 1);
+  return Math.max(-max, Math.min(max - 1, v));
+}
+
+/**
+ * @param {TypedArray} channel - Audio track frames to calculate peaks from.
+ * @param {Number} samplesPerPixel - Audio frames per peak
+ */
+function extractPeaks(channel, samplesPerPixel, bits) {
+  var i;
+  var chanLength = channel.length;
+  var numPeaks = Math.ceil(chanLength / samplesPerPixel);
+  var start;
+  var end;
+  var segment;
+  var max;
+  var min;
+  var extrema;
+
+  //create interleaved array of min,max
+  var peaks = makeTypedArray(bits, numPeaks * 2);
+
+  for (i = 0; i < numPeaks; i++) {
+    start = i * samplesPerPixel;
+    end =
+      (i + 1) * samplesPerPixel > chanLength
+        ? chanLength
+        : (i + 1) * samplesPerPixel;
+
+    segment = channel.subarray(start, end);
+    extrema = findMinMax(segment);
+    min = convert(extrema.min, bits);
+    max = convert(extrema.max, bits);
+
+    peaks[i * 2] = min;
+    peaks[i * 2 + 1] = max;
+  }
+
+  return peaks;
+}
+
+function makeTypedArray(bits, length) {
+  return new (new Function(`return Int${bits}Array`)())(length);
 }
 
 function makeMono(channelPeaks, bits) {
-    var numChan = channelPeaks.length;
-    var weight = 1 / numChan;
-    var numPeaks = channelPeaks[0].length / 2;
-    var c = 0;
-    var i = 0;
-    var min;
-    var max;
-    var peaks = new (new Function(`return Int${bits}Array`)())(numPeaks*2);
-    
+  var numChan = channelPeaks.length;
+  var weight = 1 / numChan;
+  var numPeaks = channelPeaks[0].length / 2;
+  var c = 0;
+  var i = 0;
+  var min;
+  var max;
+  var peaks = makeTypedArray(bits, numPeaks * 2);
 
-    for (i = 0; i < numPeaks; i++) {
-        min = 0;
-        max = 0;
+  for (i = 0; i < numPeaks; i++) {
+    min = 0;
+    max = 0;
 
-        for (c = 0; c < numChan; c++) {
-            min += weight * channelPeaks[c][i*2];
-            max += weight * channelPeaks[c][i*2+1];
-        }
-
-        peaks[i*2] = min;
-        peaks[i*2+1] = max;
+    for (c = 0; c < numChan; c++) {
+      min += weight * channelPeaks[c][i * 2];
+      max += weight * channelPeaks[c][i * 2 + 1];
     }
 
-    //return in array so channel number counts still work.
-    return [peaks];
+    peaks[i * 2] = min;
+    peaks[i * 2 + 1] = max;
+  }
+
+  //return in array so channel number counts still work.
+  return [peaks];
+}
+
+function defaultNumber(value, defaultNumber) {
+  if (typeof value === "number") {
+    return value;
+  } else {
+    return defaultNumber;
+  }
 }
 
 /**
-* @param {AudioBuffer,TypedArray} source - Source of audio samples for peak calculations.
-* @param {Number} samplesPerPixel - Number of audio samples per peak.
-* @param {Number} cueIn - index in channel to start peak calculations from.
-* @param {Number} cueOut - index in channel to end peak calculations from (non-inclusive).
-*/
-module.exports = function(source, samplesPerPixel, isMono, cueIn, cueOut, bits) {
-    samplesPerPixel = samplesPerPixel || 10000;
-    bits = bits || 8;
-    
-    if (isMono === null || isMono === undefined) {
-        isMono = true;
+ * @param {AudioBuffer,TypedArray} source - Source of audio samples for peak calculations.
+ * @param {Number} samplesPerPixel - Number of audio samples per peak.
+ * @param {Boolean} isMono - Whether to render the channels to a single array.
+ * @param {Number} cueIn - index in channel to start peak calculations from.
+ * @param {Number} cueOut - index in channel to end peak calculations from (non-inclusive).
+ * @param {Number} bits - number of bits for a peak.
+ */
+module.exports = function (
+  source,
+  samplesPerPixel,
+  isMono,
+  cueIn,
+  cueOut,
+  bits
+) {
+  samplesPerPixel = defaultNumber(samplesPerPixel, 1000);
+  bits = defaultNumber(bits, 16);
+
+  if (isMono === null || isMono === undefined) {
+    isMono = true;
+  }
+
+  if ([8, 16, 32].indexOf(bits) < 0) {
+    throw new Error("Invalid number of bits specified for peaks.");
+  }
+
+  var numChan = source.numberOfChannels;
+  var peaks = [];
+  var c;
+  var numPeaks;
+  var channel;
+  var slice;
+
+  cueIn = defaultNumber(cueIn, 0);
+  cueOut = defaultNumber(cueOut, source.length);
+
+  if (typeof source.subarray === "undefined") {
+    for (c = 0; c < numChan; c++) {
+      channel = source.getChannelData(c);
+      slice = channel.subarray(cueIn, cueOut);
+      peaks.push(extractPeaks(slice, samplesPerPixel, bits));
     }
+  } else {
+    peaks.push(
+      extractPeaks(source.subarray(cueIn, cueOut), samplesPerPixel, bits)
+    );
+  }
 
-    if ([8, 16, 32].indexOf(bits) < 0) {
-        throw new Error("Invalid number of bits specified for peaks.");
-    }
+  if (isMono && peaks.length > 1) {
+    peaks = makeMono(peaks, bits);
+  }
 
-    var numChan = source.numberOfChannels;
-    var peaks = [];
-    var c;
-    var numPeaks;
-    var channel;
-    var slice;
+  numPeaks = peaks[0].length / 2;
 
-    if (typeof source.subarray === "undefined") {
-        for (c = 0; c < numChan; c++) {
-            channel = source.getChannelData(c);
-            cueIn = cueIn || 0;
-            cueOut = cueOut || channel.length;
-            slice = channel.subarray(cueIn, cueOut);
-            peaks.push(extractPeaks(slice, samplesPerPixel, bits));
-        }
-    }
-    else {
-        cueIn = cueIn || 0;
-        cueOut = cueOut || source.length;
-        peaks.push(extractPeaks(source.subarray(cueIn, cueOut), samplesPerPixel, bits));
-    }
-
-    if (isMono && peaks.length > 1) {
-        peaks = makeMono(peaks, bits);
-    }
-
-    numPeaks = peaks[0].length / 2;
-
-    return {
-        length: numPeaks,
-        data: peaks,
-        bits: bits
-    };
+  return {
+    length: numPeaks,
+    data: peaks,
+    bits: bits
+  };
 };
-},{}],"../node_modules/fade-curves/index.js":[function(require,module,exports) {
-'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-    value: true
+
+/***/ }),
+
+/***/ 7362:
+/***/ ((module) => {
+
+var nativeIsArray = Array.isArray
+var toString = Object.prototype.toString
+
+module.exports = nativeIsArray || isArray
+
+function isArray(obj) {
+    return toString.call(obj) === "[object Array]"
+}
+
+
+/***/ }),
+
+/***/ 5893:
+/***/ (() => {
+
+/* (ignored) */
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			id: moduleId,
+/******/ 			loaded: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Flag the module as loaded
+/******/ 		module.loaded = true;
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/compat get default export */
+/******/ 	(() => {
+/******/ 		// getDefaultExport function for compatibility with non-harmony modules
+/******/ 		__webpack_require__.n = (module) => {
+/******/ 			var getter = module && module.__esModule ?
+/******/ 				() => (module['default']) :
+/******/ 				() => (module);
+/******/ 			__webpack_require__.d(getter, { a: getter });
+/******/ 			return getter;
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/global */
+/******/ 	(() => {
+/******/ 		__webpack_require__.g = (function() {
+/******/ 			if (typeof globalThis === 'object') return globalThis;
+/******/ 			try {
+/******/ 				return this || new Function('return this')();
+/******/ 			} catch (e) {
+/******/ 				if (typeof window === 'object') return window;
+/******/ 			}
+/******/ 		})();
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/node module decorator */
+/******/ 	(() => {
+/******/ 		__webpack_require__.nmd = (module) => {
+/******/ 			module.paths = [];
+/******/ 			if (!module.children) module.children = [];
+/******/ 			return module;
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be in strict mode.
+(() => {
+"use strict";
+// ESM COMPAT FLAG
+__webpack_require__.r(__webpack_exports__);
+
+// EXPORTS
+__webpack_require__.d(__webpack_exports__, {
+  "default": () => (/* binding */ app),
+  "init": () => (/* binding */ init)
 });
-exports.linear = linear;
-exports.exponential = exponential;
-exports.sCurve = sCurve;
-exports.logarithmic = logarithmic;
-function linear(length, rotation) {
-    var curve = new Float32Array(length),
-        i,
-        x,
-        scale = length - 1;
 
-    for (i = 0; i < length; i++) {
-        x = i / scale;
+// EXTERNAL MODULE: ./node_modules/lodash.defaultsdeep/index.js
+var lodash_defaultsdeep = __webpack_require__(2098);
+var lodash_defaultsdeep_default = /*#__PURE__*/__webpack_require__.n(lodash_defaultsdeep);
+// EXTERNAL MODULE: ./node_modules/virtual-dom/create-element.js
+var create_element = __webpack_require__(4935);
+var create_element_default = /*#__PURE__*/__webpack_require__.n(create_element);
+// EXTERNAL MODULE: ./node_modules/event-emitter/index.js
+var event_emitter = __webpack_require__(8370);
+var event_emitter_default = /*#__PURE__*/__webpack_require__.n(event_emitter);
+// EXTERNAL MODULE: ./node_modules/virtual-dom/h.js
+var h = __webpack_require__(347);
+var h_default = /*#__PURE__*/__webpack_require__.n(h);
+// EXTERNAL MODULE: ./node_modules/virtual-dom/diff.js
+var diff = __webpack_require__(7921);
+var diff_default = /*#__PURE__*/__webpack_require__.n(diff);
+// EXTERNAL MODULE: ./node_modules/virtual-dom/patch.js
+var patch = __webpack_require__(9720);
+var patch_default = /*#__PURE__*/__webpack_require__.n(patch);
+// EXTERNAL MODULE: ./node_modules/inline-worker/index.js
+var inline_worker = __webpack_require__(849);
+var inline_worker_default = /*#__PURE__*/__webpack_require__.n(inline_worker);
+;// CONCATENATED MODULE: ./src/utils/conversions.js
+function samplesToSeconds(samples, sampleRate) {
+  return samples / sampleRate;
+}
 
-        if (rotation > 0) {
-            curve[i] = x;
-        } else {
-            curve[i] = 1 - x;
+function secondsToSamples(seconds, sampleRate) {
+  return Math.ceil(seconds * sampleRate);
+}
+
+function samplesToPixels(samples, resolution) {
+  return Math.floor(samples / resolution);
+}
+
+function pixelsToSamples(pixels, resolution) {
+  return Math.floor(pixels * resolution);
+}
+
+function pixelsToSeconds(pixels, resolution, sampleRate) {
+  return (pixels * resolution) / sampleRate;
+}
+
+function secondsToPixels(seconds, resolution, sampleRate) {
+  return Math.ceil((seconds * sampleRate) / resolution);
+}
+
+;// CONCATENATED MODULE: ./src/utils/audioData.js
+function resampleAudioBuffer(audioBuffer, targetSampleRate) {
+  // `ceil` is needed because `length` must be in integer greater than 0 and
+  // resampling a single sample to a lower sample rate will yield a value value < 1.
+  const length = Math.ceil(audioBuffer.duration * targetSampleRate);
+  const ac = new OfflineAudioContext(audioBuffer.numberOfChannels, length, targetSampleRate);
+  const src = ac.createBufferSource();
+  src.buffer = audioBuffer;
+  src.connect(ac.destination);
+  src.start();
+  return ac.startRendering();
+}
+
+;// CONCATENATED MODULE: ./src/track/loader/Loader.js
+
+
+const STATE_UNINITIALIZED = 0;
+const STATE_LOADING = 1;
+const STATE_DECODING = 2;
+const STATE_FINISHED = 3;
+
+/* harmony default export */ const Loader = (class {
+  constructor(src, audioContext, ee = event_emitter_default()()) {
+    this.src = src;
+    this.ac = audioContext;
+    this.audioRequestState = STATE_UNINITIALIZED;
+    this.ee = ee;
+  }
+
+  setStateChange(state) {
+    this.audioRequestState = state;
+    this.ee.emit("audiorequeststatechange", this.audioRequestState, this.src);
+  }
+
+  fileProgress(e) {
+    let percentComplete = 0;
+
+    if (this.audioRequestState === STATE_UNINITIALIZED) {
+      this.setStateChange(STATE_LOADING);
+    }
+
+    if (e.lengthComputable) {
+      percentComplete = (e.loaded / e.total) * 100;
+    }
+
+    this.ee.emit("loadprogress", percentComplete, this.src);
+  }
+
+  fileLoad(e) {
+    const audioData = e.target.response || e.target.result;
+
+    this.setStateChange(STATE_DECODING);
+
+    return new Promise((resolve, reject) => {
+      this.ac.decodeAudioData(
+        audioData,
+        (audioBuffer) => {
+          this.audioBuffer = audioBuffer;
+          this.setStateChange(STATE_FINISHED);
+
+          resolve(audioBuffer);
+        },
+        (err) => {
+          if (err === null) {
+            // Safari issues with null error
+            reject(Error("MediaDecodeAudioDataUnknownContentType"));
+          } else {
+            reject(err);
+          }
         }
-    }
-
-    return curve;
-}
-
-function exponential(length, rotation) {
-    var curve = new Float32Array(length),
-        i,
-        x,
-        scale = length - 1,
-        index;
-
-    for (i = 0; i < length; i++) {
-        x = i / scale;
-        index = rotation > 0 ? i : length - 1 - i;
-
-        curve[index] = Math.exp(2 * x - 1) / Math.exp(1);
-    }
-
-    return curve;
-}
-
-//creating a curve to simulate an S-curve with setValueCurveAtTime.
-function sCurve(length, rotation) {
-    var curve = new Float32Array(length),
-        i,
-        phase = rotation > 0 ? Math.PI / 2 : -(Math.PI / 2);
-
-    for (i = 0; i < length; ++i) {
-        curve[i] = Math.sin(Math.PI * i / length - phase) / 2 + 0.5;
-    }
-    return curve;
-}
-
-//creating a curve to simulate a logarithmic curve with setValueCurveAtTime.
-function logarithmic(length, base, rotation) {
-    var curve = new Float32Array(length),
-        index,
-        x = 0,
-        i;
-
-    for (i = 0; i < length; i++) {
-        //index for the curve array.
-        index = rotation > 0 ? i : length - 1 - i;
-
-        x = i / length;
-        curve[index] = Math.log(1 + base * x) / Math.log(1 + base);
-    }
-
-    return curve;
-}
-
-},{}],"../node_modules/fade-maker/index.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-exports.FADEOUT = exports.FADEIN = exports.LOGARITHMIC = exports.EXPONENTIAL = exports.LINEAR = exports.SCURVE = undefined;
-exports.createFadeIn = createFadeIn;
-exports.createFadeOut = createFadeOut;
-
-var _fadeCurves = require('fade-curves');
-
-var SCURVE = exports.SCURVE = "sCurve";
-var LINEAR = exports.LINEAR = "linear";
-var EXPONENTIAL = exports.EXPONENTIAL = "exponential";
-var LOGARITHMIC = exports.LOGARITHMIC = "logarithmic";
-
-var FADEIN = exports.FADEIN = "FadeIn";
-var FADEOUT = exports.FADEOUT = "FadeOut";
-
-function sCurveFadeIn(start, duration) {
-    var curve = (0, _fadeCurves.sCurve)(10000, 1);
-    this.setValueCurveAtTime(curve, start, duration);
-}
-
-function sCurveFadeOut(start, duration) {
-    var curve = (0, _fadeCurves.sCurve)(10000, -1);
-    this.setValueCurveAtTime(curve, start, duration);
-}
-
-function linearFadeIn(start, duration) {
-    this.linearRampToValueAtTime(0, start);
-    this.linearRampToValueAtTime(1, start + duration);
-}
-
-function linearFadeOut(start, duration) {
-    this.linearRampToValueAtTime(1, start);
-    this.linearRampToValueAtTime(0, start + duration);
-}
-
-function exponentialFadeIn(start, duration) {
-    this.exponentialRampToValueAtTime(0.01, start);
-    this.exponentialRampToValueAtTime(1, start + duration);
-}
-
-function exponentialFadeOut(start, duration) {
-    this.exponentialRampToValueAtTime(1, start);
-    this.exponentialRampToValueAtTime(0.01, start + duration);
-}
-
-function logarithmicFadeIn(start, duration) {
-    var curve = (0, _fadeCurves.logarithmic)(10000, 10, 1);
-    this.setValueCurveAtTime(curve, start, duration);
-}
-
-function logarithmicFadeOut(start, duration) {
-    var curve = (0, _fadeCurves.logarithmic)(10000, 10, -1);
-    this.setValueCurveAtTime(curve, start, duration);
-}
-
-function createFadeIn(gain, shape, start, duration) {
-    switch (shape) {
-        case SCURVE:
-            sCurveFadeIn.call(gain, start, duration);
-            break;
-        case LINEAR:
-            linearFadeIn.call(gain, start, duration);
-            break;
-        case EXPONENTIAL:
-            exponentialFadeIn.call(gain, start, duration);
-            break;
-        case LOGARITHMIC:
-            logarithmicFadeIn.call(gain, start, duration);
-            break;
-        default:
-            throw new Error("Unsupported Fade type");
-    }
-}
-
-function createFadeOut(gain, shape, start, duration) {
-    switch (shape) {
-        case SCURVE:
-            sCurveFadeOut.call(gain, start, duration);
-            break;
-        case LINEAR:
-            linearFadeOut.call(gain, start, duration);
-            break;
-        case EXPONENTIAL:
-            exponentialFadeOut.call(gain, start, duration);
-            break;
-        case LOGARITHMIC:
-            logarithmicFadeOut.call(gain, start, duration);
-            break;
-        default:
-            throw new Error("Unsupported Fade type");
-    }
-}
-
-},{"fade-curves":"../node_modules/fade-curves/index.js"}],"../node_modules/waveform-playlist/lib/track/states/CursorState.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _conversions = require('../../utils/conversions');
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var _class = function () {
-  function _class(track) {
-    _classCallCheck(this, _class);
-
-    this.track = track;
+      );
+    });
   }
-
-  _createClass(_class, [{
-    key: 'setup',
-    value: function setup(samplesPerPixel, sampleRate) {
-      this.samplesPerPixel = samplesPerPixel;
-      this.sampleRate = sampleRate;
-    }
-  }, {
-    key: 'click',
-    value: function click(e) {
-      e.preventDefault();
-
-      var startX = e.offsetX;
-      var startTime = (0, _conversions.pixelsToSeconds)(startX, this.samplesPerPixel, this.sampleRate);
-
-      this.track.ee.emit('select', startTime, startTime, this.track);
-    }
-  }], [{
-    key: 'getClass',
-    value: function getClass() {
-      return '.state-cursor';
-    }
-  }, {
-    key: 'getEvents',
-    value: function getEvents() {
-      return ['click'];
-    }
-  }]);
-
-  return _class;
-}();
-
-exports.default = _class;
-},{"../../utils/conversions":"../node_modules/waveform-playlist/lib/utils/conversions.js"}],"../node_modules/waveform-playlist/lib/track/states/SelectState.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
 });
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+;// CONCATENATED MODULE: ./src/track/loader/BlobLoader.js
 
-var _conversions = require('../../utils/conversions');
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+/* harmony default export */ const BlobLoader = (class extends Loader {
+  /*
+   * Loads an audio file via a FileReader
+   */
+  load() {
+    return new Promise((resolve, reject) => {
+      if (
+        this.src.type.match(/audio.*/) ||
+        // added for problems with Firefox mime types + ogg.
+        this.src.type.match(/video\/ogg/)
+      ) {
+        const fr = new FileReader();
 
-var _class = function () {
-  function _class(track) {
-    _classCallCheck(this, _class);
+        fr.readAsArrayBuffer(this.src);
 
-    this.track = track;
-    this.active = false;
+        fr.addEventListener("progress", (e) => {
+          super.fileProgress(e);
+        });
+
+        fr.addEventListener("load", (e) => {
+          const decoderPromise = super.fileLoad(e);
+
+          decoderPromise
+            .then((audioBuffer) => {
+              resolve(audioBuffer);
+            })
+            .catch(reject);
+        });
+
+        fr.addEventListener("error", reject);
+      } else {
+        reject(Error(`Unsupported file type ${this.src.type}`));
+      }
+    });
   }
-
-  _createClass(_class, [{
-    key: 'setup',
-    value: function setup(samplesPerPixel, sampleRate) {
-      this.samplesPerPixel = samplesPerPixel;
-      this.sampleRate = sampleRate;
-    }
-  }, {
-    key: 'emitSelection',
-    value: function emitSelection(x) {
-      var minX = Math.min(x, this.startX);
-      var maxX = Math.max(x, this.startX);
-      var startTime = (0, _conversions.pixelsToSeconds)(minX, this.samplesPerPixel, this.sampleRate);
-      var endTime = (0, _conversions.pixelsToSeconds)(maxX, this.samplesPerPixel, this.sampleRate);
-
-      this.track.ee.emit('select', startTime, endTime, this.track);
-    }
-  }, {
-    key: 'complete',
-    value: function complete(x) {
-      this.emitSelection(x);
-      this.active = false;
-    }
-  }, {
-    key: 'mousedown',
-    value: function mousedown(e) {
-      e.preventDefault();
-      this.active = true;
-
-      this.startX = e.offsetX;
-      var startTime = (0, _conversions.pixelsToSeconds)(this.startX, this.samplesPerPixel, this.sampleRate);
-
-      this.track.ee.emit('select', startTime, startTime, this.track);
-    }
-  }, {
-    key: 'mousemove',
-    value: function mousemove(e) {
-      if (this.active) {
-        e.preventDefault();
-        this.emitSelection(e.offsetX);
-      }
-    }
-  }, {
-    key: 'mouseup',
-    value: function mouseup(e) {
-      if (this.active) {
-        e.preventDefault();
-        this.complete(e.offsetX);
-      }
-    }
-  }, {
-    key: 'mouseleave',
-    value: function mouseleave(e) {
-      if (this.active) {
-        e.preventDefault();
-        this.complete(e.offsetX);
-      }
-    }
-  }], [{
-    key: 'getClass',
-    value: function getClass() {
-      return '.state-select';
-    }
-  }, {
-    key: 'getEvents',
-    value: function getEvents() {
-      return ['mousedown', 'mousemove', 'mouseup', 'mouseleave'];
-    }
-  }]);
-
-  return _class;
-}();
-
-exports.default = _class;
-},{"../../utils/conversions":"../node_modules/waveform-playlist/lib/utils/conversions.js"}],"../node_modules/waveform-playlist/lib/track/states/ShiftState.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
 });
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+;// CONCATENATED MODULE: ./src/track/loader/IdentityLoader.js
 
-var _conversions = require('../../utils/conversions');
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var _class = function () {
-  function _class(track) {
-    _classCallCheck(this, _class);
-
-    this.track = track;
-    this.active = false;
+class IdentityLoader extends Loader {
+  load() {
+    return Promise.resolve(this.src);
   }
+}
 
-  _createClass(_class, [{
-    key: 'setup',
-    value: function setup(samplesPerPixel, sampleRate) {
-      this.samplesPerPixel = samplesPerPixel;
-      this.sampleRate = sampleRate;
-    }
-  }, {
-    key: 'emitShift',
-    value: function emitShift(x) {
-      var deltaX = x - this.prevX;
-      var deltaTime = (0, _conversions.pixelsToSeconds)(deltaX, this.samplesPerPixel, this.sampleRate);
-      this.prevX = x;
-      this.track.ee.emit('shift', deltaTime, this.track);
-    }
-  }, {
-    key: 'complete',
-    value: function complete(x) {
-      this.emitShift(x);
-      this.active = false;
-    }
-  }, {
-    key: 'mousedown',
-    value: function mousedown(e) {
-      e.preventDefault();
+;// CONCATENATED MODULE: ./src/track/loader/XHRLoader.js
 
-      this.active = true;
-      this.el = e.target;
-      this.prevX = e.offsetX;
-    }
-  }, {
-    key: 'mousemove',
-    value: function mousemove(e) {
-      if (this.active) {
-        e.preventDefault();
-        this.emitShift(e.offsetX);
-      }
-    }
-  }, {
-    key: 'mouseup',
-    value: function mouseup(e) {
-      if (this.active) {
-        e.preventDefault();
-        this.complete(e.offsetX);
-      }
-    }
-  }, {
-    key: 'mouseleave',
-    value: function mouseleave(e) {
-      if (this.active) {
-        e.preventDefault();
-        this.complete(e.offsetX);
-      }
-    }
-  }], [{
-    key: 'getClass',
-    value: function getClass() {
-      return '.state-shift';
-    }
-  }, {
-    key: 'getEvents',
-    value: function getEvents() {
-      return ['mousedown', 'mousemove', 'mouseup', 'mouseleave'];
-    }
-  }]);
 
-  return _class;
-}();
+/* harmony default export */ const XHRLoader = (class extends Loader {
+  /**
+   * Loads an audio file via XHR.
+   */
+  load() {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
 
-exports.default = _class;
-},{"../../utils/conversions":"../node_modules/waveform-playlist/lib/utils/conversions.js"}],"../node_modules/waveform-playlist/lib/track/states/FadeInState.js":[function(require,module,exports) {
-'use strict';
+      xhr.open("GET", this.src, true);
+      xhr.responseType = "arraybuffer";
+      xhr.send();
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+      xhr.addEventListener("progress", (e) => {
+        super.fileProgress(e);
+      });
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+      xhr.addEventListener("load", (e) => {
+        const decoderPromise = super.fileLoad(e);
 
-var _conversions = require('../../utils/conversions');
+        decoderPromise
+          .then((audioBuffer) => {
+            resolve(audioBuffer);
+          })
+          .catch(reject);
+      });
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var _class = function () {
-  function _class(track) {
-    _classCallCheck(this, _class);
-
-    this.track = track;
+      xhr.addEventListener("error", () => {
+        reject(Error(`Track ${this.src} failed to load`));
+      });
+    });
   }
-
-  _createClass(_class, [{
-    key: 'setup',
-    value: function setup(samplesPerPixel, sampleRate) {
-      this.samplesPerPixel = samplesPerPixel;
-      this.sampleRate = sampleRate;
-    }
-  }, {
-    key: 'click',
-    value: function click(e) {
-      var startX = e.offsetX;
-      var time = (0, _conversions.pixelsToSeconds)(startX, this.samplesPerPixel, this.sampleRate);
-
-      if (time > this.track.getStartTime() && time < this.track.getEndTime()) {
-        this.track.ee.emit('fadein', time - this.track.getStartTime(), this.track);
-      }
-    }
-  }], [{
-    key: 'getClass',
-    value: function getClass() {
-      return '.state-fadein';
-    }
-  }, {
-    key: 'getEvents',
-    value: function getEvents() {
-      return ['click'];
-    }
-  }]);
-
-  return _class;
-}();
-
-exports.default = _class;
-},{"../../utils/conversions":"../node_modules/waveform-playlist/lib/utils/conversions.js"}],"../node_modules/waveform-playlist/lib/track/states/FadeOutState.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
 });
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+;// CONCATENATED MODULE: ./src/track/loader/LoaderFactory.js
 
-var _conversions = require('../../utils/conversions');
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var _class = function () {
-  function _class(track) {
-    _classCallCheck(this, _class);
 
-    this.track = track;
+/* harmony default export */ const LoaderFactory = (class {
+  static createLoader(src, audioContext, ee) {
+    if (src instanceof Blob) {
+      return new BlobLoader(src, audioContext, ee);
+    } else if (src instanceof AudioBuffer) {
+      return new IdentityLoader(src, audioContext, ee);
+    } else if (typeof src === "string") {
+      return new XHRLoader(src, audioContext, ee);
+    }
+
+    throw new Error("Unsupported src type");
   }
-
-  _createClass(_class, [{
-    key: 'setup',
-    value: function setup(samplesPerPixel, sampleRate) {
-      this.samplesPerPixel = samplesPerPixel;
-      this.sampleRate = sampleRate;
-    }
-  }, {
-    key: 'click',
-    value: function click(e) {
-      var startX = e.offsetX;
-      var time = (0, _conversions.pixelsToSeconds)(startX, this.samplesPerPixel, this.sampleRate);
-
-      if (time > this.track.getStartTime() && time < this.track.getEndTime()) {
-        this.track.ee.emit('fadeout', this.track.getEndTime() - time, this.track);
-      }
-    }
-  }], [{
-    key: 'getClass',
-    value: function getClass() {
-      return '.state-fadeout';
-    }
-  }, {
-    key: 'getEvents',
-    value: function getEvents() {
-      return ['click'];
-    }
-  }]);
-
-  return _class;
-}();
-
-exports.default = _class;
-},{"../../utils/conversions":"../node_modules/waveform-playlist/lib/utils/conversions.js"}],"../node_modules/waveform-playlist/lib/track/states.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
 });
 
-var _CursorState = require('./states/CursorState');
+;// CONCATENATED MODULE: ./src/render/ScrollHook.js
 
-var _CursorState2 = _interopRequireDefault(_CursorState);
-
-var _SelectState = require('./states/SelectState');
-
-var _SelectState2 = _interopRequireDefault(_SelectState);
-
-var _ShiftState = require('./states/ShiftState');
-
-var _ShiftState2 = _interopRequireDefault(_ShiftState);
-
-var _FadeInState = require('./states/FadeInState');
-
-var _FadeInState2 = _interopRequireDefault(_FadeInState);
-
-var _FadeOutState = require('./states/FadeOutState');
-
-var _FadeOutState2 = _interopRequireDefault(_FadeOutState);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = {
-  cursor: _CursorState2.default,
-  select: _SelectState2.default,
-  shift: _ShiftState2.default,
-  fadein: _FadeInState2.default,
-  fadeout: _FadeOutState2.default
-};
-},{"./states/CursorState":"../node_modules/waveform-playlist/lib/track/states/CursorState.js","./states/SelectState":"../node_modules/waveform-playlist/lib/track/states/SelectState.js","./states/ShiftState":"../node_modules/waveform-playlist/lib/track/states/ShiftState.js","./states/FadeInState":"../node_modules/waveform-playlist/lib/track/states/FadeInState.js","./states/FadeOutState":"../node_modules/waveform-playlist/lib/track/states/FadeOutState.js"}],"../node_modules/waveform-playlist/lib/render/CanvasHook.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 /*
-* virtual-dom hook for drawing to the canvas element.
-*/
-var CanvasHook = function () {
-  function CanvasHook(peaks, offset, bits, color, scale) {
-    _classCallCheck(this, CanvasHook);
+ * virtual-dom hook for scrolling the track container.
+ */
+/* harmony default export */ const ScrollHook = (class {
+  constructor(playlist) {
+    this.playlist = playlist;
+  }
 
+  hook(node) {
+    const playlist = this.playlist;
+    if (!playlist.isScrolling) {
+      const el = node;
+
+      if (playlist.isAutomaticScroll) {
+        const rect = node.getBoundingClientRect();
+        const controlWidth = playlist.controls.show
+          ? playlist.controls.width
+          : 0;
+        const width = pixelsToSeconds(
+          rect.width - controlWidth,
+          playlist.samplesPerPixel,
+          playlist.sampleRate
+        );
+
+        const timePoint = playlist.isPlaying()
+          ? playlist.playbackSeconds
+          : playlist.getTimeSelection().start;
+
+        if (
+          timePoint < playlist.scrollLeft ||
+          timePoint >= playlist.scrollLeft + width
+        ) {
+          playlist.scrollLeft = Math.min(timePoint, playlist.duration - width);
+        }
+      }
+
+      const left = secondsToPixels(
+        playlist.scrollLeft,
+        playlist.samplesPerPixel,
+        playlist.sampleRate
+      );
+
+      el.scrollLeft = left;
+    }
+  }
+});
+
+;// CONCATENATED MODULE: ./src/render/TimeScaleHook.js
+/*
+ * virtual-dom hook for rendering the time scale canvas.
+ */
+/* harmony default export */ const TimeScaleHook = (class {
+  constructor(tickInfo, offset, samplesPerPixel, duration, colors) {
+    this.tickInfo = tickInfo;
+    this.offset = offset;
+    this.samplesPerPixel = samplesPerPixel;
+    this.duration = duration;
+    this.colors = colors;
+  }
+
+  hook(canvas, prop, prev) {
+    // canvas is up to date
+    if (
+      prev !== undefined &&
+      prev.offset === this.offset &&
+      prev.duration === this.duration &&
+      prev.samplesPerPixel === this.samplesPerPixel
+    ) {
+      return;
+    }
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const ctx = canvas.getContext("2d");
+
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = this.colors.timeColor;
+
+    Object.keys(this.tickInfo).forEach((x) => {
+      const scaleHeight = this.tickInfo[x];
+      const scaleY = height - scaleHeight;
+      ctx.fillRect(x, scaleY, 1, scaleHeight);
+    });
+  }
+});
+
+;// CONCATENATED MODULE: ./src/TimeScale.js
+
+
+
+
+
+class TimeScale {
+  constructor(
+    duration,
+    offset,
+    samplesPerPixel,
+    sampleRate,
+    marginLeft = 0,
+    colors
+  ) {
+    this.duration = duration;
+    this.offset = offset;
+    this.samplesPerPixel = samplesPerPixel;
+    this.sampleRate = sampleRate;
+    this.marginLeft = marginLeft;
+    this.colors = colors;
+
+    this.timeinfo = {
+      20000: {
+        marker: 30000,
+        bigStep: 10000,
+        smallStep: 5000,
+        secondStep: 5,
+      },
+      12000: {
+        marker: 15000,
+        bigStep: 5000,
+        smallStep: 1000,
+        secondStep: 1,
+      },
+      10000: {
+        marker: 10000,
+        bigStep: 5000,
+        smallStep: 1000,
+        secondStep: 1,
+      },
+      5000: {
+        marker: 5000,
+        bigStep: 1000,
+        smallStep: 500,
+        secondStep: 1 / 2,
+      },
+      2500: {
+        marker: 2000,
+        bigStep: 1000,
+        smallStep: 500,
+        secondStep: 1 / 2,
+      },
+      1500: {
+        marker: 2000,
+        bigStep: 1000,
+        smallStep: 200,
+        secondStep: 1 / 5,
+      },
+      700: {
+        marker: 1000,
+        bigStep: 500,
+        smallStep: 100,
+        secondStep: 1 / 10,
+      },
+    };
+  }
+
+  getScaleInfo(resolution) {
+    let keys = Object.keys(this.timeinfo).map((item) => parseInt(item, 10));
+
+    // make sure keys are numerically sorted.
+    keys = keys.sort((a, b) => a - b);
+
+    for (let i = 0; i < keys.length; i += 1) {
+      if (resolution <= keys[i]) {
+        return this.timeinfo[keys[i]];
+      }
+    }
+
+    return this.timeinfo[keys[0]];
+  }
+
+  /*
+    Return time in format mm:ss
+  */
+  static formatTime(milliseconds) {
+    const seconds = milliseconds / 1000;
+    let s = seconds % 60;
+    const m = (seconds - s) / 60;
+
+    if (s < 10) {
+      s = `0${s}`;
+    }
+
+    return `${m}:${s}`;
+  }
+
+  render() {
+    const widthX = secondsToPixels(
+      this.duration,
+      this.samplesPerPixel,
+      this.sampleRate
+    );
+    const pixPerSec = this.sampleRate / this.samplesPerPixel;
+    const pixOffset = secondsToPixels(
+      this.offset,
+      this.samplesPerPixel,
+      this.sampleRate
+    );
+    const scaleInfo = this.getScaleInfo(this.samplesPerPixel);
+    const canvasInfo = {};
+    const timeMarkers = [];
+    const end = widthX + pixOffset;
+    let counter = 0;
+
+    for (let i = 0; i < end; i += pixPerSec * scaleInfo.secondStep) {
+      const pixIndex = Math.floor(i);
+      const pix = pixIndex - pixOffset;
+
+      if (pixIndex >= pixOffset) {
+        // put a timestamp every 30 seconds.
+        if (scaleInfo.marker && counter % scaleInfo.marker === 0) {
+          timeMarkers.push(
+            h_default()(
+              "div.time",
+              {
+                attributes: {
+                  style: `position: absolute; left: ${pix}px;`,
+                },
+              },
+              [TimeScale.formatTime(counter)]
+            )
+          );
+
+          canvasInfo[pix] = 10;
+        } else if (scaleInfo.bigStep && counter % scaleInfo.bigStep === 0) {
+          canvasInfo[pix] = 5;
+        } else if (scaleInfo.smallStep && counter % scaleInfo.smallStep === 0) {
+          canvasInfo[pix] = 2;
+        }
+      }
+
+      counter += 1000 * scaleInfo.secondStep;
+    }
+
+    return h_default()(
+      "div.playlist-time-scale",
+      {
+        attributes: {
+          style: `position: relative; left: 0; right: 0; margin-left: ${this.marginLeft}px;`,
+        },
+      },
+      [
+        timeMarkers,
+        h_default()("canvas", {
+          attributes: {
+            width: widthX,
+            height: 30,
+            style: "position: absolute; left: 0; right: 0; top: 0; bottom: 0;",
+          },
+          hook: new TimeScaleHook(
+            canvasInfo,
+            this.offset,
+            this.samplesPerPixel,
+            this.duration,
+            this.colors
+          ),
+        }),
+      ]
+    );
+  }
+}
+
+/* harmony default export */ const src_TimeScale = (TimeScale);
+
+// EXTERNAL MODULE: ./node_modules/lodash.assign/index.js
+var lodash_assign = __webpack_require__(1730);
+var lodash_assign_default = /*#__PURE__*/__webpack_require__.n(lodash_assign);
+// EXTERNAL MODULE: ./node_modules/lodash.forown/index.js
+var lodash_forown = __webpack_require__(3520);
+var lodash_forown_default = /*#__PURE__*/__webpack_require__.n(lodash_forown);
+;// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-browser/rng.js
+// Unique ID creation requires a high quality random # generator. In the browser we therefore
+// require the crypto API and do not support built-in fallback to lower quality random number
+// generators (like Math.random()).
+var getRandomValues;
+var rnds8 = new Uint8Array(16);
+function rng() {
+  // lazy load so that environments that need to polyfill have a chance to do so
+  if (!getRandomValues) {
+    // getRandomValues needs to be invoked in a context where "this" is a Crypto implementation. Also,
+    // find the complete implementation of crypto (msCrypto) on IE11.
+    getRandomValues = typeof crypto !== 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto) || typeof msCrypto !== 'undefined' && typeof msCrypto.getRandomValues === 'function' && msCrypto.getRandomValues.bind(msCrypto);
+
+    if (!getRandomValues) {
+      throw new Error('crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported');
+    }
+  }
+
+  return getRandomValues(rnds8);
+}
+;// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-browser/regex.js
+/* harmony default export */ const regex = (/^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i);
+;// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-browser/validate.js
+
+
+function validate(uuid) {
+  return typeof uuid === 'string' && regex.test(uuid);
+}
+
+/* harmony default export */ const esm_browser_validate = (validate);
+;// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-browser/stringify.js
+
+/**
+ * Convert array of 16 byte values to UUID string format of the form:
+ * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ */
+
+var byteToHex = [];
+
+for (var i = 0; i < 256; ++i) {
+  byteToHex.push((i + 0x100).toString(16).substr(1));
+}
+
+function stringify(arr) {
+  var offset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+  // Note: Be careful editing this code!  It's been tuned for performance
+  // and works in ways you may not expect. See https://github.com/uuidjs/uuid/pull/434
+  var uuid = (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase(); // Consistency check for valid UUID.  If this throws, it's likely due to one
+  // of the following:
+  // - One or more input array values don't map to a hex octet (leading to
+  // "undefined" in the uuid)
+  // - Invalid input values for the RFC `version` or `variant` fields
+
+  if (!esm_browser_validate(uuid)) {
+    throw TypeError('Stringified UUID is invalid');
+  }
+
+  return uuid;
+}
+
+/* harmony default export */ const esm_browser_stringify = (stringify);
+;// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-browser/v4.js
+
+
+
+function v4(options, buf, offset) {
+  options = options || {};
+  var rnds = options.random || (options.rng || rng)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+
+  rnds[6] = rnds[6] & 0x0f | 0x40;
+  rnds[8] = rnds[8] & 0x3f | 0x80; // Copy bytes to buffer, if provided
+
+  if (buf) {
+    offset = offset || 0;
+
+    for (var i = 0; i < 16; ++i) {
+      buf[offset + i] = rnds[i];
+    }
+
+    return buf;
+  }
+
+  return esm_browser_stringify(rnds);
+}
+
+/* harmony default export */ const esm_browser_v4 = (v4);
+// EXTERNAL MODULE: ./node_modules/webaudio-peaks/index.js
+var webaudio_peaks = __webpack_require__(4991);
+var webaudio_peaks_default = /*#__PURE__*/__webpack_require__.n(webaudio_peaks);
+// EXTERNAL MODULE: ./node_modules/fade-maker/index.js
+var fade_maker = __webpack_require__(1114);
+;// CONCATENATED MODULE: ./src/track/states/CursorState.js
+
+
+/* harmony default export */ const CursorState = (class {
+  constructor(track) {
+    this.track = track;
+  }
+
+  setup(samplesPerPixel, sampleRate) {
+    this.samplesPerPixel = samplesPerPixel;
+    this.sampleRate = sampleRate;
+  }
+
+  click(e) {
+    e.preventDefault();
+
+    const startX = e.offsetX;
+    const startTime = pixelsToSeconds(
+      startX,
+      this.samplesPerPixel,
+      this.sampleRate
+    );
+
+    this.track.ee.emit("select", startTime, startTime, this.track);
+  }
+
+  static getClass() {
+    return ".state-cursor";
+  }
+
+  static getEvents() {
+    return ["click"];
+  }
+});
+
+;// CONCATENATED MODULE: ./src/track/states/SelectState.js
+
+
+/* harmony default export */ const SelectState = (class {
+  constructor(track) {
+    this.track = track;
+    this.active = false;
+  }
+
+  setup(samplesPerPixel, sampleRate) {
+    this.samplesPerPixel = samplesPerPixel;
+    this.sampleRate = sampleRate;
+  }
+
+  emitSelection(x) {
+    const minX = Math.min(x, this.startX);
+    const maxX = Math.max(x, this.startX);
+    const startTime = pixelsToSeconds(
+      minX,
+      this.samplesPerPixel,
+      this.sampleRate
+    );
+    const endTime = pixelsToSeconds(
+      maxX,
+      this.samplesPerPixel,
+      this.sampleRate
+    );
+
+    this.track.ee.emit("select", startTime, endTime, this.track);
+  }
+
+  complete(x) {
+    this.emitSelection(x);
+    this.active = false;
+  }
+
+  mousedown(e) {
+    e.preventDefault();
+    this.active = true;
+
+    this.startX = e.offsetX;
+    const startTime = pixelsToSeconds(
+      this.startX,
+      this.samplesPerPixel,
+      this.sampleRate
+    );
+
+    this.track.ee.emit("select", startTime, startTime, this.track);
+  }
+
+  mousemove(e) {
+    if (this.active) {
+      e.preventDefault();
+      this.emitSelection(e.offsetX);
+    }
+  }
+
+  mouseup(e) {
+    if (this.active) {
+      e.preventDefault();
+      this.complete(e.offsetX);
+    }
+  }
+
+  mouseleave(e) {
+    if (this.active) {
+      e.preventDefault();
+      this.complete(e.offsetX);
+    }
+  }
+
+  static getClass() {
+    return ".state-select";
+  }
+
+  static getEvents() {
+    return ["mousedown", "mousemove", "mouseup", "mouseleave"];
+  }
+});
+
+;// CONCATENATED MODULE: ./src/track/states/ShiftState.js
+
+
+/* harmony default export */ const ShiftState = (class {
+  constructor(track) {
+    this.track = track;
+    this.active = false;
+  }
+
+  setup(samplesPerPixel, sampleRate) {
+    this.samplesPerPixel = samplesPerPixel;
+    this.sampleRate = sampleRate;
+  }
+
+  emitShift(x) {
+    const deltaX = x - this.prevX;
+    const deltaTime = pixelsToSeconds(
+      deltaX,
+      this.samplesPerPixel,
+      this.sampleRate
+    );
+    this.prevX = x;
+    this.track.ee.emit("shift", deltaTime, this.track);
+  }
+
+  complete(x) {
+    this.emitShift(x);
+    this.active = false;
+  }
+
+  mousedown(e) {
+    e.preventDefault();
+
+    this.active = true;
+    this.el = e.target;
+    this.prevX = e.offsetX;
+  }
+
+  mousemove(e) {
+    if (this.active) {
+      e.preventDefault();
+      this.emitShift(e.offsetX);
+    }
+  }
+
+  mouseup(e) {
+    if (this.active) {
+      e.preventDefault();
+      this.complete(e.offsetX);
+    }
+  }
+
+  mouseleave(e) {
+    if (this.active) {
+      e.preventDefault();
+      this.complete(e.offsetX);
+    }
+  }
+
+  static getClass() {
+    return ".state-shift";
+  }
+
+  static getEvents() {
+    return ["mousedown", "mousemove", "mouseup", "mouseleave"];
+  }
+});
+
+;// CONCATENATED MODULE: ./src/track/states/FadeInState.js
+
+
+/* harmony default export */ const FadeInState = (class {
+  constructor(track) {
+    this.track = track;
+  }
+
+  setup(samplesPerPixel, sampleRate) {
+    this.samplesPerPixel = samplesPerPixel;
+    this.sampleRate = sampleRate;
+  }
+
+  click(e) {
+    const startX = e.offsetX;
+    const time = pixelsToSeconds(startX, this.samplesPerPixel, this.sampleRate);
+
+    if (time > this.track.getStartTime() && time < this.track.getEndTime()) {
+      this.track.ee.emit(
+        "fadein",
+        time - this.track.getStartTime(),
+        this.track
+      );
+    }
+  }
+
+  static getClass() {
+    return ".state-fadein";
+  }
+
+  static getEvents() {
+    return ["click"];
+  }
+});
+
+;// CONCATENATED MODULE: ./src/track/states/FadeOutState.js
+
+
+/* harmony default export */ const FadeOutState = (class {
+  constructor(track) {
+    this.track = track;
+  }
+
+  setup(samplesPerPixel, sampleRate) {
+    this.samplesPerPixel = samplesPerPixel;
+    this.sampleRate = sampleRate;
+  }
+
+  click(e) {
+    const startX = e.offsetX;
+    const time = pixelsToSeconds(startX, this.samplesPerPixel, this.sampleRate);
+
+    if (time > this.track.getStartTime() && time < this.track.getEndTime()) {
+      this.track.ee.emit("fadeout", this.track.getEndTime() - time, this.track);
+    }
+  }
+
+  static getClass() {
+    return ".state-fadeout";
+  }
+
+  static getEvents() {
+    return ["click"];
+  }
+});
+
+;// CONCATENATED MODULE: ./src/track/states.js
+
+
+
+
+
+
+/* harmony default export */ const states = ({
+  cursor: CursorState,
+  select: SelectState,
+  shift: ShiftState,
+  fadein: FadeInState,
+  fadeout: FadeOutState,
+});
+
+;// CONCATENATED MODULE: ./src/render/CanvasHook.js
+/*
+ * virtual-dom hook for drawing to the canvas element.
+ */
+class CanvasHook {
+  constructor(peaks, offset, bits, color, scale, height, barWidth, barGap) {
     this.peaks = peaks;
     // http://stackoverflow.com/questions/6081483/maximum-size-of-a-canvas-element
     this.offset = offset;
     this.color = color;
     this.bits = bits;
     this.scale = scale;
+    this.height = height;
+    this.barWidth = barWidth;
+    this.barGap = barGap;
   }
 
-  _createClass(CanvasHook, [{
-    key: 'hook',
-    value: function hook(canvas, prop, prev) {
-      // canvas is up to date
-      if (prev !== undefined && prev.peaks === this.peaks && prev.scale === this.scale) {
-        return;
-      }
+  static drawFrame(cc, h2, x, minPeak, maxPeak, width, gap) {
+    const min = Math.abs(minPeak * h2);
+    const max = Math.abs(maxPeak * h2);
 
-      var scale = this.scale;
-      var len = canvas.width / scale;
-      var cc = canvas.getContext('2d');
-      var h2 = canvas.height / scale / 2;
-      var maxValue = Math.pow(2, this.bits - 1);
-
-      cc.clearRect(0, 0, canvas.width, canvas.height);
-
-      cc.save();
-      cc.fillStyle = this.color;
-      cc.scale(scale, scale);
-
-      for (var i = 0; i < len; i += 1) {
-        var minPeak = this.peaks[(i + this.offset) * 2] / maxValue;
-        var maxPeak = this.peaks[(i + this.offset) * 2 + 1] / maxValue;
-        CanvasHook.drawFrame(cc, h2, i, minPeak, maxPeak);
-      }
-
-      cc.restore();
+    // draw max
+    cc.fillRect(x, 0, width, h2 - max);
+    // draw min
+    cc.fillRect(x, h2 + min, width, h2 - min);
+    // draw gap
+    if (gap !== 0) {
+      cc.fillRect(x + width, 0, gap, h2 * 2);
     }
-  }], [{
-    key: 'drawFrame',
-    value: function drawFrame(cc, h2, x, minPeak, maxPeak) {
-      var min = Math.abs(minPeak * h2);
-      var max = Math.abs(maxPeak * h2);
+  }
 
-      // draw max
-      cc.fillRect(x, 0, 1, h2 - max);
-      // draw min
-      cc.fillRect(x, h2 + min, 1, h2 - min);
+  hook(canvas, prop, prev) {
+    // canvas is up to date
+    if (
+      prev !== undefined &&
+      prev.peaks === this.peaks &&
+      prev.scale === this.scale &&
+      prev.height === this.height
+    ) {
+      return;
     }
-  }]);
 
-  return CanvasHook;
-}();
+    const scale = this.scale;
+    const len = canvas.width / scale;
+    const cc = canvas.getContext("2d");
+    const h2 = canvas.height / scale / 2;
+    const maxValue = 2 ** (this.bits - 1);
+    const width = this.barWidth;
+    const gap = this.barGap;
+    const barStart = width + gap;
 
-exports.default = CanvasHook;
-},{}],"../node_modules/waveform-playlist/lib/render/FadeCanvasHook.js":[function(require,module,exports) {
-'use strict';
+    cc.clearRect(0, 0, canvas.width, canvas.height);
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+    cc.save();
+    cc.fillStyle = this.color;
+    cc.scale(scale, scale);
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+    for (let pixel = 0; pixel < len; pixel += barStart) {
+      const minPeak = this.peaks[(pixel + this.offset) * 2] / maxValue;
+      const maxPeak = this.peaks[(pixel + this.offset) * 2 + 1] / maxValue;
+      CanvasHook.drawFrame(cc, h2, pixel, minPeak, maxPeak, width, gap);
+    }
 
-var _fadeMaker = require('fade-maker');
+    cc.restore();
+  }
+}
 
-var _fadeCurves = require('fade-curves');
+/* harmony default export */ const render_CanvasHook = (CanvasHook);
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+// EXTERNAL MODULE: ./node_modules/fade-curves/index.js
+var fade_curves = __webpack_require__(6226);
+;// CONCATENATED MODULE: ./src/render/FadeCanvasHook.js
+
+
 
 /*
-* virtual-dom hook for drawing the fade curve to the canvas element.
-*/
-var FadeCanvasHook = function () {
-  function FadeCanvasHook(type, shape, duration, samplesPerPixel) {
-    _classCallCheck(this, FadeCanvasHook);
-
+ * virtual-dom hook for drawing the fade curve to the canvas element.
+ */
+class FadeCanvasHook {
+  constructor(type, shape, duration, samplesPerPixel) {
     this.type = type;
     this.shape = shape;
     this.duration = duration;
     this.samplesPerPixel = samplesPerPixel;
   }
 
-  _createClass(FadeCanvasHook, [{
-    key: 'hook',
-    value: function hook(canvas, prop, prev) {
-      // node is up to date.
-      if (prev !== undefined && prev.shape === this.shape && prev.type === this.type && prev.duration === this.duration && prev.samplesPerPixel === this.samplesPerPixel) {
-        return;
+  static createCurve(shape, type, width) {
+    let reflection;
+    let curve;
+
+    switch (type) {
+      case fade_maker/* FADEIN */.Y1: {
+        reflection = 1;
+        break;
       }
-
-      var ctx = canvas.getContext('2d');
-      var width = canvas.width;
-      var height = canvas.height;
-      var curve = FadeCanvasHook.createCurve(this.shape, this.type, width);
-      var len = curve.length;
-      var y = height - curve[0] * height;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.save();
-
-      ctx.strokeStyle = 'black';
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-
-      for (var i = 1; i < len; i += 1) {
-        y = height - curve[i] * height;
-        ctx.lineTo(i, y);
+      case fade_maker/* FADEOUT */.h7: {
+        reflection = -1;
+        break;
       }
-      ctx.stroke();
-      ctx.restore();
+      default: {
+        throw new Error("Unsupported fade type.");
+      }
     }
-  }], [{
-    key: 'createCurve',
-    value: function createCurve(shape, type, width) {
-      var reflection = void 0;
-      var curve = void 0;
 
-      switch (type) {
-        case _fadeMaker.FADEIN:
-          {
-            reflection = 1;
-            break;
-          }
-        case _fadeMaker.FADEOUT:
-          {
-            reflection = -1;
-            break;
-          }
-        default:
-          {
-            throw new Error('Unsupported fade type.');
-          }
+    switch (shape) {
+      case fade_maker/* SCURVE */._h: {
+        curve = (0,fade_curves.sCurve)(width, reflection);
+        break;
       }
-
-      switch (shape) {
-        case _fadeMaker.SCURVE:
-          {
-            curve = (0, _fadeCurves.sCurve)(width, reflection);
-            break;
-          }
-        case _fadeMaker.LINEAR:
-          {
-            curve = (0, _fadeCurves.linear)(width, reflection);
-            break;
-          }
-        case _fadeMaker.EXPONENTIAL:
-          {
-            curve = (0, _fadeCurves.exponential)(width, reflection);
-            break;
-          }
-        case _fadeMaker.LOGARITHMIC:
-          {
-            curve = (0, _fadeCurves.logarithmic)(width, 10, reflection);
-            break;
-          }
-        default:
-          {
-            throw new Error('Unsupported fade shape');
-          }
+      case fade_maker/* LINEAR */.t$: {
+        curve = (0,fade_curves.linear)(width, reflection);
+        break;
       }
-
-      return curve;
+      case fade_maker/* EXPONENTIAL */.Jl: {
+        curve = (0,fade_curves.exponential)(width, reflection);
+        break;
+      }
+      case fade_maker/* LOGARITHMIC */.Hp: {
+        curve = (0,fade_curves.logarithmic)(width, 10, reflection);
+        break;
+      }
+      default: {
+        throw new Error("Unsupported fade shape");
+      }
     }
-  }]);
 
-  return FadeCanvasHook;
-}();
+    return curve;
+  }
 
-exports.default = FadeCanvasHook;
-},{"fade-maker":"../node_modules/fade-maker/index.js","fade-curves":"../node_modules/fade-curves/index.js"}],"../node_modules/waveform-playlist/lib/render/VolumeSliderHook.js":[function(require,module,exports) {
-'use strict';
+  hook(canvas, prop, prev) {
+    // node is up to date.
+    if (
+      prev !== undefined &&
+      prev.shape === this.shape &&
+      prev.type === this.type &&
+      prev.duration === this.duration &&
+      prev.samplesPerPixel === this.samplesPerPixel
+    ) {
+      return;
+    }
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+    const ctx = canvas.getContext("2d");
+    const width = canvas.width;
+    const height = canvas.height;
+    const curve = FadeCanvasHook.createCurve(this.shape, this.type, width);
+    const len = curve.length;
+    let y = height - curve[0] * height;
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+    ctx.strokeStyle = "black";
+    ctx.beginPath();
+    ctx.moveTo(0, y);
 
+    for (let i = 1; i < len; i += 1) {
+      y = height - curve[i] * height;
+      ctx.lineTo(i, y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+/* harmony default export */ const render_FadeCanvasHook = (FadeCanvasHook);
+
+;// CONCATENATED MODULE: ./src/render/VolumeSliderHook.js
+/* eslint-disable no-param-reassign */
 /*
-* virtual-dom hook for setting the volume input programmatically.
-*/
-var _class = function () {
-  function _class(gain) {
-    _classCallCheck(this, _class);
-
+ * virtual-dom hook for setting the volume input programmatically.
+ */
+/* harmony default export */ const VolumeSliderHook = (class {
+  constructor(gain) {
     this.gain = gain;
   }
 
-  _createClass(_class, [{
-    key: 'hook',
-    value: function hook(volumeInput) {
-      volumeInput.setAttribute('value', this.gain * 100);
-    }
-  }]);
-
-  return _class;
-}();
-
-exports.default = _class;
-},{}],"../node_modules/waveform-playlist/lib/Track.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
+  hook(volumeInput) {
+    volumeInput.value = this.gain * 100;
+    volumeInput.title = `${Math.round(this.gain * 100)}% volume`;
+  }
 });
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+;// CONCATENATED MODULE: ./src/render/StereoPanSliderHook.js
+/* eslint-disable no-param-reassign */
+/*
+ * virtual-dom hook for setting the stereoPan input programmatically.
+ */
+/* harmony default export */ const StereoPanSliderHook = (class {
+  constructor(stereoPan) {
+    this.stereoPan = stereoPan;
+  }
 
-var _lodash = require('lodash.assign');
+  hook(stereoPanInput) {
+    stereoPanInput.value = this.stereoPan * 100;
 
-var _lodash2 = _interopRequireDefault(_lodash);
+    let panOrientation;
+    if (this.stereoPan === 0) {
+      panOrientation = "Center";
+    } else if (this.stereoPan < 0) {
+      panOrientation = "Left";
+    } else {
+      panOrientation = "Right";
+    }
+    const percentage = `${Math.abs(Math.round(this.stereoPan * 100))}% `;
+    stereoPanInput.title = `Pan: ${
+      this.stereoPan !== 0 ? percentage : ""
+    }${panOrientation}`;
+  }
+});
 
-var _lodash3 = require('lodash.forown');
+;// CONCATENATED MODULE: ./src/Track.js
 
-var _lodash4 = _interopRequireDefault(_lodash3);
 
-var _uuid = require('uuid');
 
-var _uuid2 = _interopRequireDefault(_uuid);
 
-var _h = require('virtual-dom/h');
 
-var _h2 = _interopRequireDefault(_h);
 
-var _webaudioPeaks = require('webaudio-peaks');
 
-var _webaudioPeaks2 = _interopRequireDefault(_webaudioPeaks);
 
-var _fadeMaker = require('fade-maker');
 
-var _conversions = require('./utils/conversions');
 
-var _states = require('./track/states');
 
-var _states2 = _interopRequireDefault(_states);
 
-var _CanvasHook = require('./render/CanvasHook');
 
-var _CanvasHook2 = _interopRequireDefault(_CanvasHook);
 
-var _FadeCanvasHook = require('./render/FadeCanvasHook');
 
-var _FadeCanvasHook2 = _interopRequireDefault(_FadeCanvasHook);
 
-var _VolumeSliderHook = require('./render/VolumeSliderHook');
 
-var _VolumeSliderHook2 = _interopRequireDefault(_VolumeSliderHook);
+const MAX_CANVAS_WIDTH = 1000;
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var MAX_CANVAS_WIDTH = 1000;
-
-var _class = function () {
-  function _class() {
-    _classCallCheck(this, _class);
-
-    this.name = 'Untitled';
+/* harmony default export */ const Track = (class {
+  constructor() {
+    this.name = "Untitled";
     this.customClass = undefined;
     this.waveOutlineColor = undefined;
     this.gain = 1;
     this.fades = {};
     this.peakData = {
-      type: 'WebAudio',
-      mono: false
+      type: "WebAudio",
+      mono: false,
     };
 
     this.cueIn = 0;
@@ -6282,1009 +9916,1108 @@ var _class = function () {
     this.stereoPan = 0;
   }
 
-  _createClass(_class, [{
-    key: 'setEventEmitter',
-    value: function setEventEmitter(ee) {
-      this.ee = ee;
-    }
-  }, {
-    key: 'setName',
-    value: function setName(name) {
-      this.name = name;
-    }
-  }, {
-    key: 'setCustomClass',
-    value: function setCustomClass(className) {
-      this.customClass = className;
-    }
-  }, {
-    key: 'setWaveOutlineColor',
-    value: function setWaveOutlineColor(color) {
-      this.waveOutlineColor = color;
-    }
-  }, {
-    key: 'setCues',
-    value: function setCues(cueIn, cueOut) {
-      if (cueOut < cueIn) {
-        throw new Error('cue out cannot be less than cue in');
-      }
+  setEventEmitter(ee) {
+    this.ee = ee;
+  }
 
-      this.cueIn = cueIn;
-      this.cueOut = cueOut;
-      this.duration = this.cueOut - this.cueIn;
-      this.endTime = this.startTime + this.duration;
+  setName(name) {
+    this.name = name;
+  }
+
+  setCustomClass(className) {
+    this.customClass = className;
+  }
+
+  setWaveOutlineColor(color) {
+    this.waveOutlineColor = color;
+  }
+
+  setCues(cueIn, cueOut) {
+    if (cueOut < cueIn) {
+      throw new Error("cue out cannot be less than cue in");
     }
 
-    /*
-    *   start, end in seconds relative to the entire playlist.
-    */
+    this.cueIn = cueIn;
+    this.cueOut = cueOut;
+    this.duration = this.cueOut - this.cueIn;
+    this.endTime = this.startTime + this.duration;
+  }
 
-  }, {
-    key: 'trim',
-    value: function trim(start, end) {
-      var trackStart = this.getStartTime();
-      var trackEnd = this.getEndTime();
-      var offset = this.cueIn - trackStart;
+  /*
+   *   start, end in seconds relative to the entire playlist.
+   */
+  trim(start, end) {
+    const trackStart = this.getStartTime();
+    const trackEnd = this.getEndTime();
+    const offset = this.cueIn - trackStart;
 
-      if (trackStart <= start && trackEnd >= start || trackStart <= end && trackEnd >= end) {
-        var cueIn = start < trackStart ? trackStart : start;
-        var cueOut = end > trackEnd ? trackEnd : end;
+    if (
+      (trackStart <= start && trackEnd >= start) ||
+      (trackStart <= end && trackEnd >= end)
+    ) {
+      const cueIn = start < trackStart ? trackStart : start;
+      const cueOut = end > trackEnd ? trackEnd : end;
 
-        this.setCues(cueIn + offset, cueOut + offset);
-        if (start > trackStart) {
-          this.setStartTime(start);
-        }
+      this.setCues(cueIn + offset, cueOut + offset);
+      if (start > trackStart) {
+        this.setStartTime(start);
       }
     }
-  }, {
-    key: 'setStartTime',
-    value: function setStartTime(start) {
-      this.startTime = start;
-      this.endTime = start + this.duration;
+  }
+
+  setStartTime(start) {
+    this.startTime = start;
+    this.endTime = start + this.duration;
+  }
+
+  setPlayout(playout) {
+    this.playout = playout;
+  }
+
+  setOfflinePlayout(playout) {
+    this.offlinePlayout = playout;
+  }
+
+  setEnabledStates(enabledStates = {}) {
+    const defaultStatesEnabled = {
+      cursor: true,
+      fadein: true,
+      fadeout: true,
+      select: true,
+      shift: true,
+    };
+
+    this.enabledStates = lodash_assign_default()({}, defaultStatesEnabled, enabledStates);
+  }
+
+  setFadeIn(duration, shape = "logarithmic") {
+    if (duration > this.duration) {
+      throw new Error("Invalid Fade In");
     }
-  }, {
-    key: 'setPlayout',
-    value: function setPlayout(playout) {
-      this.playout = playout;
+
+    const fade = {
+      shape,
+      start: 0,
+      end: duration,
+    };
+
+    if (this.fadeIn) {
+      this.removeFade(this.fadeIn);
+      this.fadeIn = undefined;
     }
-  }, {
-    key: 'setOfflinePlayout',
-    value: function setOfflinePlayout(playout) {
-      this.offlinePlayout = playout;
+
+    this.fadeIn = this.saveFade(fade_maker/* FADEIN */.Y1, fade.shape, fade.start, fade.end);
+  }
+
+  setFadeOut(duration, shape = "logarithmic") {
+    if (duration > this.duration) {
+      throw new Error("Invalid Fade Out");
     }
-  }, {
-    key: 'setEnabledStates',
-    value: function setEnabledStates() {
-      var enabledStates = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-      var defaultStatesEnabled = {
-        cursor: true,
-        fadein: true,
-        fadeout: true,
-        select: true,
-        shift: true
-      };
+    const fade = {
+      shape,
+      start: this.duration - duration,
+      end: this.duration,
+    };
 
-      this.enabledStates = (0, _lodash2.default)({}, defaultStatesEnabled, enabledStates);
+    if (this.fadeOut) {
+      this.removeFade(this.fadeOut);
+      this.fadeOut = undefined;
     }
-  }, {
-    key: 'setFadeIn',
-    value: function setFadeIn(duration) {
-      var shape = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'logarithmic';
 
-      if (duration > this.duration) {
-        throw new Error('Invalid Fade In');
-      }
+    this.fadeOut = this.saveFade(fade_maker/* FADEOUT */.h7, fade.shape, fade.start, fade.end);
+  }
 
-      var fade = {
-        shape: shape,
-        start: 0,
-        end: duration
-      };
+  saveFade(type, shape, start, end) {
+    const id = esm_browser_v4();
 
-      if (this.fadeIn) {
-        this.removeFade(this.fadeIn);
-        this.fadeIn = undefined;
-      }
+    this.fades[id] = {
+      type,
+      shape,
+      start,
+      end,
+    };
 
-      this.fadeIn = this.saveFade(_fadeMaker.FADEIN, fade.shape, fade.start, fade.end);
+    return id;
+  }
+
+  removeFade(id) {
+    delete this.fades[id];
+  }
+
+  setBuffer(buffer) {
+    this.buffer = buffer;
+  }
+
+  setPeakData(data) {
+    this.peakData = data;
+  }
+
+  calculatePeaks(samplesPerPixel, sampleRate) {
+    const cueIn = secondsToSamples(this.cueIn, sampleRate);
+    const cueOut = secondsToSamples(this.cueOut, sampleRate);
+
+    this.setPeaks(
+      webaudio_peaks_default()(
+        this.buffer,
+        samplesPerPixel,
+        this.peakData.mono,
+        cueIn,
+        cueOut
+      )
+    );
+  }
+
+  setPeaks(peaks) {
+    this.peaks = peaks;
+  }
+
+  setState(state) {
+    this.state = state;
+
+    if (this.state && this.enabledStates[this.state]) {
+      const StateClass = states[this.state];
+      this.stateObj = new StateClass(this);
+    } else {
+      this.stateObj = undefined;
     }
-  }, {
-    key: 'setFadeOut',
-    value: function setFadeOut(duration) {
-      var shape = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'logarithmic';
+  }
 
-      if (duration > this.duration) {
-        throw new Error('Invalid Fade Out');
-      }
+  getStartTime() {
+    return this.startTime;
+  }
 
-      var fade = {
-        shape: shape,
-        start: this.duration - duration,
-        end: this.duration
-      };
+  getEndTime() {
+    return this.endTime;
+  }
 
-      if (this.fadeOut) {
-        this.removeFade(this.fadeOut);
-        this.fadeOut = undefined;
-      }
+  getDuration() {
+    return this.duration;
+  }
 
-      this.fadeOut = this.saveFade(_fadeMaker.FADEOUT, fade.shape, fade.start, fade.end);
+  isPlaying() {
+    return this.playout.isPlaying();
+  }
+
+  setShouldPlay(bool) {
+    this.playout.setShouldPlay(bool);
+  }
+
+  setGainLevel(level) {
+    this.gain = level;
+    this.playout.setVolumeGainLevel(level);
+  }
+
+  setMasterGainLevel(level) {
+    this.playout.setMasterGainLevel(level);
+  }
+
+  setStereoPanValue(value) {
+    this.stereoPan = value;
+    this.playout.setStereoPanValue(value);
+  }
+
+  setEffects(effectsGraph) {
+    this.effectsGraph = effectsGraph;
+    this.playout.setEffects(effectsGraph);
+  }
+
+  /*
+    startTime, endTime in seconds (float).
+    segment is for a highlighted section in the UI.
+
+    returns a Promise that will resolve when the AudioBufferSource
+    is either stopped or plays out naturally.
+  */
+  schedulePlay(now, startTime, endTime, config) {
+    let start;
+    let duration;
+    let when = now;
+    let segment = endTime ? endTime - startTime : undefined;
+
+    const defaultOptions = {
+      shouldPlay: true,
+      masterGain: 1,
+      isOffline: false,
+    };
+
+    const options = lodash_assign_default()({}, defaultOptions, config);
+    const playoutSystem = options.isOffline
+      ? this.offlinePlayout
+      : this.playout;
+
+    // 1) track has no content to play.
+    // 2) track does not play in this selection.
+    if (
+      this.endTime <= startTime ||
+      (segment && startTime + segment < this.startTime)
+    ) {
+      // return a resolved promise since this track is technically "stopped".
+      return Promise.resolve();
     }
-  }, {
-    key: 'saveFade',
-    value: function saveFade(type, shape, start, end) {
-      var id = _uuid2.default.v4();
 
-      this.fades[id] = {
-        type: type,
-        shape: shape,
-        start: start,
-        end: end
-      };
+    // track should have something to play if it gets here.
 
-      return id;
-    }
-  }, {
-    key: 'removeFade',
-    value: function removeFade(id) {
-      delete this.fades[id];
-    }
-  }, {
-    key: 'setBuffer',
-    value: function setBuffer(buffer) {
-      this.buffer = buffer;
-    }
-  }, {
-    key: 'setPeakData',
-    value: function setPeakData(data) {
-      this.peakData = data;
-    }
-  }, {
-    key: 'calculatePeaks',
-    value: function calculatePeaks(samplesPerPixel, sampleRate) {
-      var cueIn = (0, _conversions.secondsToSamples)(this.cueIn, sampleRate);
-      var cueOut = (0, _conversions.secondsToSamples)(this.cueOut, sampleRate);
+    // the track starts in the future or on the cursor position
+    if (this.startTime >= startTime) {
+      start = 0;
+      // schedule additional delay for this audio node.
+      when += this.startTime - startTime;
 
-      this.setPeaks((0, _webaudioPeaks2.default)(this.buffer, samplesPerPixel, this.peakData.mono, cueIn, cueOut));
-    }
-  }, {
-    key: 'setPeaks',
-    value: function setPeaks(peaks) {
-      this.peaks = peaks;
-    }
-  }, {
-    key: 'setState',
-    value: function setState(state) {
-      this.state = state;
-
-      if (this.state && this.enabledStates[this.state]) {
-        var StateClass = _states2.default[this.state];
-        this.stateObj = new StateClass(this);
+      if (endTime) {
+        segment -= this.startTime - startTime;
+        duration = Math.min(segment, this.duration);
       } else {
-        this.stateObj = undefined;
+        duration = this.duration;
       }
-    }
-  }, {
-    key: 'getStartTime',
-    value: function getStartTime() {
-      return this.startTime;
-    }
-  }, {
-    key: 'getEndTime',
-    value: function getEndTime() {
-      return this.endTime;
-    }
-  }, {
-    key: 'getDuration',
-    value: function getDuration() {
-      return this.duration;
-    }
-  }, {
-    key: 'isPlaying',
-    value: function isPlaying() {
-      return this.playout.isPlaying();
-    }
-  }, {
-    key: 'setShouldPlay',
-    value: function setShouldPlay(bool) {
-      this.playout.setShouldPlay(bool);
-    }
-  }, {
-    key: 'setGainLevel',
-    value: function setGainLevel(level) {
-      this.gain = level;
-      this.playout.setVolumeGainLevel(level);
-    }
-  }, {
-    key: 'setMasterGainLevel',
-    value: function setMasterGainLevel(level) {
-      this.playout.setMasterGainLevel(level);
-    }
-  }, {
-    key: 'setStereoPanValue',
-    value: function setStereoPanValue(value) {
-      this.stereoPan = value;
-      this.playout.setStereoPanValue(value);
-    }
+    } else {
+      start = startTime - this.startTime;
 
-    /*
-      startTime, endTime in seconds (float).
-      segment is for a highlighted section in the UI.
-       returns a Promise that will resolve when the AudioBufferSource
-      is either stopped or plays out naturally.
-    */
-
-  }, {
-    key: 'schedulePlay',
-    value: function schedulePlay(now, startTime, endTime, config) {
-      var start = void 0;
-      var duration = void 0;
-      var when = now;
-      var segment = endTime ? endTime - startTime : undefined;
-
-      var defaultOptions = {
-        shouldPlay: true,
-        masterGain: 1,
-        isOffline: false
-      };
-
-      var options = (0, _lodash2.default)({}, defaultOptions, config);
-      var playoutSystem = options.isOffline ? this.offlinePlayout : this.playout;
-
-      // 1) track has no content to play.
-      // 2) track does not play in this selection.
-      if (this.endTime <= startTime || segment && startTime + segment < this.startTime) {
-        // return a resolved promise since this track is technically "stopped".
-        return Promise.resolve();
-      }
-
-      // track should have something to play if it gets here.
-
-      // the track starts in the future or on the cursor position
-      if (this.startTime >= startTime) {
-        start = 0;
-        // schedule additional delay for this audio node.
-        when += this.startTime - startTime;
-
-        if (endTime) {
-          segment -= this.startTime - startTime;
-          duration = Math.min(segment, this.duration);
-        } else {
-          duration = this.duration;
-        }
+      if (endTime) {
+        duration = Math.min(segment, this.duration - start);
       } else {
-        start = startTime - this.startTime;
-
-        if (endTime) {
-          duration = Math.min(segment, this.duration - start);
-        } else {
-          duration = this.duration - start;
-        }
+        duration = this.duration - start;
       }
+    }
 
-      start += this.cueIn;
-      var relPos = startTime - this.startTime;
-      var sourcePromise = playoutSystem.setUpSource();
+    start += this.cueIn;
+    const relPos = startTime - this.startTime;
+    const sourcePromise = playoutSystem.setUpSource();
 
-      // param relPos: cursor position in seconds relative to this track.
-      // can be negative if the cursor is placed before the start of this track etc.
-      (0, _lodash4.default)(this.fades, function (fade) {
-        var fadeStart = void 0;
-        var fadeDuration = void 0;
+    // param relPos: cursor position in seconds relative to this track.
+    // can be negative if the cursor is placed before the start of this track etc.
+    lodash_forown_default()(this.fades, (fade) => {
+      let fadeStart;
+      let fadeDuration;
 
-        // only apply fade if it's ahead of the cursor.
-        if (relPos < fade.end) {
-          if (relPos <= fade.start) {
-            fadeStart = now + (fade.start - relPos);
-            fadeDuration = fade.end - fade.start;
-          } else if (relPos > fade.start && relPos < fade.end) {
-            fadeStart = now - (relPos - fade.start);
-            fadeDuration = fade.end - fade.start;
+      // only apply fade if it's ahead of the cursor.
+      if (relPos < fade.end) {
+        if (relPos <= fade.start) {
+          fadeStart = now + (fade.start - relPos);
+          fadeDuration = fade.end - fade.start;
+        } else if (relPos > fade.start && relPos < fade.end) {
+          fadeStart = now - (relPos - fade.start);
+          fadeDuration = fade.end - fade.start;
+        }
+
+        switch (fade.type) {
+          case fade_maker/* FADEIN */.Y1: {
+            playoutSystem.applyFadeIn(fadeStart, fadeDuration, fade.shape);
+            break;
           }
-
-          switch (fade.type) {
-            case _fadeMaker.FADEIN:
-              {
-                playoutSystem.applyFadeIn(fadeStart, fadeDuration, fade.shape);
-                break;
-              }
-            case _fadeMaker.FADEOUT:
-              {
-                playoutSystem.applyFadeOut(fadeStart, fadeDuration, fade.shape);
-                break;
-              }
-            default:
-              {
-                throw new Error('Invalid fade type saved on track.');
-              }
+          case fade_maker/* FADEOUT */.h7: {
+            playoutSystem.applyFadeOut(fadeStart, fadeDuration, fade.shape);
+            break;
+          }
+          default: {
+            throw new Error("Invalid fade type saved on track.");
           }
         }
+      }
+    });
+
+    playoutSystem.setVolumeGainLevel(this.gain);
+    playoutSystem.setShouldPlay(options.shouldPlay);
+    playoutSystem.setMasterGainLevel(options.masterGain);
+    playoutSystem.setStereoPanValue(this.stereoPan);
+    playoutSystem.play(when, start, duration);
+
+    return sourcePromise;
+  }
+
+  scheduleStop(when = 0) {
+    this.playout.stop(when);
+  }
+
+  renderOverlay(data) {
+    const channelPixels = secondsToPixels(
+      data.playlistLength,
+      data.resolution,
+      data.sampleRate
+    );
+
+    const config = {
+      attributes: {
+        style: `position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: ${channelPixels}px; z-index: 9;`,
+      },
+    };
+
+    let overlayClass = "";
+
+    if (this.stateObj) {
+      this.stateObj.setup(data.resolution, data.sampleRate);
+      const StateClass = states[this.state];
+      const events = StateClass.getEvents();
+
+      events.forEach((event) => {
+        config[`on${event}`] = this.stateObj[event].bind(this.stateObj);
       });
 
-      playoutSystem.setVolumeGainLevel(this.gain);
-      playoutSystem.setShouldPlay(options.shouldPlay);
-      playoutSystem.setMasterGainLevel(options.masterGain);
-      playoutSystem.setStereoPanValue(this.stereoPan);
-      playoutSystem.play(when, start, duration);
-
-      return sourcePromise;
+      overlayClass = StateClass.getClass();
     }
-  }, {
-    key: 'scheduleStop',
-    value: function scheduleStop() {
-      var when = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
+    // use this overlay for track event cursor position calculations.
+    return h_default()(`div.playlist-overlay${overlayClass}`, config);
+  }
 
-      this.playout.stop(when);
-    }
-  }, {
-    key: 'renderOverlay',
-    value: function renderOverlay(data) {
-      var _this = this;
+  renderControls(data) {
+    const muteClass = data.muted ? ".active" : "";
+    const soloClass = data.soloed ? ".active" : "";
+    const isCollapsed = data.collapsed;
+    const numChan = this.peaks.data.length;
+    const widgets = data.controls.widgets;
 
-      var channelPixels = (0, _conversions.secondsToPixels)(data.playlistLength, data.resolution, data.sampleRate);
-
-      var config = {
+    const removeTrack = h_default()(
+      "button.btn.btn-danger.btn-xs.track-remove",
+      {
         attributes: {
-          style: 'position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: ' + channelPixels + 'px; z-index: 9;'
-        }
-      };
-
-      var overlayClass = '';
-
-      if (this.stateObj) {
-        this.stateObj.setup(data.resolution, data.sampleRate);
-        var StateClass = _states2.default[this.state];
-        var events = StateClass.getEvents();
-
-        events.forEach(function (event) {
-          config['on' + event] = _this.stateObj[event].bind(_this.stateObj);
-        });
-
-        overlayClass = StateClass.getClass();
-      }
-      // use this overlay for track event cursor position calculations.
-      return (0, _h2.default)('div.playlist-overlay' + overlayClass, config);
-    }
-  }, {
-    key: 'renderControls',
-    value: function renderControls(data) {
-      var _this2 = this;
-
-      var muteClass = data.muted ? '.active' : '';
-      var soloClass = data.soloed ? '.active' : '';
-      var numChan = this.peaks.data.length;
-
-      return (0, _h2.default)('div.controls', {
-        attributes: {
-          style: 'height: ' + numChan * data.height + 'px; width: ' + data.controls.width + 'px; position: absolute; left: 0; z-index: 10;'
-        }
-      }, [(0, _h2.default)('header', [this.name]), (0, _h2.default)('div.btn-group', [(0, _h2.default)('span.btn.btn-default.btn-xs.btn-mute' + muteClass, {
-        onclick: function onclick() {
-          _this2.ee.emit('mute', _this2);
-        }
-      }, ['Mute']), (0, _h2.default)('span.btn.btn-default.btn-xs.btn-solo' + soloClass, {
-        onclick: function onclick() {
-          _this2.ee.emit('solo', _this2);
-        }
-      }, ['Solo'])]), (0, _h2.default)('label', [(0, _h2.default)('input.volume-slider', {
-        attributes: {
-          type: 'range',
-          min: 0,
-          max: 100,
-          value: 100
+          type: "button",
+          title: "Remove track",
         },
-        hook: new _VolumeSliderHook2.default(this.gain),
-        oninput: function oninput(e) {
-          _this2.ee.emit('volumechange', e.target.value, _this2);
-        }
-      })])]);
+        onclick: () => {
+          this.ee.emit("removeTrack", this);
+        },
+      },
+      [h_default()("i.fas.fa-times")]
+    );
+
+    const trackName = h_default()("span", [this.name]);
+
+    const collapseTrack = h_default()(
+      "button.btn.btn-info.btn-xs.track-collapse",
+      {
+        attributes: {
+          type: "button",
+          title: isCollapsed ? "Expand track" : "Collapse track",
+        },
+        onclick: () => {
+          this.ee.emit("changeTrackView", this, {
+            collapsed: !isCollapsed,
+          });
+        },
+      },
+      [h_default()(`i.fas.${isCollapsed ? "fa-caret-down" : "fa-caret-up"}`)]
+    );
+
+    const headerChildren = [];
+
+    if (widgets.remove) {
+      headerChildren.push(removeTrack);
     }
-  }, {
-    key: 'render',
-    value: function render(data) {
-      var _this3 = this;
+    headerChildren.push(trackName);
+    if (widgets.collapse) {
+      headerChildren.push(collapseTrack);
+    }
 
-      var width = this.peaks.length;
-      var playbackX = (0, _conversions.secondsToPixels)(data.playbackSeconds, data.resolution, data.sampleRate);
-      var startX = (0, _conversions.secondsToPixels)(this.startTime, data.resolution, data.sampleRate);
-      var endX = (0, _conversions.secondsToPixels)(this.endTime, data.resolution, data.sampleRate);
-      var progressWidth = 0;
-      var numChan = this.peaks.data.length;
-      var scale = Math.floor(window.devicePixelRatio);
+    const controls = [h_default()("div.track-header", headerChildren)];
 
-      if (playbackX > 0 && playbackX > startX) {
-        if (playbackX < endX) {
-          progressWidth = playbackX - startX;
-        } else {
-          progressWidth = width;
-        }
+    if (!isCollapsed) {
+      if (widgets.muteOrSolo) {
+        controls.push(
+          h_default()("div.btn-group", [
+            h_default()(
+              `button.btn.btn-outline-dark.btn-xs.btn-mute${muteClass}`,
+              {
+                attributes: {
+                  type: "button",
+                },
+                onclick: () => {
+                  this.ee.emit("mute", this);
+                },
+              },
+              ["Mute"]
+            ),
+            h_default()(
+              `button.btn.btn-outline-dark.btn-xs.btn-solo${soloClass}`,
+              {
+                onclick: () => {
+                  this.ee.emit("solo", this);
+                },
+              },
+              ["Solo"]
+            ),
+          ])
+        );
       }
 
-      var waveformChildren = [(0, _h2.default)('div.cursor', {
+      if (widgets.volume) {
+        controls.push(
+          h_default()("label.volume", [
+            h_default()("input.volume-slider", {
+              attributes: {
+                "aria-label": "Track volume control",
+                type: "range",
+                min: 0,
+                max: 100,
+                value: 100,
+              },
+              hook: new VolumeSliderHook(this.gain),
+              oninput: (e) => {
+                this.ee.emit("volumechange", e.target.value, this);
+              },
+            }),
+          ])
+        );
+      }
+
+      if (widgets.stereoPan) {
+        controls.push(
+          h_default()("label.stereopan", [
+            h_default()("input.stereopan-slider", {
+              attributes: {
+                "aria-label": "Track stereo pan control",
+                type: "range",
+                min: -100,
+                max: 100,
+                value: 100,
+              },
+              hook: new StereoPanSliderHook(this.stereoPan),
+              oninput: (e) => {
+                this.ee.emit("stereopan", e.target.value / 100, this);
+              },
+            }),
+          ])
+        );
+      }
+    }
+
+    return h_default()(
+      "div.controls",
+      {
         attributes: {
-          style: 'position: absolute; width: 1px; margin: 0; padding: 0; top: 0; left: ' + playbackX + 'px; bottom: 0; z-index: 5;'
-        }
-      })];
+          style: `height: ${numChan * data.height}px; width: ${
+            data.controls.width
+          }px; position: absolute; left: 0; z-index: 10;`,
+        },
+      },
+      controls
+    );
+  }
 
-      var channels = Object.keys(this.peaks.data).map(function (channelNum) {
-        var channelChildren = [(0, _h2.default)('div.channel-progress', {
+  render(data) {
+    const width = this.peaks.length;
+    const playbackX = secondsToPixels(
+      data.playbackSeconds,
+      data.resolution,
+      data.sampleRate
+    );
+    const startX = secondsToPixels(
+      this.startTime,
+      data.resolution,
+      data.sampleRate
+    );
+    const endX = secondsToPixels(
+      this.endTime,
+      data.resolution,
+      data.sampleRate
+    );
+    let progressWidth = 0;
+    const numChan = this.peaks.data.length;
+    const scale = Math.ceil(window.devicePixelRatio);
+
+    if (playbackX > 0 && playbackX > startX) {
+      if (playbackX < endX) {
+        progressWidth = playbackX - startX;
+      } else {
+        progressWidth = width;
+      }
+    }
+
+    const waveformChildren = [
+      h_default()("div.cursor", {
+        attributes: {
+          style: `position: absolute; width: 1px; margin: 0; padding: 0; top: 0; left: ${playbackX}px; bottom: 0; z-index: 5;`,
+        },
+      }),
+    ];
+
+    const channels = Object.keys(this.peaks.data).map((channelNum) => {
+      const channelChildren = [
+        h_default()("div.channel-progress", {
           attributes: {
-            style: 'position: absolute; width: ' + progressWidth + 'px; height: ' + data.height + 'px; z-index: 2;'
-          }
-        })];
-        var offset = 0;
-        var totalWidth = width;
-        var peaks = _this3.peaks.data[channelNum];
+            style: `position: absolute; width: ${progressWidth}px; height: ${data.height}px; z-index: 2;`,
+          },
+        }),
+      ];
+      let offset = 0;
+      let totalWidth = width;
+      const peaks = this.peaks.data[channelNum];
 
-        while (totalWidth > 0) {
-          var currentWidth = Math.min(totalWidth, MAX_CANVAS_WIDTH);
-          var canvasColor = _this3.waveOutlineColor ? _this3.waveOutlineColor : data.colors.waveOutlineColor;
+      while (totalWidth > 0) {
+        const currentWidth = Math.min(totalWidth, MAX_CANVAS_WIDTH);
+        const canvasColor = this.waveOutlineColor
+          ? this.waveOutlineColor
+          : data.colors.waveOutlineColor;
 
-          channelChildren.push((0, _h2.default)('canvas', {
+        channelChildren.push(
+          h_default()("canvas", {
             attributes: {
               width: currentWidth * scale,
               height: data.height * scale,
-              style: 'float: left; position: relative; margin: 0; padding: 0; z-index: 3; width: ' + currentWidth + 'px; height: ' + data.height + 'px;'
+              style: `float: left; position: relative; margin: 0; padding: 0; z-index: 3; width: ${currentWidth}px; height: ${data.height}px;`,
             },
-            hook: new _CanvasHook2.default(peaks, offset, _this3.peaks.bits, canvasColor, scale)
-          }));
+            hook: new render_CanvasHook(
+              peaks,
+              offset,
+              this.peaks.bits,
+              canvasColor,
+              scale,
+              data.height,
+              data.barWidth,
+              data.barGap
+            ),
+          })
+        );
 
-          totalWidth -= currentWidth;
-          offset += MAX_CANVAS_WIDTH;
-        }
-
-        // if there are fades, display them.
-        if (_this3.fadeIn) {
-          var fadeIn = _this3.fades[_this3.fadeIn];
-          var fadeWidth = (0, _conversions.secondsToPixels)(fadeIn.end - fadeIn.start, data.resolution, data.sampleRate);
-
-          channelChildren.push((0, _h2.default)('div.wp-fade.wp-fadein', {
-            attributes: {
-              style: 'position: absolute; height: ' + data.height + 'px; width: ' + fadeWidth + 'px; top: 0; left: 0; z-index: 4;'
-            }
-          }, [(0, _h2.default)('canvas', {
-            attributes: {
-              width: fadeWidth,
-              height: data.height
-            },
-            hook: new _FadeCanvasHook2.default(fadeIn.type, fadeIn.shape, fadeIn.end - fadeIn.start, data.resolution)
-          })]));
-        }
-
-        if (_this3.fadeOut) {
-          var fadeOut = _this3.fades[_this3.fadeOut];
-          var _fadeWidth = (0, _conversions.secondsToPixels)(fadeOut.end - fadeOut.start, data.resolution, data.sampleRate);
-
-          channelChildren.push((0, _h2.default)('div.wp-fade.wp-fadeout', {
-            attributes: {
-              style: 'position: absolute; height: ' + data.height + 'px; width: ' + _fadeWidth + 'px; top: 0; right: 0; z-index: 4;'
-            }
-          }, [(0, _h2.default)('canvas', {
-            attributes: {
-              width: _fadeWidth,
-              height: data.height
-            },
-            hook: new _FadeCanvasHook2.default(fadeOut.type, fadeOut.shape, fadeOut.end - fadeOut.start, data.resolution)
-          })]));
-        }
-
-        return (0, _h2.default)('div.channel.channel-' + channelNum, {
-          attributes: {
-            style: 'height: ' + data.height + 'px; width: ' + width + 'px; top: ' + channelNum * data.height + 'px; left: ' + startX + 'px; position: absolute; margin: 0; padding: 0; z-index: 1;'
-          }
-        }, channelChildren);
-      });
-
-      waveformChildren.push(channels);
-      waveformChildren.push(this.renderOverlay(data));
-
-      // draw cursor selection on active track.
-      if (data.isActive === true) {
-        var cStartX = (0, _conversions.secondsToPixels)(data.timeSelection.start, data.resolution, data.sampleRate);
-        var cEndX = (0, _conversions.secondsToPixels)(data.timeSelection.end, data.resolution, data.sampleRate);
-        var cWidth = cEndX - cStartX + 1;
-        var cClassName = cWidth > 1 ? '.segment' : '.point';
-
-        waveformChildren.push((0, _h2.default)('div.selection' + cClassName, {
-          attributes: {
-            style: 'position: absolute; width: ' + cWidth + 'px; bottom: 0; top: 0; left: ' + cStartX + 'px; z-index: 4;'
-          }
-        }));
+        totalWidth -= currentWidth;
+        offset += MAX_CANVAS_WIDTH;
       }
 
-      var waveform = (0, _h2.default)('div.waveform', {
-        attributes: {
-          style: 'height: ' + numChan * data.height + 'px; position: relative;'
-        }
-      }, waveformChildren);
-
-      var channelChildren = [];
-      var channelMargin = 0;
-
-      if (data.controls.show) {
-        channelChildren.push(this.renderControls(data));
-        channelMargin = data.controls.width;
-      }
-
-      channelChildren.push(waveform);
-
-      var audibleClass = data.shouldPlay ? '' : '.silent';
-      var customClass = this.customClass === undefined ? '' : '.' + this.customClass;
-
-      return (0, _h2.default)('div.channel-wrapper' + audibleClass + customClass, {
-        attributes: {
-          style: 'margin-left: ' + channelMargin + 'px; height: ' + data.height * numChan + 'px;'
-        }
-      }, channelChildren);
-    }
-  }, {
-    key: 'getTrackDetails',
-    value: function getTrackDetails() {
-      var info = {
-        src: this.src,
-        start: this.startTime,
-        end: this.endTime,
-        name: this.name,
-        customClass: this.customClass,
-        cuein: this.cueIn,
-        cueout: this.cueOut
-      };
-
+      // if there are fades, display them.
       if (this.fadeIn) {
-        var fadeIn = this.fades[this.fadeIn];
+        const fadeIn = this.fades[this.fadeIn];
+        const fadeWidth = secondsToPixels(
+          fadeIn.end - fadeIn.start,
+          data.resolution,
+          data.sampleRate
+        );
 
-        info.fadeIn = {
-          shape: fadeIn.shape,
-          duration: fadeIn.end - fadeIn.start
-        };
+        channelChildren.push(
+          h_default()(
+            "div.wp-fade.wp-fadein",
+            {
+              attributes: {
+                style: `position: absolute; height: ${data.height}px; width: ${fadeWidth}px; top: 0; left: 0; z-index: 4;`,
+              },
+            },
+            [
+              h_default()("canvas", {
+                attributes: {
+                  width: fadeWidth,
+                  height: data.height,
+                },
+                hook: new render_FadeCanvasHook(
+                  fadeIn.type,
+                  fadeIn.shape,
+                  fadeIn.end - fadeIn.start,
+                  data.resolution
+                ),
+              }),
+            ]
+          )
+        );
       }
 
       if (this.fadeOut) {
-        var fadeOut = this.fades[this.fadeOut];
+        const fadeOut = this.fades[this.fadeOut];
+        const fadeWidth = secondsToPixels(
+          fadeOut.end - fadeOut.start,
+          data.resolution,
+          data.sampleRate
+        );
 
-        info.fadeOut = {
-          shape: fadeOut.shape,
-          duration: fadeOut.end - fadeOut.start
-        };
+        channelChildren.push(
+          h_default()(
+            "div.wp-fade.wp-fadeout",
+            {
+              attributes: {
+                style: `position: absolute; height: ${data.height}px; width: ${fadeWidth}px; top: 0; right: 0; z-index: 4;`,
+              },
+            },
+            [
+              h_default()("canvas", {
+                attributes: {
+                  width: fadeWidth,
+                  height: data.height,
+                },
+                hook: new render_FadeCanvasHook(
+                  fadeOut.type,
+                  fadeOut.shape,
+                  fadeOut.end - fadeOut.start,
+                  data.resolution
+                ),
+              }),
+            ]
+          )
+        );
       }
 
-      return info;
+      return h_default()(
+        `div.channel.channel-${channelNum}`,
+        {
+          attributes: {
+            style: `height: ${data.height}px; width: ${width}px; top: ${
+              channelNum * data.height
+            }px; left: ${startX}px; position: absolute; margin: 0; padding: 0; z-index: 1;`,
+          },
+        },
+        channelChildren
+      );
+    });
+
+    waveformChildren.push(channels);
+    waveformChildren.push(this.renderOverlay(data));
+
+    // draw cursor selection on active track.
+    if (data.isActive === true) {
+      const cStartX = secondsToPixels(
+        data.timeSelection.start,
+        data.resolution,
+        data.sampleRate
+      );
+      const cEndX = secondsToPixels(
+        data.timeSelection.end,
+        data.resolution,
+        data.sampleRate
+      );
+      const cWidth = cEndX - cStartX + 1;
+      const cClassName = cWidth > 1 ? ".segment" : ".point";
+
+      waveformChildren.push(
+        h_default()(`div.selection${cClassName}`, {
+          attributes: {
+            style: `position: absolute; width: ${cWidth}px; bottom: 0; top: 0; left: ${cStartX}px; z-index: 4;`,
+          },
+        })
+      );
     }
-  }]);
 
-  return _class;
-}();
+    const waveform = h_default()(
+      "div.waveform",
+      {
+        attributes: {
+          style: `height: ${numChan * data.height}px; position: relative;`,
+        },
+      },
+      waveformChildren
+    );
 
-exports.default = _class;
-},{"lodash.assign":"../node_modules/lodash.assign/index.js","lodash.forown":"../node_modules/lodash.forown/index.js","uuid":"../node_modules/waveform-playlist/node_modules/uuid/uuid.js","virtual-dom/h":"../node_modules/virtual-dom/h.js","webaudio-peaks":"../node_modules/webaudio-peaks/index.js","fade-maker":"../node_modules/fade-maker/index.js","./utils/conversions":"../node_modules/waveform-playlist/lib/utils/conversions.js","./track/states":"../node_modules/waveform-playlist/lib/track/states.js","./render/CanvasHook":"../node_modules/waveform-playlist/lib/render/CanvasHook.js","./render/FadeCanvasHook":"../node_modules/waveform-playlist/lib/render/FadeCanvasHook.js","./render/VolumeSliderHook":"../node_modules/waveform-playlist/lib/render/VolumeSliderHook.js"}],"../node_modules/waveform-playlist/lib/Playout.js":[function(require,module,exports) {
-'use strict';
+    const channelChildren = [];
+    let channelMargin = 0;
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+    if (data.controls.show) {
+      channelChildren.push(this.renderControls(data));
+      channelMargin = data.controls.width;
+    }
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+    channelChildren.push(waveform);
 
-var _fadeMaker = require('fade-maker');
+    const audibleClass = data.shouldPlay ? "" : ".silent";
+    const customClass =
+      this.customClass === undefined ? "" : `.${this.customClass}`;
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var _class = function () {
-  function _class(ac, buffer) {
-    _classCallCheck(this, _class);
-
-    this.ac = ac;
-    this.gain = 1;
-    this.buffer = buffer;
-    this.destination = this.ac.destination;
-    this.ac.createStereoPanner = ac.createStereoPanner || ac.createPanner;
+    return h_default()(
+      `div.channel-wrapper${audibleClass}${customClass}`,
+      {
+        attributes: {
+          style: `margin-left: ${channelMargin}px; height: ${
+            data.height * numChan
+          }px;`,
+        },
+      },
+      channelChildren
+    );
   }
 
-  _createClass(_class, [{
-    key: 'applyFade',
-    value: function applyFade(type, start, duration) {
-      var shape = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'logarithmic';
+  getTrackDetails() {
+    const info = {
+      src: this.src,
+      start: this.startTime,
+      end: this.endTime,
+      name: this.name,
+      customClass: this.customClass,
+      cuein: this.cueIn,
+      cueout: this.cueOut,
+      stereoPan: this.stereoPan,
+      gain: this.gain,
+      effects: this.effectsGraph,
+    };
 
-      if (type === _fadeMaker.FADEIN) {
-        (0, _fadeMaker.createFadeIn)(this.fadeGain.gain, shape, start, duration);
-      } else if (type === _fadeMaker.FADEOUT) {
-        (0, _fadeMaker.createFadeOut)(this.fadeGain.gain, shape, start, duration);
-      } else {
-        throw new Error('Unsupported fade type');
-      }
-    }
-  }, {
-    key: 'applyFadeIn',
-    value: function applyFadeIn(start, duration) {
-      var shape = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'logarithmic';
+    if (this.fadeIn) {
+      const fadeIn = this.fades[this.fadeIn];
 
-      this.applyFade(_fadeMaker.FADEIN, start, duration, shape);
-    }
-  }, {
-    key: 'applyFadeOut',
-    value: function applyFadeOut(start, duration) {
-      var shape = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'logarithmic';
-
-      this.applyFade(_fadeMaker.FADEOUT, start, duration, shape);
-    }
-  }, {
-    key: 'isPlaying',
-    value: function isPlaying() {
-      return this.source !== undefined;
-    }
-  }, {
-    key: 'getDuration',
-    value: function getDuration() {
-      return this.buffer.duration;
-    }
-  }, {
-    key: 'setAudioContext',
-    value: function setAudioContext(ac) {
-      this.ac = ac;
-      this.ac.createStereoPanner = ac.createStereoPanner || ac.createPanner;
-      this.destination = this.ac.destination;
-    }
-  }, {
-    key: 'setUpSource',
-    value: function setUpSource() {
-      var _this = this;
-
-      this.source = this.ac.createBufferSource();
-      this.source.buffer = this.buffer;
-
-      var sourcePromise = new Promise(function (resolve) {
-        // keep track of the buffer state.
-        _this.source.onended = function () {
-          _this.source.disconnect();
-          _this.fadeGain.disconnect();
-          _this.volumeGain.disconnect();
-          _this.shouldPlayGain.disconnect();
-          _this.panner.disconnect();
-          _this.masterGain.disconnect();
-
-          _this.source = undefined;
-          _this.fadeGain = undefined;
-          _this.volumeGain = undefined;
-          _this.shouldPlayGain = undefined;
-          _this.panner = undefined;
-          _this.masterGain = undefined;
-
-          resolve();
-        };
-      });
-
-      this.fadeGain = this.ac.createGain();
-      // used for track volume slider
-      this.volumeGain = this.ac.createGain();
-      // used for solo/mute
-      this.shouldPlayGain = this.ac.createGain();
-      this.masterGain = this.ac.createGain();
-
-      this.panner = this.ac.createStereoPanner();
-
-      this.source.connect(this.fadeGain);
-      this.fadeGain.connect(this.volumeGain);
-      this.volumeGain.connect(this.shouldPlayGain);
-      this.shouldPlayGain.connect(this.masterGain);
-      this.masterGain.connect(this.panner);
-      this.panner.connect(this.destination);
-
-      return sourcePromise;
-    }
-  }, {
-    key: 'setVolumeGainLevel',
-    value: function setVolumeGainLevel(level) {
-      if (this.volumeGain) {
-        this.volumeGain.gain.value = level;
-      }
-    }
-  }, {
-    key: 'setShouldPlay',
-    value: function setShouldPlay(bool) {
-      if (this.shouldPlayGain) {
-        this.shouldPlayGain.gain.value = bool ? 1 : 0;
-      }
-    }
-  }, {
-    key: 'setMasterGainLevel',
-    value: function setMasterGainLevel(level) {
-      if (this.masterGain) {
-        this.masterGain.gain.value = level;
-      }
-    }
-  }, {
-    key: 'setStereoPanValue',
-    value: function setStereoPanValue(value) {
-      var pan = value === undefined ? 0 : value;
-
-      if (this.panner) {
-        if (this.panner.pan !== undefined) {
-          this.panner.pan.value = pan;
-        } else {
-          this.panner.panningModel = 'equalpower';
-          this.panner.setPosition(pan, 0, 1 - Math.abs(pan));
-        }
-      }
+      info.fadeIn = {
+        shape: fadeIn.shape,
+        duration: fadeIn.end - fadeIn.start,
+      };
     }
 
-    /*
-      source.start is picky when passing the end time.
-      If rounding error causes a number to make the source think
-      it is playing slightly more samples than it has it won't play at all.
-      Unfortunately it doesn't seem to work if you just give it a start time.
-    */
+    if (this.fadeOut) {
+      const fadeOut = this.fades[this.fadeOut];
 
-  }, {
-    key: 'play',
-    value: function play(when, start, duration) {
-      this.source.start(when, start, duration);
+      info.fadeOut = {
+        shape: fadeOut.shape,
+        duration: fadeOut.end - fadeOut.start,
+      };
     }
-  }, {
-    key: 'stop',
-    value: function stop() {
-      var when = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
 
-      if (this.source) {
-        this.source.stop(when);
-      }
-    }
-  }]);
-
-  return _class;
-}();
-
-exports.default = _class;
-},{"fade-maker":"../node_modules/fade-maker/index.js"}],"../node_modules/waveform-playlist/lib/annotation/input/aeneas.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
+    return info;
+  }
 });
 
-exports.default = function (aeneas) {
-  var annotation = {
-    id: aeneas.id || _uuid2.default.v4(),
+;// CONCATENATED MODULE: ./src/Playout.js
+
+
+function noEffects(node1, node2) {
+  node1.connect(node2);
+}
+
+/* harmony default export */ const Playout = (class {
+  constructor(ac, buffer, masterGain = ac.createGain()) {
+    this.ac = ac;
+    this.gain = 1;
+    this.effectsGraph = noEffects;
+    this.masterEffectsGraph = noEffects;
+    this.buffer = buffer;
+    this.masterGain = masterGain;
+    this.destination = this.ac.destination;
+  }
+
+  applyFade(type, start, duration, shape = "logarithmic") {
+    if (type === fade_maker/* FADEIN */.Y1) {
+      (0,fade_maker/* createFadeIn */.L7)(this.fadeGain.gain, shape, start, duration);
+    } else if (type === fade_maker/* FADEOUT */.h7) {
+      (0,fade_maker/* createFadeOut */.Mt)(this.fadeGain.gain, shape, start, duration);
+    } else {
+      throw new Error("Unsupported fade type");
+    }
+  }
+
+  applyFadeIn(start, duration, shape = "logarithmic") {
+    this.applyFade(fade_maker/* FADEIN */.Y1, start, duration, shape);
+  }
+
+  applyFadeOut(start, duration, shape = "logarithmic") {
+    this.applyFade(fade_maker/* FADEOUT */.h7, start, duration, shape);
+  }
+
+  isPlaying() {
+    return this.source !== undefined;
+  }
+
+  getDuration() {
+    return this.buffer.duration;
+  }
+
+  setAudioContext(ac) {
+    this.ac = ac;
+    this.destination = this.ac.destination;
+  }
+
+  createStereoPanner() {
+    if (this.ac.createStereoPanner) {
+      return this.ac.createStereoPanner();
+    }
+    return this.ac.createPanner();
+  }
+
+  setUpSource() {
+    this.source = this.ac.createBufferSource();
+    this.source.buffer = this.buffer;
+
+    let cleanupEffects;
+    let cleanupMasterEffects;
+
+    const sourcePromise = new Promise((resolve) => {
+      // keep track of the buffer state.
+      this.source.onended = () => {
+        this.source.disconnect();
+        this.fadeGain.disconnect();
+        this.volumeGain.disconnect();
+        this.shouldPlayGain.disconnect();
+        this.panner.disconnect();
+        // this.masterGain.disconnect();
+
+        if (cleanupEffects) cleanupEffects();
+        if (cleanupMasterEffects) cleanupMasterEffects();
+
+        this.source = undefined;
+        this.fadeGain = undefined;
+        this.volumeGain = undefined;
+        this.shouldPlayGain = undefined;
+        this.panner = undefined;
+
+        resolve();
+      };
+    });
+
+    this.fadeGain = this.ac.createGain();
+    // used for track volume slider
+    this.volumeGain = this.ac.createGain();
+    // used for solo/mute
+    this.shouldPlayGain = this.ac.createGain();
+    this.panner = this.createStereoPanner();
+
+    this.source.connect(this.fadeGain);
+    this.fadeGain.connect(this.volumeGain);
+    this.volumeGain.connect(this.shouldPlayGain);
+    this.shouldPlayGain.connect(this.panner);
+
+    cleanupEffects = this.effectsGraph(
+      this.panner,
+      this.masterGain,
+      this.ac instanceof OfflineAudioContext
+    );
+    cleanupMasterEffects = this.masterEffectsGraph(
+      this.masterGain,
+      this.destination,
+      this.ac instanceof OfflineAudioContext
+    );
+
+    return sourcePromise;
+  }
+
+  setVolumeGainLevel(level) {
+    if (this.volumeGain) {
+      this.volumeGain.gain.value = level;
+    }
+  }
+
+  setShouldPlay(bool) {
+    if (this.shouldPlayGain) {
+      this.shouldPlayGain.gain.value = bool ? 1 : 0;
+    }
+  }
+
+  setMasterGainLevel(level) {
+    if (this.masterGain) {
+      this.masterGain.gain.value = level;
+    }
+  }
+
+  setStereoPanValue(pan = 0) {
+    if (this.panner) {
+      if (this.panner.pan !== undefined) {
+        this.panner.pan.value = pan;
+      } else {
+        this.panner.panningModel = "equalpower";
+        this.panner.setPosition(pan, 0, 1 - Math.abs(pan));
+      }
+    }
+  }
+
+  setEffects(effectsGraph = noEffects) {
+    this.effectsGraph = effectsGraph;
+  }
+
+  setMasterEffects(effectsGraph = noEffects) {
+    this.masterEffectsGraph = effectsGraph;
+  }
+
+  /*
+    source.start is picky when passing the end time.
+    If rounding error causes a number to make the source think
+    it is playing slightly more samples than it has it won't play at all.
+    Unfortunately it doesn't seem to work if you just give it a start time.
+  */
+  play(when, start, duration) {
+    this.source.start(when, start, duration);
+  }
+
+  stop(when = 0) {
+    if (this.source) {
+      this.source.stop(when);
+    }
+  }
+});
+
+;// CONCATENATED MODULE: ./src/annotation/input/aeneas.js
+/*
+{
+  "begin": "5.759",
+  "end": "9.155",
+  "id": "002",
+  "language": "en",
+  "lines": [
+    "I just wanted to hold"
+  ]
+},
+ */
+
+
+
+/* harmony default export */ function aeneas(aeneas) {
+  const annotation = {
+    id: aeneas.id || esm_browser_v4(),
     start: Number(aeneas.begin) || 0,
     end: Number(aeneas.end) || 0,
-    lines: aeneas.lines || [''],
-    lang: aeneas.language || 'en'
+    lines: aeneas.lines || [""],
+    lang: aeneas.language || "en",
   };
 
   return annotation;
-};
+}
 
-var _uuid = require('uuid');
+;// CONCATENATED MODULE: ./src/annotation/output/aeneas.js
+/*
+{
+  "begin": "5.759",
+  "end": "9.155",
+  "id": "002",
+  "language": "en",
+  "lines": [
+    "I just wanted to hold"
+  ]
+},
+ */
 
-var _uuid2 = _interopRequireDefault(_uuid);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-},{"uuid":"../node_modules/waveform-playlist/node_modules/uuid/uuid.js"}],"../node_modules/waveform-playlist/lib/annotation/output/aeneas.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-exports.default = function (annotation) {
+/* harmony default export */ function output_aeneas(annotation) {
   return {
     begin: String(annotation.start.toFixed(3)),
     end: String(annotation.end.toFixed(3)),
     id: String(annotation.id),
     language: annotation.lang,
-    lines: annotation.lines
+    lines: annotation.lines,
   };
-};
-},{}],"../node_modules/waveform-playlist/lib/interaction/DragInteraction.js":[function(require,module,exports) {
-'use strict';
+}
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+;// CONCATENATED MODULE: ./src/interaction/DragInteraction.js
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _conversions = require('../utils/conversions');
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var _class = function () {
-  function _class(playlist) {
-    var _this = this;
-
-    var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-    _classCallCheck(this, _class);
-
+/* harmony default export */ const DragInteraction = (class {
+  constructor(playlist, data = {}) {
     this.playlist = playlist;
     this.data = data;
     this.active = false;
 
-    this.ondragover = function (e) {
-      if (_this.active) {
+    this.ondragover = (e) => {
+      if (this.active) {
         e.preventDefault();
-        _this.emitDrag(e.clientX);
+        this.emitDrag(e.clientX);
       }
     };
   }
 
-  _createClass(_class, [{
-    key: 'emitDrag',
-    value: function emitDrag(x) {
-      var deltaX = x - this.prevX;
+  emitDrag(x) {
+    const deltaX = x - this.prevX;
 
-      // emit shift event if not 0
-      if (deltaX) {
-        var deltaTime = (0, _conversions.pixelsToSeconds)(deltaX, this.playlist.samplesPerPixel, this.playlist.sampleRate);
-        this.prevX = x;
-        this.playlist.ee.emit('dragged', deltaTime, this.data);
-      }
+    // emit shift event if not 0
+    if (deltaX) {
+      const deltaTime = pixelsToSeconds(
+        deltaX,
+        this.playlist.samplesPerPixel,
+        this.playlist.sampleRate
+      );
+      this.prevX = x;
+      this.playlist.ee.emit("dragged", deltaTime, this.data);
     }
-  }, {
-    key: 'complete',
-    value: function complete() {
-      this.active = false;
-      document.removeEventListener('dragover', this.ondragover);
-    }
-  }, {
-    key: 'dragstart',
-    value: function dragstart(e) {
-      var ev = e;
-      this.active = true;
-      this.prevX = e.clientX;
+  }
 
-      ev.dataTransfer.dropEffect = 'move';
-      ev.dataTransfer.effectAllowed = 'move';
-      ev.dataTransfer.setData('text/plain', '');
-      document.addEventListener('dragover', this.ondragover);
-    }
-  }, {
-    key: 'dragend',
-    value: function dragend(e) {
-      if (this.active) {
-        e.preventDefault();
-        this.complete();
-      }
-    }
-  }], [{
-    key: 'getClass',
-    value: function getClass() {
-      return '.shift';
-    }
-  }, {
-    key: 'getEvents',
-    value: function getEvents() {
-      return ['dragstart', 'dragend'];
-    }
-  }]);
+  complete() {
+    this.active = false;
+    document.removeEventListener("dragover", this.ondragover);
+  }
 
-  return _class;
-}();
+  dragstart(e) {
+    const ev = e;
+    this.active = true;
+    this.prevX = e.clientX;
 
-exports.default = _class;
-},{"../utils/conversions":"../node_modules/waveform-playlist/lib/utils/conversions.js"}],"../node_modules/waveform-playlist/lib/annotation/render/ScrollTopHook.js":[function(require,module,exports) {
-'use strict';
+    ev.dataTransfer.dropEffect = "move";
+    ev.dataTransfer.effectAllowed = "move";
+    ev.dataTransfer.setData("text/plain", "");
+    document.addEventListener("dragover", this.ondragover);
+  }
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
+  dragend(e) {
+    if (this.active) {
+      e.preventDefault();
+      this.complete();
+    }
+  }
+
+  static getClass() {
+    return ".shift";
+  }
+
+  static getEvents() {
+    return ["dragstart", "dragend"];
+  }
 });
+
+;// CONCATENATED MODULE: ./src/annotation/render/ScrollTopHook.js
 /*
-* virtual-dom hook for scrolling to the text annotation.
-*/
-var Hook = function ScrollTopHook() {};
+ * virtual-dom hook for scrolling to the text annotation.
+ */
+const Hook = function ScrollTopHook() {};
 Hook.prototype.hook = function hook(node) {
-  var el = node.querySelector('.current');
+  const el = node.querySelector(".current");
   if (el) {
-    var box = node.getBoundingClientRect();
-    var row = el.getBoundingClientRect();
-    var diff = row.top - box.top;
-    var list = node;
+    const box = node.getBoundingClientRect();
+    const row = el.getBoundingClientRect();
+    const diff = row.top - box.top;
+    const list = node;
     list.scrollTop += diff;
   }
 };
 
-exports.default = Hook;
-},{}],"../node_modules/waveform-playlist/lib/utils/timeformat.js":[function(require,module,exports) {
-'use strict';
+/* harmony default export */ const ScrollTopHook = (Hook);
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-exports.default = function (format) {
+;// CONCATENATED MODULE: ./src/utils/timeformat.js
+/* harmony default export */ function timeformat(format) {
   function clockFormat(seconds, decimals) {
-    var hours = parseInt(seconds / 3600, 10) % 24;
-    var minutes = parseInt(seconds / 60, 10) % 60;
-    var secs = (seconds % 60).toFixed(decimals);
+    const hours = parseInt(seconds / 3600, 10) % 24;
+    const minutes = parseInt(seconds / 60, 10) % 60;
+    const secs = (seconds % 60).toFixed(decimals);
 
-    var sHours = hours < 10 ? '0' + hours : hours;
-    var sMinutes = minutes < 10 ? '0' + minutes : minutes;
-    var sSeconds = secs < 10 ? '0' + secs : secs;
+    const sHours = hours < 10 ? `0${hours}` : hours;
+    const sMinutes = minutes < 10 ? `0${minutes}` : minutes;
+    const sSeconds = secs < 10 ? `0${secs}` : secs;
 
-    return sHours + ':' + sMinutes + ':' + sSeconds;
+    return `${sHours}:${sMinutes}:${sSeconds}`;
   }
 
-  var formats = {
-    seconds: function seconds(_seconds) {
-      return _seconds.toFixed(0);
+  const formats = {
+    seconds(seconds) {
+      return seconds.toFixed(0);
     },
-    thousandths: function thousandths(seconds) {
+    thousandths(seconds) {
       return seconds.toFixed(3);
     },
-
-    'hh:mm:ss': function hhmmss(seconds) {
+    "hh:mm:ss": function hhmmss(seconds) {
       return clockFormat(seconds, 0);
     },
-    'hh:mm:ss.u': function hhmmssu(seconds) {
+    "hh:mm:ss.u": function hhmmssu(seconds) {
       return clockFormat(seconds, 1);
     },
-    'hh:mm:ss.uu': function hhmmssuu(seconds) {
+    "hh:mm:ss.uu": function hhmmssuu(seconds) {
       return clockFormat(seconds, 2);
     },
-    'hh:mm:ss.uuu': function hhmmssuuu(seconds) {
+    "hh:mm:ss.uuu": function hhmmssuuu(seconds) {
       return clockFormat(seconds, 3);
-    }
+    },
   };
 
   return formats[format];
-};
-},{}],"../node_modules/waveform-playlist/lib/annotation/AnnotationList.js":[function(require,module,exports) {
-'use strict';
+}
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+;// CONCATENATED MODULE: ./src/annotation/AnnotationList.js
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _h = require('virtual-dom/h');
 
-var _h2 = _interopRequireDefault(_h);
 
-var _aeneas = require('./input/aeneas');
 
-var _aeneas2 = _interopRequireDefault(_aeneas);
 
-var _aeneas3 = require('./output/aeneas');
 
-var _aeneas4 = _interopRequireDefault(_aeneas3);
 
-var _conversions = require('../utils/conversions');
 
-var _DragInteraction = require('../interaction/DragInteraction');
-
-var _DragInteraction2 = _interopRequireDefault(_DragInteraction);
-
-var _ScrollTopHook = require('./render/ScrollTopHook');
-
-var _ScrollTopHook2 = _interopRequireDefault(_ScrollTopHook);
-
-var _timeformat = require('../utils/timeformat');
-
-var _timeformat2 = _interopRequireDefault(_timeformat);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var AnnotationList = function () {
-  function AnnotationList(playlist, annotations) {
-    var controls = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-    var editable = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
-    var linkEndpoints = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
-    var isContinuousPlay = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
-
-    _classCallCheck(this, AnnotationList);
-
+class AnnotationList {
+  constructor(
+    playlist,
+    annotations,
+    controls = [],
+    editable = false,
+    linkEndpoints = false,
+    isContinuousPlay = false,
+    marginLeft = 0
+  ) {
     this.playlist = playlist;
+    this.marginLeft = marginLeft;
     this.resizeHandlers = [];
     this.editable = editable;
-    this.annotations = annotations.map(function (a) {
-      return (
-        // TODO support different formats later on.
-        (0, _aeneas2.default)(a)
-      );
-    });
+    this.annotations = annotations.map((a) =>
+      // TODO support different formats later on.
+      aeneas(a)
+    );
     this.setupInteractions();
 
     this.controls = controls;
@@ -7296,264 +11029,294 @@ var AnnotationList = function () {
     this.length = this.annotations.length;
   }
 
-  _createClass(AnnotationList, [{
-    key: 'setupInteractions',
-    value: function setupInteractions() {
-      var _this = this;
-
-      this.annotations.forEach(function (a, i) {
-        var leftShift = new _DragInteraction2.default(_this.playlist, {
-          direction: 'left',
-          index: i
-        });
-        var rightShift = new _DragInteraction2.default(_this.playlist, {
-          direction: 'right',
-          index: i
-        });
-
-        _this.resizeHandlers.push(leftShift);
-        _this.resizeHandlers.push(rightShift);
+  setupInteractions() {
+    this.annotations.forEach((a, i) => {
+      const leftShift = new DragInteraction(this.playlist, {
+        direction: "left",
+        index: i,
       });
-    }
-  }, {
-    key: 'setupEE',
-    value: function setupEE(ee) {
-      var _this2 = this;
+      const rightShift = new DragInteraction(this.playlist, {
+        direction: "right",
+        index: i,
+      });
 
-      ee.on('dragged', function (deltaTime, data) {
-        var annotationIndex = data.index;
-        var annotations = _this2.annotations;
-        var note = annotations[annotationIndex];
+      this.resizeHandlers.push(leftShift);
+      this.resizeHandlers.push(rightShift);
+    });
+  }
 
-        // resizing to the left
-        if (data.direction === 'left') {
-          var originalVal = note.start;
-          note.start += deltaTime;
+  setupEE(ee) {
+    ee.on("dragged", (deltaTime, data) => {
+      const annotationIndex = data.index;
+      const annotations = this.annotations;
+      const note = annotations[annotationIndex];
 
-          if (note.start < 0) {
-            note.start = 0;
-          }
+      // resizing to the left
+      if (data.direction === "left") {
+        const originalVal = note.start;
+        note.start += deltaTime;
 
-          if (annotationIndex && annotations[annotationIndex - 1].end > note.start) {
-            annotations[annotationIndex - 1].end = note.start;
-          }
-
-          if (_this2.playlist.linkEndpoints && annotationIndex && annotations[annotationIndex - 1].end === originalVal) {
-            annotations[annotationIndex - 1].end = note.start;
-          }
-        } else {
-          // resizing to the right
-          var _originalVal = note.end;
-          note.end += deltaTime;
-
-          if (note.end > _this2.playlist.duration) {
-            note.end = _this2.playlist.duration;
-          }
-
-          if (annotationIndex < annotations.length - 1 && annotations[annotationIndex + 1].start < note.end) {
-            annotations[annotationIndex + 1].start = note.end;
-          }
-
-          if (_this2.playlist.linkEndpoints && annotationIndex < annotations.length - 1 && annotations[annotationIndex + 1].start === _originalVal) {
-            annotations[annotationIndex + 1].start = note.end;
-          }
+        if (note.start < 0) {
+          note.start = 0;
         }
 
-        _this2.playlist.drawRequest();
-      });
+        if (
+          annotationIndex &&
+          annotations[annotationIndex - 1].end > note.start
+        ) {
+          annotations[annotationIndex - 1].end = note.start;
+        }
 
-      ee.on('continuousplay', function (val) {
-        _this2.playlist.isContinuousPlay = val;
-      });
+        if (
+          this.playlist.linkEndpoints &&
+          annotationIndex &&
+          annotations[annotationIndex - 1].end === originalVal
+        ) {
+          annotations[annotationIndex - 1].end = note.start;
+        }
+      } else {
+        // resizing to the right
+        const originalVal = note.end;
+        note.end += deltaTime;
 
-      ee.on('linkendpoints', function (val) {
-        _this2.playlist.linkEndpoints = val;
-      });
+        if (note.end > this.playlist.duration) {
+          note.end = this.playlist.duration;
+        }
 
-      ee.on('annotationsrequest', function () {
-        _this2.export();
-      });
+        if (
+          annotationIndex < annotations.length - 1 &&
+          annotations[annotationIndex + 1].start < note.end
+        ) {
+          annotations[annotationIndex + 1].start = note.end;
+        }
 
-      return ee;
-    }
-  }, {
-    key: 'export',
-    value: function _export() {
-      var output = this.annotations.map(function (a) {
-        return (0, _aeneas4.default)(a);
-      });
-      var dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(output));
-      var a = document.createElement('a');
+        if (
+          this.playlist.linkEndpoints &&
+          annotationIndex < annotations.length - 1 &&
+          annotations[annotationIndex + 1].start === originalVal
+        ) {
+          annotations[annotationIndex + 1].start = note.end;
+        }
+      }
 
-      document.body.appendChild(a);
-      a.href = dataStr;
-      a.download = 'annotations.json';
-      a.click();
-      document.body.removeChild(a);
-    }
-  }, {
-    key: 'renderResizeLeft',
-    value: function renderResizeLeft(i) {
-      var events = _DragInteraction2.default.getEvents();
-      var config = {
+      this.playlist.drawRequest();
+    });
+
+    ee.on("continuousplay", (val) => {
+      this.playlist.isContinuousPlay = val;
+    });
+
+    ee.on("linkendpoints", (val) => {
+      this.playlist.linkEndpoints = val;
+    });
+
+    ee.on("annotationsrequest", () => {
+      this.export();
+    });
+
+    return ee;
+  }
+
+  export() {
+    const output = this.annotations.map((a) => output_aeneas(a));
+    const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(
+      JSON.stringify(output)
+    )}`;
+    const a = document.createElement("a");
+
+    document.body.appendChild(a);
+    a.href = dataStr;
+    a.download = "annotations.json";
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  renderResizeLeft(i) {
+    const events = DragInteraction.getEvents();
+    const config = {
+      attributes: {
+        style:
+          "position: absolute; height: 30px; width: 10px; top: 0; left: -2px",
+        draggable: true,
+      },
+    };
+    const handler = this.resizeHandlers[i * 2];
+
+    events.forEach((event) => {
+      config[`on${event}`] = handler[event].bind(handler);
+    });
+
+    return h_default()("div.resize-handle.resize-w", config);
+  }
+
+  renderResizeRight(i) {
+    const events = DragInteraction.getEvents();
+    const config = {
+      attributes: {
+        style:
+          "position: absolute; height: 30px; width: 10px; top: 0; right: -2px",
+        draggable: true,
+      },
+    };
+    const handler = this.resizeHandlers[i * 2 + 1];
+
+    events.forEach((event) => {
+      config[`on${event}`] = handler[event].bind(handler);
+    });
+
+    return h_default()("div.resize-handle.resize-e", config);
+  }
+
+  renderControls(note, i) {
+    // seems to be a bug with references, or I'm missing something.
+    const that = this;
+    return this.controls.map((ctrl) =>
+      h_default()(`i.${ctrl.class}`, {
         attributes: {
-          style: 'position: absolute; height: 30px; width: 10px; top: 0; left: -2px',
-          draggable: true
-        }
-      };
-      var handler = this.resizeHandlers[i * 2];
+          title: ctrl.title,
+        },
+        onclick: () => {
+          ctrl.action(note, i, that.annotations, {
+            linkEndpoints: that.playlist.linkEndpoints,
+          });
+          this.setupInteractions();
+          that.playlist.drawRequest();
+        },
+      })
+    );
+  }
 
-      events.forEach(function (event) {
-        config['on' + event] = handler[event].bind(handler);
-      });
-
-      return (0, _h2.default)('div.resize-handle.resize-w', config);
-    }
-  }, {
-    key: 'renderResizeRight',
-    value: function renderResizeRight(i) {
-      var events = _DragInteraction2.default.getEvents();
-      var config = {
+  render() {
+    const boxes = h_default()(
+      "div.annotations-boxes",
+      {
         attributes: {
-          style: 'position: absolute; height: 30px; width: 10px; top: 0; right: -2px',
-          draggable: true
-        }
-      };
-      var handler = this.resizeHandlers[i * 2 + 1];
+          style: `height: 30px; position: relative; margin-left: ${this.marginLeft}px;`,
+        },
+      },
+      this.annotations.map((note, i) => {
+        const samplesPerPixel = this.playlist.samplesPerPixel;
+        const sampleRate = this.playlist.sampleRate;
+        const pixPerSec = sampleRate / samplesPerPixel;
+        const pixOffset = secondsToPixels(
+          this.playlist.scrollLeft,
+          samplesPerPixel,
+          sampleRate
+        );
+        const left = Math.floor(note.start * pixPerSec - pixOffset);
+        const width = Math.ceil(note.end * pixPerSec - note.start * pixPerSec);
 
-      events.forEach(function (event) {
-        config['on' + event] = handler[event].bind(handler);
-      });
-
-      return (0, _h2.default)('div.resize-handle.resize-e', config);
-    }
-  }, {
-    key: 'renderControls',
-    value: function renderControls(note, i) {
-      var _this3 = this;
-
-      // seems to be a bug with references, or I'm missing something.
-      var that = this;
-      return this.controls.map(function (ctrl) {
-        return (0, _h2.default)('i.' + ctrl.class, {
-          attributes: {
-            title: ctrl.title
+        return h_default()(
+          "div.annotation-box",
+          {
+            attributes: {
+              style: `position: absolute; height: 30px; width: ${width}px; left: ${left}px`,
+              "data-id": note.id,
+            },
           },
-          onclick: function onclick() {
-            ctrl.action(note, i, that.annotations, {
-              linkEndpoints: that.playlist.linkEndpoints
-            });
-            _this3.setupInteractions();
-            that.playlist.drawRequest();
-          }
-        });
-      });
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      var _this4 = this;
+          [
+            this.renderResizeLeft(i),
+            h_default()(
+              "span.id",
+              {
+                onclick: () => {
+                  const start = this.annotations[i].start;
+                  const end = this.annotations[i].end;
 
-      var boxes = (0, _h2.default)('div.annotations-boxes', {
+                  if (this.playlist.isContinuousPlay) {
+                    this.playlist.seek(start, start);
+                    this.playlist.ee.emit("play", start);
+                  } else {
+                    this.playlist.seek(start, end);
+                    this.playlist.ee.emit("play", start, end);
+                  }
+                },
+              },
+              [note.id]
+            ),
+            this.renderResizeRight(i),
+          ]
+        );
+      })
+    );
+
+    const boxesWrapper = h_default()(
+      "div.annotations-boxes-wrapper",
+      {
         attributes: {
-          style: 'height: 30px;'
-        }
-      }, this.annotations.map(function (note, i) {
-        var samplesPerPixel = _this4.playlist.samplesPerPixel;
-        var sampleRate = _this4.playlist.sampleRate;
-        var pixPerSec = sampleRate / samplesPerPixel;
-        var pixOffset = (0, _conversions.secondsToPixels)(_this4.playlist.scrollLeft, samplesPerPixel, sampleRate);
-        var left = Math.floor(note.start * pixPerSec - pixOffset);
-        var width = Math.ceil(note.end * pixPerSec - note.start * pixPerSec);
+          style: "overflow: hidden;",
+        },
+      },
+      [boxes]
+    );
 
-        return (0, _h2.default)('div.annotation-box', {
+    const text = h_default()(
+      "div.annotations-text",
+      {
+        hook: new ScrollTopHook(),
+      },
+      this.annotations.map((note, i) => {
+        const format = timeformat(this.playlist.durationFormat);
+        const start = format(note.start);
+        const end = format(note.end);
+
+        let segmentClass = "";
+        if (
+          this.playlist.isPlaying() &&
+          this.playlist.playbackSeconds >= note.start &&
+          this.playlist.playbackSeconds <= note.end
+        ) {
+          segmentClass = ".current";
+        }
+
+        const editableConfig = {
           attributes: {
-            style: 'position: absolute; height: 30px; width: ' + width + 'px; left: ' + left + 'px',
-            'data-id': note.id
-          }
-        }, [_this4.renderResizeLeft(i), (0, _h2.default)('span.id', {
-          onclick: function onclick() {
-            var start = _this4.annotations[i].start;
-            var end = _this4.annotations[i].end;
-
-            if (_this4.playlist.isContinuousPlay) {
-              _this4.playlist.seek(start, start);
-              _this4.playlist.ee.emit('play', start);
-            } else {
-              _this4.playlist.seek(start, end);
-              _this4.playlist.ee.emit('play', start, end);
-            }
-          }
-        }, [note.id]), _this4.renderResizeRight(i)]);
-      }));
-
-      var boxesWrapper = (0, _h2.default)('div.annotations-boxes-wrapper', {
-        attributes: {
-          style: 'overflow: hidden;'
-        }
-      }, [boxes]);
-
-      var text = (0, _h2.default)('div.annotations-text', {
-        hook: new _ScrollTopHook2.default()
-      }, this.annotations.map(function (note, i) {
-        var format = (0, _timeformat2.default)(_this4.playlist.durationFormat);
-        var start = format(note.start);
-        var end = format(note.end);
-
-        var segmentClass = '';
-        if (_this4.playlist.isPlaying() && _this4.playlist.playbackSeconds >= note.start && _this4.playlist.playbackSeconds <= note.end) {
-          segmentClass = '.current';
-        }
-
-        var editableConfig = {
-          attributes: {
-            contenteditable: true
+            contenteditable: true,
           },
-          oninput: function oninput(e) {
+          oninput: (e) => {
             // needed currently for references
             // eslint-disable-next-line no-param-reassign
             note.lines = [e.target.innerText];
           },
-          onkeypress: function onkeypress(e) {
+          onkeypress: (e) => {
             if (e.which === 13 || e.keyCode === 13) {
               e.target.blur();
               e.preventDefault();
             }
-          }
+          },
         };
 
-        var linesConfig = _this4.editable ? editableConfig : {};
+        const linesConfig = this.editable ? editableConfig : {};
 
-        return (0, _h2.default)('div.annotation' + segmentClass, [(0, _h2.default)('span.annotation-id', [note.id]), (0, _h2.default)('span.annotation-start', [start]), (0, _h2.default)('span.annotation-end', [end]), (0, _h2.default)('span.annotation-lines', linesConfig, [note.lines]), (0, _h2.default)('span.annotation-actions', _this4.renderControls(note, i))]);
-      }));
+        return h_default()(`div.annotation${segmentClass}`, [
+          h_default()("span.annotation-id", [note.id]),
+          h_default()("span.annotation-start", [start]),
+          h_default()("span.annotation-end", [end]),
+          h_default()("span.annotation-lines", linesConfig, [note.lines]),
+          h_default()("span.annotation-actions", this.renderControls(note, i)),
+        ]);
+      })
+    );
 
-      return (0, _h2.default)('div.annotations', [boxesWrapper, text]);
-    }
-  }]);
+    return h_default()("div.annotations", [boxesWrapper, text]);
+  }
+}
 
-  return AnnotationList;
-}();
+/* harmony default export */ const annotation_AnnotationList = (AnnotationList);
 
-exports.default = AnnotationList;
-},{"virtual-dom/h":"../node_modules/virtual-dom/h.js","./input/aeneas":"../node_modules/waveform-playlist/lib/annotation/input/aeneas.js","./output/aeneas":"../node_modules/waveform-playlist/lib/annotation/output/aeneas.js","../utils/conversions":"../node_modules/waveform-playlist/lib/utils/conversions.js","../interaction/DragInteraction":"../node_modules/waveform-playlist/lib/interaction/DragInteraction.js","./render/ScrollTopHook":"../node_modules/waveform-playlist/lib/annotation/render/ScrollTopHook.js","../utils/timeformat":"../node_modules/waveform-playlist/lib/utils/timeformat.js"}],"../node_modules/waveform-playlist/lib/utils/recorderWorker.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-exports.default = function () {
+;// CONCATENATED MODULE: ./src/utils/recorderWorker.js
+/* harmony default export */ function recorderWorker() {
   // http://jsperf.com/typed-array-min-max/2
   // plain for loop for finding min/max is way faster than anything else.
   /**
-  * @param {TypedArray} array - Subarray of audio to calculate peaks from.
-  */
+   * @param {TypedArray} array - Subarray of audio to calculate peaks from.
+   */
   function findMinMax(array) {
-    var min = Infinity;
-    var max = -Infinity;
-    var curr = void 0;
+    let min = Infinity;
+    let max = -Infinity;
+    let curr;
 
-    for (var i = 0; i < array.length; i += 1) {
+    for (let i = 0; i < array.length; i += 1) {
       curr = array[i];
       if (min > curr) {
         min = curr;
@@ -7564,41 +11327,44 @@ exports.default = function () {
     }
 
     return {
-      min: min,
-      max: max
+      min,
+      max,
     };
   }
 
   /**
-  * @param {Number} n - peak to convert from float to Int8, Int16 etc.
-  * @param {Number} bits - convert to #bits two's complement signed integer
-  */
+   * @param {Number} n - peak to convert from float to Int8, Int16 etc.
+   * @param {Number} bits - convert to #bits two's complement signed integer
+   */
   function convert(n, bits) {
-    var max = Math.pow(2, bits - 1);
-    var v = n < 0 ? n * max : n * max - 1;
+    const max = 2 ** (bits - 1);
+    const v = n < 0 ? n * max : n * max - 1;
     return Math.max(-max, Math.min(max - 1, v));
   }
 
   /**
-  * @param {TypedArray} channel - Audio track frames to calculate peaks from.
-  * @param {Number} samplesPerPixel - Audio frames per peak
-  */
+   * @param {TypedArray} channel - Audio track frames to calculate peaks from.
+   * @param {Number} samplesPerPixel - Audio frames per peak
+   */
   function extractPeaks(channel, samplesPerPixel, bits) {
-    var chanLength = channel.length;
-    var numPeaks = Math.ceil(chanLength / samplesPerPixel);
-    var start = void 0;
-    var end = void 0;
-    var segment = void 0;
-    var max = void 0;
-    var min = void 0;
-    var extrema = void 0;
+    const chanLength = channel.length;
+    const numPeaks = Math.ceil(chanLength / samplesPerPixel);
+    let start;
+    let end;
+    let segment;
+    let max;
+    let min;
+    let extrema;
 
     // create interleaved array of min,max
-    var peaks = new self['Int' + bits + 'Array'](numPeaks * 2);
+    const peaks = new self[`Int${bits}Array`](numPeaks * 2);
 
-    for (var i = 0; i < numPeaks; i += 1) {
+    for (let i = 0; i < numPeaks; i += 1) {
       start = i * samplesPerPixel;
-      end = (i + 1) * samplesPerPixel > chanLength ? chanLength : (i + 1) * samplesPerPixel;
+      end =
+        (i + 1) * samplesPerPixel > chanLength
+          ? chanLength
+          : (i + 1) * samplesPerPixel;
 
       segment = channel.subarray(start, end);
       extrema = findMinMax(segment);
@@ -7613,51 +11379,45 @@ exports.default = function () {
   }
 
   /**
-  * @param {TypedArray} source - Source of audio samples for peak calculations.
-  * @param {Number} samplesPerPixel - Number of audio samples per peak.
-  * @param {Number} cueIn - index in channel to start peak calculations from.
-  * @param {Number} cueOut - index in channel to end peak calculations from (non-inclusive).
-  */
-  function audioPeaks(source) {
-    var samplesPerPixel = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 10000;
-    var bits = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 8;
-
+   * @param {TypedArray} source - Source of audio samples for peak calculations.
+   * @param {Number} samplesPerPixel - Number of audio samples per peak.
+   * @param {Number} cueIn - index in channel to start peak calculations from.
+   * @param {Number} cueOut - index in channel to end peak calculations from (non-inclusive).
+   */
+  function audioPeaks(source, samplesPerPixel = 10000, bits = 8) {
     if ([8, 16, 32].indexOf(bits) < 0) {
-      throw new Error('Invalid number of bits specified for peaks.');
+      throw new Error("Invalid number of bits specified for peaks.");
     }
 
-    var peaks = [];
-    var start = 0;
-    var end = source.length;
-    peaks.push(extractPeaks(source.subarray(start, end), samplesPerPixel, bits));
+    const peaks = [];
+    const start = 0;
+    const end = source.length;
+    peaks.push(
+      extractPeaks(source.subarray(start, end), samplesPerPixel, bits)
+    );
 
-    var length = peaks[0].length / 2;
+    const length = peaks[0].length / 2;
 
     return {
-      bits: bits,
-      length: length,
-      data: peaks
+      bits,
+      length,
+      data: peaks,
     };
   }
 
   onmessage = function onmessage(e) {
-    var peaks = audioPeaks(e.data.samples, e.data.samplesPerPixel);
+    const peaks = audioPeaks(e.data.samples, e.data.samplesPerPixel);
 
     postMessage(peaks);
   };
-};
-},{}],"../node_modules/waveform-playlist/lib/utils/exportWavWorker.js":[function(require,module,exports) {
-'use strict';
+}
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-exports.default = function () {
-  var recLength = 0;
-  var recBuffersL = [];
-  var recBuffersR = [];
-  var sampleRate = void 0;
+;// CONCATENATED MODULE: ./src/utils/exportWavWorker.js
+/* harmony default export */ function exportWavWorker() {
+  let recLength = 0;
+  let recBuffersL = [];
+  let recBuffersR = [];
+  let sampleRate;
 
   function init(config) {
     sampleRate = config.sampleRate;
@@ -7670,33 +11430,31 @@ exports.default = function () {
   }
 
   function writeString(view, offset, string) {
-    for (var i = 0; i < string.length; i += 1) {
+    for (let i = 0; i < string.length; i += 1) {
       view.setUint8(offset + i, string.charCodeAt(i));
     }
   }
 
   function floatTo16BitPCM(output, offset, input) {
-    var writeOffset = offset;
-    for (var i = 0; i < input.length; i += 1, writeOffset += 2) {
-      var s = Math.max(-1, Math.min(1, input[i]));
-      output.setInt16(writeOffset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    let writeOffset = offset;
+    for (let i = 0; i < input.length; i += 1, writeOffset += 2) {
+      const s = Math.max(-1, Math.min(1, input[i]));
+      output.setInt16(writeOffset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
     }
   }
 
-  function encodeWAV(samples) {
-    var mono = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-    var buffer = new ArrayBuffer(44 + samples.length * 2);
-    var view = new DataView(buffer);
+  function encodeWAV(samples, mono = false) {
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
 
     /* RIFF identifier */
-    writeString(view, 0, 'RIFF');
+    writeString(view, 0, "RIFF");
     /* file length */
     view.setUint32(4, 32 + samples.length * 2, true);
     /* RIFF type */
-    writeString(view, 8, 'WAVE');
+    writeString(view, 8, "WAVE");
     /* format chunk identifier */
-    writeString(view, 12, 'fmt ');
+    writeString(view, 12, "fmt ");
     /* format chunk length */
     view.setUint32(16, 16, true);
     /* sample format (raw) */
@@ -7712,7 +11470,7 @@ exports.default = function () {
     /* bits per sample */
     view.setUint16(34, 16, true);
     /* data chunk identifier */
-    writeString(view, 36, 'data');
+    writeString(view, 36, "data");
     /* data chunk length */
     view.setUint32(40, samples.length * 2, true);
 
@@ -7722,10 +11480,10 @@ exports.default = function () {
   }
 
   function mergeBuffers(recBuffers, length) {
-    var result = new Float32Array(length);
-    var offset = 0;
+    const result = new Float32Array(length);
+    let offset = 0;
 
-    for (var i = 0; i < recBuffers.length; i += 1) {
+    for (let i = 0; i < recBuffers.length; i += 1) {
       result.set(recBuffers[i], offset);
       offset += recBuffers[i].length;
     }
@@ -7733,15 +11491,15 @@ exports.default = function () {
   }
 
   function interleave(inputL, inputR) {
-    var length = inputL.length + inputR.length;
-    var result = new Float32Array(length);
+    const length = inputL.length + inputR.length;
+    const result = new Float32Array(length);
 
-    var index = 0;
-    var inputIndex = 0;
+    let index = 0;
+    let inputIndex = 0;
 
     while (index < length) {
-      result[index += 1] = inputL[inputIndex];
-      result[index += 1] = inputR[inputIndex];
+      result[(index += 1)] = inputL[inputIndex];
+      result[(index += 1)] = inputR[inputIndex];
       inputIndex += 1;
     }
 
@@ -7749,11 +11507,11 @@ exports.default = function () {
   }
 
   function exportWAV(type) {
-    var bufferL = mergeBuffers(recBuffersL, recLength);
-    var bufferR = mergeBuffers(recBuffersR, recLength);
-    var interleaved = interleave(bufferL, bufferR);
-    var dataview = encodeWAV(interleaved);
-    var audioBlob = new Blob([dataview], { type: type });
+    const bufferL = mergeBuffers(recBuffersL, recLength);
+    const bufferR = mergeBuffers(recBuffersR, recLength);
+    const interleaved = interleave(bufferL, bufferR);
+    const dataview = encodeWAV(interleaved);
+    const audioBlob = new Blob([dataview], { type });
 
     postMessage(audioBlob);
   }
@@ -7766,107 +11524,55 @@ exports.default = function () {
 
   onmessage = function onmessage(e) {
     switch (e.data.command) {
-      case 'init':
-        {
-          init(e.data.config);
-          break;
-        }
-      case 'record':
-        {
-          record(e.data.buffer);
-          break;
-        }
-      case 'exportWAV':
-        {
-          exportWAV(e.data.type);
-          break;
-        }
-      case 'clear':
-        {
-          clear();
-          break;
-        }
-      default:
-        {
-          throw new Error('Unknown export worker command');
-        }
+      case "init": {
+        init(e.data.config);
+        break;
+      }
+      case "record": {
+        record(e.data.buffer);
+        break;
+      }
+      case "exportWAV": {
+        exportWAV(e.data.type);
+        break;
+      }
+      case "clear": {
+        clear();
+        break;
+      }
+      default: {
+        throw new Error("Unknown export worker command");
+      }
     }
   };
-};
-},{}],"../node_modules/waveform-playlist/lib/Playlist.js":[function(require,module,exports) {
-'use strict';
+}
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+;// CONCATENATED MODULE: ./src/Playlist.js
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _lodash = require('lodash.defaults');
 
-var _lodash2 = _interopRequireDefault(_lodash);
 
-var _h = require('virtual-dom/h');
 
-var _h2 = _interopRequireDefault(_h);
 
-var _diff = require('virtual-dom/diff');
 
-var _diff2 = _interopRequireDefault(_diff);
 
-var _patch = require('virtual-dom/patch');
 
-var _patch2 = _interopRequireDefault(_patch);
 
-var _inlineWorker = require('inline-worker');
 
-var _inlineWorker2 = _interopRequireDefault(_inlineWorker);
 
-var _conversions = require('./utils/conversions');
 
-var _LoaderFactory = require('./track/loader/LoaderFactory');
 
-var _LoaderFactory2 = _interopRequireDefault(_LoaderFactory);
 
-var _ScrollHook = require('./render/ScrollHook');
 
-var _ScrollHook2 = _interopRequireDefault(_ScrollHook);
 
-var _TimeScale = require('./TimeScale');
 
-var _TimeScale2 = _interopRequireDefault(_TimeScale);
 
-var _Track = require('./Track');
-
-var _Track2 = _interopRequireDefault(_Track);
-
-var _Playout = require('./Playout');
-
-var _Playout2 = _interopRequireDefault(_Playout);
-
-var _AnnotationList = require('./annotation/AnnotationList');
-
-var _AnnotationList2 = _interopRequireDefault(_AnnotationList);
-
-var _recorderWorker = require('./utils/recorderWorker');
-
-var _recorderWorker2 = _interopRequireDefault(_recorderWorker);
-
-var _exportWavWorker = require('./utils/exportWavWorker');
-
-var _exportWavWorker2 = _interopRequireDefault(_exportWavWorker);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var _class = function () {
-  function _class() {
-    _classCallCheck(this, _class);
-
+/* harmony default export */ const Playlist = (class {
+  constructor() {
     this.tracks = [];
     this.soloedTracks = [];
     this.mutedTracks = [];
+    this.collapsedTracks = [];
     this.playoutPromises = [];
 
     this.cursor = 0;
@@ -7878,353 +11584,395 @@ var _class = function () {
     // whether a user is scrolling the waveform
     this.isScrolling = false;
 
-    this.fadeType = 'logarithmic';
+    this.fadeType = "logarithmic";
     this.masterGain = 1;
     this.annotations = [];
-    this.durationFormat = 'hh:mm:ss.uuu';
+    this.durationFormat = "hh:mm:ss.uuu";
     this.isAutomaticScroll = false;
     this.resetDrawTimer = undefined;
   }
 
   // TODO extract into a plugin
+  initExporter() {
+    this.exportWorker = new (inline_worker_default())(exportWavWorker);
+  }
 
+  // TODO extract into a plugin
+  initRecorder(stream) {
+    this.mediaRecorder = new MediaRecorder(stream);
 
-  _createClass(_class, [{
-    key: 'initExporter',
-    value: function initExporter() {
-      this.exportWorker = new _inlineWorker2.default(_exportWavWorker2.default);
-    }
+    this.mediaRecorder.onstart = () => {
+      const track = new Track();
+      track.setName("Recording");
+      track.setEnabledStates();
+      track.setEventEmitter(this.ee);
 
-    // TODO extract into a plugin
+      this.recordingTrack = track;
+      this.tracks.push(track);
 
-  }, {
-    key: 'initRecorder',
-    value: function initRecorder(stream) {
-      var _this = this;
+      this.chunks = [];
+      this.working = false;
+    };
 
-      this.mediaRecorder = new window.MediaRecorder(stream);
+    this.mediaRecorder.ondataavailable = (e) => {
+      this.chunks.push(e.data);
 
-      this.mediaRecorder.onstart = function () {
-        var track = new _Track2.default();
-        track.setName('Recording');
-        track.setEnabledStates();
-        track.setEventEmitter(_this.ee);
-
-        _this.recordingTrack = track;
-        _this.tracks.push(track);
-
-        _this.chunks = [];
-        _this.working = false;
-      };
-
-      this.mediaRecorder.ondataavailable = function (e) {
-        _this.chunks.push(e.data);
-
-        // throttle peaks calculation
-        if (!_this.working) {
-          var recording = new Blob(_this.chunks, { type: 'audio/ogg; codecs=opus' });
-          var loader = _LoaderFactory2.default.createLoader(recording, _this.ac);
-          loader.load().then(function (audioBuffer) {
+      // throttle peaks calculation
+      if (!this.working) {
+        const recording = new Blob(this.chunks, {
+          type: "audio/ogg; codecs=opus",
+        });
+        const loader = LoaderFactory.createLoader(recording, this.ac);
+        loader
+          .load()
+          .then((audioBuffer) => {
             // ask web worker for peaks.
-            _this.recorderWorker.postMessage({
+            this.recorderWorker.postMessage({
               samples: audioBuffer.getChannelData(0),
-              samplesPerPixel: _this.samplesPerPixel
+              samplesPerPixel: this.samplesPerPixel,
             });
-            _this.recordingTrack.setCues(0, audioBuffer.duration);
-            _this.recordingTrack.setBuffer(audioBuffer);
-            _this.recordingTrack.setPlayout(new _Playout2.default(_this.ac, audioBuffer));
-            _this.adjustDuration();
-          }).catch(function () {
-            _this.working = false;
+            this.recordingTrack.setCues(0, audioBuffer.duration);
+            this.recordingTrack.setBuffer(audioBuffer);
+            this.recordingTrack.setPlayout(
+              new Playout(this.ac, audioBuffer, this.masterGainNode)
+            );
+            this.adjustDuration();
+          })
+          .catch(() => {
+            this.working = false;
           });
-          _this.working = true;
-        }
-      };
+        this.working = true;
+      }
+    };
 
-      this.mediaRecorder.onstop = function () {
-        _this.chunks = [];
-        _this.working = false;
-      };
+    this.mediaRecorder.onstop = () => {
+      this.chunks = [];
+      this.working = false;
+    };
 
-      this.recorderWorker = new _inlineWorker2.default(_recorderWorker2.default);
-      // use a worker for calculating recording peaks.
-      this.recorderWorker.onmessage = function (e) {
-        _this.recordingTrack.setPeaks(e.data);
-        _this.working = false;
-        _this.drawRequest();
-      };
-    }
-  }, {
-    key: 'setShowTimeScale',
-    value: function setShowTimeScale(show) {
-      this.showTimescale = show;
-    }
-  }, {
-    key: 'setMono',
-    value: function setMono(mono) {
-      this.mono = mono;
-    }
-  }, {
-    key: 'setExclSolo',
-    value: function setExclSolo(exclSolo) {
-      this.exclSolo = exclSolo;
-    }
-  }, {
-    key: 'setSeekStyle',
-    value: function setSeekStyle(style) {
-      this.seekStyle = style;
-    }
-  }, {
-    key: 'getSeekStyle',
-    value: function getSeekStyle() {
-      return this.seekStyle;
-    }
-  }, {
-    key: 'setSampleRate',
-    value: function setSampleRate(sampleRate) {
-      this.sampleRate = sampleRate;
-    }
-  }, {
-    key: 'setSamplesPerPixel',
-    value: function setSamplesPerPixel(samplesPerPixel) {
-      this.samplesPerPixel = samplesPerPixel;
-    }
-  }, {
-    key: 'setAudioContext',
-    value: function setAudioContext(ac) {
-      this.ac = ac;
-    }
-  }, {
-    key: 'setControlOptions',
-    value: function setControlOptions(controlOptions) {
-      this.controls = controlOptions;
-    }
-  }, {
-    key: 'setWaveHeight',
-    value: function setWaveHeight(height) {
-      this.waveHeight = height;
-    }
-  }, {
-    key: 'setColors',
-    value: function setColors(colors) {
-      this.colors = colors;
-    }
-  }, {
-    key: 'setAnnotations',
-    value: function setAnnotations(config) {
-      this.annotationList = new _AnnotationList2.default(this, config.annotations, config.controls, config.editable, config.linkEndpoints, config.isContinuousPlay);
-    }
-  }, {
-    key: 'setEventEmitter',
-    value: function setEventEmitter(ee) {
-      this.ee = ee;
-    }
-  }, {
-    key: 'getEventEmitter',
-    value: function getEventEmitter() {
-      return this.ee;
-    }
-  }, {
-    key: 'setUpEventEmitter',
-    value: function setUpEventEmitter() {
-      var _this2 = this;
+    this.recorderWorker = new (inline_worker_default())(recorderWorker);
+    // use a worker for calculating recording peaks.
+    this.recorderWorker.onmessage = (e) => {
+      this.recordingTrack.setPeaks(e.data);
+      this.working = false;
+      this.drawRequest();
+    };
+  }
 
-      var ee = this.ee;
+  setShowTimeScale(show) {
+    this.showTimescale = show;
+  }
 
-      ee.on('automaticscroll', function (val) {
-        _this2.isAutomaticScroll = val;
+  setMono(mono) {
+    this.mono = mono;
+  }
+
+  setExclSolo(exclSolo) {
+    this.exclSolo = exclSolo;
+  }
+
+  setSeekStyle(style) {
+    this.seekStyle = style;
+  }
+
+  getSeekStyle() {
+    return this.seekStyle;
+  }
+
+  setSampleRate(sampleRate) {
+    this.sampleRate = sampleRate;
+  }
+
+  setSamplesPerPixel(samplesPerPixel) {
+    this.samplesPerPixel = samplesPerPixel;
+  }
+
+  setAudioContext(ac) {
+    this.ac = ac;
+    this.masterGainNode = ac.createGain();
+  }
+
+  getAudioContext() {
+    return this.ac;
+  }
+
+  setControlOptions(controlOptions) {
+    this.controls = controlOptions;
+  }
+
+  setWaveHeight(height) {
+    this.waveHeight = height;
+  }
+
+  setCollapsedWaveHeight(height) {
+    this.collapsedWaveHeight = height;
+  }
+
+  setColors(colors) {
+    this.colors = colors;
+  }
+
+  setBarWidth(width) {
+    this.barWidth = width;
+  }
+
+  setBarGap(width) {
+    this.barGap = width;
+  }
+
+  setAnnotations(config) {
+    const controlWidth = this.controls.show ? this.controls.width : 0;
+    this.annotationList = new annotation_AnnotationList(
+      this,
+      config.annotations,
+      config.controls,
+      config.editable,
+      config.linkEndpoints,
+      config.isContinuousPlay,
+      controlWidth
+    );
+  }
+
+  setEffects(effectsGraph) {
+    this.effectsGraph = effectsGraph;
+  }
+
+  setEventEmitter(ee) {
+    this.ee = ee;
+  }
+
+  getEventEmitter() {
+    return this.ee;
+  }
+
+  setUpEventEmitter() {
+    const ee = this.ee;
+
+    ee.on("automaticscroll", (val) => {
+      this.isAutomaticScroll = val;
+    });
+
+    ee.on("durationformat", (format) => {
+      this.durationFormat = format;
+      this.drawRequest();
+    });
+
+    ee.on("select", (start, end, track) => {
+      if (this.isPlaying()) {
+        this.lastSeeked = start;
+        this.pausedAt = undefined;
+        this.restartPlayFrom(start);
+      } else {
+        // reset if it was paused.
+        this.seek(start, end, track);
+        this.ee.emit("timeupdate", start);
+        this.drawRequest();
+      }
+    });
+
+    ee.on("startaudiorendering", (type) => {
+      this.startOfflineRender(type);
+    });
+
+    ee.on("statechange", (state) => {
+      this.setState(state);
+      this.drawRequest();
+    });
+
+    ee.on("shift", (deltaTime, track) => {
+      track.setStartTime(track.getStartTime() + deltaTime);
+      this.adjustDuration();
+      this.drawRequest();
+    });
+
+    ee.on("record", () => {
+      this.record();
+    });
+
+    ee.on("play", (start, end) => {
+      this.play(start, end);
+    });
+
+    ee.on("pause", () => {
+      this.pause();
+    });
+
+    ee.on("stop", () => {
+      this.stop();
+    });
+
+    ee.on("rewind", () => {
+      this.rewind();
+    });
+
+    ee.on("fastforward", () => {
+      this.fastForward();
+    });
+
+    ee.on("clear", () => {
+      this.clear().then(() => {
+        this.drawRequest();
       });
+    });
 
-      ee.on('durationformat', function (format) {
-        _this2.durationFormat = format;
-        _this2.drawRequest();
+    ee.on("solo", (track) => {
+      this.soloTrack(track);
+      this.adjustTrackPlayout();
+      this.drawRequest();
+    });
+
+    ee.on("mute", (track) => {
+      this.muteTrack(track);
+      this.adjustTrackPlayout();
+      this.drawRequest();
+    });
+
+    ee.on("removeTrack", (track) => {
+      this.removeTrack(track);
+      this.adjustTrackPlayout();
+      this.drawRequest();
+    });
+
+    ee.on("changeTrackView", (track, opts) => {
+      this.collapseTrack(track, opts);
+      this.drawRequest();
+    });
+
+    ee.on("volumechange", (volume, track) => {
+      track.setGainLevel(volume / 100);
+      this.drawRequest();
+    });
+
+    ee.on("mastervolumechange", (volume) => {
+      this.masterGain = volume / 100;
+      this.tracks.forEach((track) => {
+        track.setMasterGainLevel(this.masterGain);
       });
+    });
 
-      ee.on('select', function (start, end, track) {
-        if (_this2.isPlaying()) {
-          _this2.lastSeeked = start;
-          _this2.pausedAt = undefined;
-          _this2.restartPlayFrom(start);
-        } else {
-          // reset if it was paused.
-          _this2.seek(start, end, track);
-          _this2.ee.emit('timeupdate', start);
-          _this2.drawRequest();
-        }
-      });
+    ee.on("fadein", (duration, track) => {
+      track.setFadeIn(duration, this.fadeType);
+      this.drawRequest();
+    });
 
-      ee.on('startaudiorendering', function (type, trackPos) {        
-        _this2.startOfflineRender(type, trackPos);
-      });
+    ee.on("fadeout", (duration, track) => {
+      track.setFadeOut(duration, this.fadeType);
+      this.drawRequest();
+    });
 
-      ee.on('statechange', function (state) {
-        _this2.setState(state);
-        _this2.drawRequest();
-      });
+    ee.on("stereopan", (panvalue, track) => {
+      track.setStereoPanValue(panvalue);
+      this.drawRequest();
+    });
 
-      ee.on('shift', function (deltaTime, track) {
-        track.setStartTime(track.getStartTime() + deltaTime);
-        _this2.adjustDuration();
-        _this2.drawRequest();
-      });
+    ee.on("fadetype", (type) => {
+      this.fadeType = type;
+    });
 
-      ee.on('record', function () {
-        _this2.record();
-      });
-
-      ee.on('play', function (start, end) {
-        _this2.play(start, end);
-      });
-
-      ee.on('pause', function () {
-        _this2.pause();
-      });
-
-      ee.on('stop', function () {
-        _this2.stop();
-      });
-
-      ee.on('rewind', function () {
-        _this2.rewind();
-      });
-
-      ee.on('fastforward', function () {
-        _this2.fastForward();
-      });
-
-      ee.on('clear', function () {
-        _this2.clear().then(function () {
-          _this2.drawRequest();
-        });
-      });
-
-      ee.on('solo', function (track) {
-        _this2.soloTrack(track);
-        _this2.adjustTrackPlayout();
-        _this2.drawRequest();
-      });
-
-      ee.on('mute', function (track) {
-        _this2.muteTrack(track);
-        _this2.adjustTrackPlayout();
-        _this2.drawRequest();
-      });
-
-      ee.on('volumechange', function (volume, track) {
-        track.setGainLevel(volume / 100);
-      });
-
-      ee.on('mastervolumechange', function (volume) {
-        _this2.masterGain = volume / 100;
-        _this2.tracks.forEach(function (track) {
-          track.setMasterGainLevel(_this2.masterGain);
-        });
-      });
-
-      ee.on('fadein', function (duration, track) {
-        track.setFadeIn(duration, _this2.fadeType);
-        _this2.drawRequest();
-      });
-
-      ee.on('fadeout', function (duration, track) {
-        track.setFadeOut(duration, _this2.fadeType);
-        _this2.drawRequest();
-      });
-
-      ee.on('stereopan', function (panvalue, track) {
-        track.setStereoPanValue(panvalue);
-      });
-
-      ee.on('fadetype', function (type) {
-        _this2.fadeType = type;
-      });
-
-      ee.on('newtrack', function (file) {
-        _this2.load([{
+    ee.on("newtrack", (file) => {
+      this.load([
+        {
           src: file,
-          name: file.name
-        }]);
-      });
+          name: file.name,
+        },
+      ]);
+    });
 
-      ee.on('trim', function () {
-        var track = _this2.getActiveTrack();
-        var timeSelection = _this2.getTimeSelection();
+    ee.on("trim", () => {
+      const track = this.getActiveTrack();
+      const timeSelection = this.getTimeSelection();
 
-        track.trim(timeSelection.start, timeSelection.end);
-        track.calculatePeaks(_this2.samplesPerPixel, _this2.sampleRate);
+      track.trim(timeSelection.start, timeSelection.end);
+      track.calculatePeaks(this.samplesPerPixel, this.sampleRate);
 
-        _this2.setTimeSelection(0, 0);
-        _this2.drawRequest();
-      });
+      this.setTimeSelection(0, 0);
+      this.drawRequest();
+    });
 
-      ee.on('zoomin', function () {
-        var zoomIndex = Math.max(0, _this2.zoomIndex - 1);
-        var zoom = _this2.zoomLevels[zoomIndex];
+    ee.on("zoomin", () => {
+      const zoomIndex = Math.max(0, this.zoomIndex - 1);
+      const zoom = this.zoomLevels[zoomIndex];
 
-        if (zoom !== _this2.samplesPerPixel) {
-          _this2.setZoom(zoom);
-          _this2.drawRequest();
+      if (zoom !== this.samplesPerPixel) {
+        this.setZoom(zoom);
+        this.drawRequest();
+      }
+    });
+
+    ee.on("zoomout", () => {
+      const zoomIndex = Math.min(
+        this.zoomLevels.length - 1,
+        this.zoomIndex + 1
+      );
+      const zoom = this.zoomLevels[zoomIndex];
+
+      if (zoom !== this.samplesPerPixel) {
+        this.setZoom(zoom);
+        this.drawRequest();
+      }
+    });
+
+    ee.on("scroll", () => {
+      this.isScrolling = true;
+      this.drawRequest();
+      clearTimeout(this.scrollTimer);
+      this.scrollTimer = setTimeout(() => {
+        this.isScrolling = false;
+      }, 200);
+    });
+  }
+
+  load(trackList) {
+    const loadPromises = trackList.map((trackInfo) => {
+      const loader = LoaderFactory.createLoader(
+        trackInfo.src,
+        this.ac,
+        this.ee
+      );
+      return loader.load().then((audioBuffer) => {
+        if (audioBuffer.sampleRate === this.sampleRate) {
+          return audioBuffer;
+        } else {
+          return resampleAudioBuffer(audioBuffer, this.sampleRate);
         }
       });
+    });
 
-      ee.on('zoomout', function () {
-        var zoomIndex = Math.min(_this2.zoomLevels.length - 1, _this2.zoomIndex + 1);
-        var zoom = _this2.zoomLevels[zoomIndex];
+    return Promise.all(loadPromises)
+      .then((audioBuffers) => {
+        this.ee.emit("audiosourcesloaded");
 
-        if (zoom !== _this2.samplesPerPixel) {
-          _this2.setZoom(zoom);
-          _this2.drawRequest();
-        }
-      });
-
-      ee.on('scroll', function () {
-        _this2.isScrolling = true;
-        _this2.drawRequest();
-        clearTimeout(_this2.scrollTimer);
-        _this2.scrollTimer = setTimeout(function () {
-          _this2.isScrolling = false;
-        }, 200);
-      });
-    }
-  }, {
-    key: 'load',
-    value: function load(trackList) {
-      var _this3 = this;
-
-      var loadPromises = trackList.map(function (trackInfo) {
-        var loader = _LoaderFactory2.default.createLoader(trackInfo.src, _this3.ac, _this3.ee);
-        return loader.load();
-      });
-
-      return Promise.all(loadPromises).then(function (audioBuffers) {
-        _this3.ee.emit('audiosourcesloaded');
-
-        var tracks = audioBuffers.map(function (audioBuffer, index) {
-          var info = trackList[index];
-          var name = info.name || 'Untitled';
-          var start = info.start || 0;
-          var states = info.states || {};
-          var fadeIn = info.fadeIn;
-          var fadeOut = info.fadeOut;
-          var cueIn = info.cuein || 0;
-          var cueOut = info.cueout || audioBuffer.duration;
-          var gain = info.gain || 1;
-          var muted = info.muted || false;
-          var soloed = info.soloed || false;
-          var selection = info.selected;
-          var peaks = info.peaks || { type: 'WebAudio', mono: _this3.mono };
-          var customClass = info.customClass || undefined;
-          var waveOutlineColor = info.waveOutlineColor || undefined;
-          var stereoPan = info.stereoPan || 0;
+        const tracks = audioBuffers.map((audioBuffer, index) => {
+          const info = trackList[index];
+          const name = info.name || "Untitled";
+          const start = info.start || 0;
+          const states = info.states || {};
+          const fadeIn = info.fadeIn;
+          const fadeOut = info.fadeOut;
+          const cueIn = info.cuein || 0;
+          const cueOut = info.cueout || audioBuffer.duration;
+          const gain = info.gain || 1;
+          const muted = info.muted || false;
+          const soloed = info.soloed || false;
+          const selection = info.selected;
+          const peaks = info.peaks || { type: "WebAudio", mono: this.mono };
+          const customClass = info.customClass || undefined;
+          const waveOutlineColor = info.waveOutlineColor || undefined;
+          const stereoPan = info.stereoPan || 0;
+          const effects = info.effects || null;
 
           // webaudio specific playout for now.
-          var playout = new _Playout2.default(_this3.ac, audioBuffer);
+          const playout = new Playout(
+            this.ac,
+            audioBuffer,
+            this.masterGainNode
+          );
 
-          var track = new _Track2.default();
+          const track = new Track();
           track.src = info.src;
           track.setBuffer(audioBuffer);
           track.setName(name);
-          track.setEventEmitter(_this3.ee);
+          track.setEventEmitter(this.ee);
           track.setEnabledStates(states);
           track.setCues(cueIn, cueOut);
           track.setCustomClass(customClass);
@@ -8239,732 +11987,713 @@ var _class = function () {
           }
 
           if (selection !== undefined) {
-            _this3.setActiveTrack(track);
-            _this3.setTimeSelection(selection.start, selection.end);
+            this.setActiveTrack(track);
+            this.setTimeSelection(selection.start, selection.end);
           }
 
           if (peaks !== undefined) {
             track.setPeakData(peaks);
           }
 
-          track.setState(_this3.getState());
+          track.setState(this.getState());
           track.setStartTime(start);
           track.setPlayout(playout);
 
           track.setGainLevel(gain);
           track.setStereoPanValue(stereoPan);
+          if (effects) {
+            track.setEffects(effects);
+          }
 
           if (muted) {
-            _this3.muteTrack(track);
+            this.muteTrack(track);
           }
 
           if (soloed) {
-            _this3.soloTrack(track);
+            this.soloTrack(track);
           }
 
           // extract peaks with AudioContext for now.
-          track.calculatePeaks(_this3.samplesPerPixel, _this3.sampleRate);
+          track.calculatePeaks(this.samplesPerPixel, this.sampleRate);
 
           return track;
         });
 
-        _this3.tracks = _this3.tracks.concat(tracks);
-        _this3.adjustDuration();
-        _this3.draw(_this3.render());
-
-        _this3.ee.emit('audiosourcesrendered');
-      }).catch(function (e) {
-        _this3.ee.emit('audiosourceserror', e);
-      });
-    }
-
-    /*
-      track instance of Track.
-    */
-
-  }, {
-    key: 'setActiveTrack',
-    value: function setActiveTrack(track) {
-      this.activeTrack = track;
-    }
-  }, {
-    key: 'getActiveTrack',
-    value: function getActiveTrack() {
-      return this.activeTrack;
-    }
-  }, {
-    key: 'isSegmentSelection',
-    value: function isSegmentSelection() {
-      return this.timeSelection.start !== this.timeSelection.end;
-    }
-
-    /*
-      start, end in seconds.
-    */
-
-  }, {
-    key: 'setTimeSelection',
-    value: function setTimeSelection() {
-      var start = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-      var end = arguments[1];
-
-      this.timeSelection = {
-        start: start,
-        end: end === undefined ? start : end
-      };
-
-      this.cursor = start;
-    }
-  }, {
-    key: 'startOfflineRender',
-    value: function startOfflineRender(type, trackPos) {          
-      var _this4 = this;
-      
-      if (this.isRendering) {
-        return;
-      }
-
-      this.isRendering = true;
-      this.offlineAudioContext = new OfflineAudioContext(2, 44100 * this.duration, 44100);
-
-      var currentTime = this.offlineAudioContext.currentTime;
-
-      this.tracks.forEach(function (track, pos) { 
-          let shouldPlay = _this4.shouldTrackPlay(track)
-          if(trackPos >= 0 ){            
-            shouldPlay = pos === trackPos
-          }         
-          track.setOfflinePlayout(new _Playout2.default(_this4.offlineAudioContext, track.buffer));
-          track.schedulePlay(currentTime, 0, 0, {
-            shouldPlay: shouldPlay,        
-            masterGain: 1,
-            isOffline: true
-          });        
-       
-      });
-
-      /*
-        TODO cleanup of different audio playouts handling.
-      */
-      this.offlineAudioContext.startRendering().then(function (audioBuffer) {
-
-        if (type === 'buffer') {
-          _this4.ee.emit('audiorenderingfinished', type, audioBuffer);
-          _this4.isRendering = false;
-          return;
-        }
-
-        if (type === 'wav') {
-          _this4.exportWorker.postMessage({
-            command: 'init',
-            config: {
-              sampleRate: 44100
-            }
-          });
-
-          // callback for `exportWAV`
-          _this4.exportWorker.onmessage = function (e) {
-            _this4.ee.emit('audiorenderingfinished', type, e.data, trackPos);
-            _this4.isRendering = false;
-
-            // clear out the buffer for next renderings.
-            _this4.exportWorker.postMessage({
-              command: 'clear'
-            });
-          };
-
-          // send the channel data from our buffer to the worker
-          _this4.exportWorker.postMessage({
-            command: 'record',
-            buffer: [audioBuffer.getChannelData(0), audioBuffer.getChannelData(1)]
-          });
-
-          // ask the worker for a WAV
-          _this4.exportWorker.postMessage({
-            command: 'exportWAV',
-            type: 'audio/wav'
-          });
-        }
-      }).catch(function (e) {
-        throw e;
-      });
-    }  
-  }, {
-    key: 'getTimeSelection',
-    value: function getTimeSelection() {
-      return this.timeSelection;
-    }
-  }, {
-    key: 'setState',
-    value: function setState(state) {
-      this.state = state;
-
-      this.tracks.forEach(function (track) {
-        track.setState(state);
-      });
-    }
-  }, {
-    key: 'getState',
-    value: function getState() {
-      return this.state;
-    }
-  }, {
-    key: 'setZoomIndex',
-    value: function setZoomIndex(index) {
-      this.zoomIndex = index;
-    }
-  }, {
-    key: 'setZoomLevels',
-    value: function setZoomLevels(levels) {
-      this.zoomLevels = levels;
-    }
-  }, {
-    key: 'setZoom',
-    value: function setZoom(zoom) {
-      var _this5 = this;
-
-      this.samplesPerPixel = zoom;
-      this.zoomIndex = this.zoomLevels.indexOf(zoom);
-      this.tracks.forEach(function (track) {
-        track.calculatePeaks(zoom, _this5.sampleRate);
-      });
-    }
-  }, {
-    key: 'muteTrack',
-    value: function muteTrack(track) {
-      var index = this.mutedTracks.indexOf(track);
-
-      if (index > -1) {
-        this.mutedTracks.splice(index, 1);
-      } else {
-        this.mutedTracks.push(track);
-      }
-    }
-  }, {
-    key: 'soloTrack',
-    value: function soloTrack(track) {
-      var index = this.soloedTracks.indexOf(track);
-
-      if (index > -1) {
-        this.soloedTracks.splice(index, 1);
-      } else if (this.exclSolo) {
-        this.soloedTracks = [track];
-      } else {
-        this.soloedTracks.push(track);
-      }
-    }
-  }, {
-    key: 'adjustTrackPlayout',
-    value: function adjustTrackPlayout() {
-      var _this6 = this;
-
-      this.tracks.forEach(function (track) {
-        track.setShouldPlay(_this6.shouldTrackPlay(track));
-      });
-    }
-  }, {
-    key: 'adjustDuration',
-    value: function adjustDuration() {
-      this.duration = this.tracks.reduce(function (duration, track) {
-        return Math.max(duration, track.getEndTime());
-      }, 0);
-    }
-  }, {
-    key: 'shouldTrackPlay',
-    value: function shouldTrackPlay(track) {
-      var shouldPlay = void 0;
-      // if there are solo tracks, only they should play.
-      if (this.soloedTracks.length > 0) {
-        shouldPlay = false;
-        if (this.soloedTracks.indexOf(track) > -1) {
-          shouldPlay = true;
-        }
-      } else {
-        // play all tracks except any muted tracks.
-        shouldPlay = true;
-        if (this.mutedTracks.indexOf(track) > -1) {
-          shouldPlay = false;
-        }
-      }
-
-      return shouldPlay;
-    }
-  }, {
-    key: 'isPlaying',
-    value: function isPlaying() {
-      return this.tracks.reduce(function (isPlaying, track) {
-        return isPlaying || track.isPlaying();
-      }, false);
-    }
-
-    /*
-    *   returns the current point of time in the playlist in seconds.
-    */
-
-  }, {
-    key: 'getCurrentTime',
-    value: function getCurrentTime() {
-      var cursorPos = this.lastSeeked || this.pausedAt || this.cursor;
-
-      return cursorPos + this.getElapsedTime();
-    }
-  }, {
-    key: 'getElapsedTime',
-    value: function getElapsedTime() {
-      return this.ac.currentTime - this.lastPlay;
-    }
-  }, {
-    key: 'setMasterGain',
-    value: function setMasterGain(gain) {
-      this.ee.emit('mastervolumechange', gain);
-    }
-  }, {
-    key: 'restartPlayFrom',
-    value: function restartPlayFrom(start, end) {
-      this.stopAnimation();
-
-      this.tracks.forEach(function (editor) {
-        editor.scheduleStop();
-      });
-
-      return Promise.all(this.playoutPromises).then(this.play.bind(this, start, end));
-    }
-  }, {
-    key: 'play',
-    value: function play(startTime, endTime) {
-      var _this7 = this;
-
-      clearTimeout(this.resetDrawTimer);
-
-      var currentTime = this.ac.currentTime;
-      var selected = this.getTimeSelection();
-      var playoutPromises = [];
-
-      var start = startTime || this.pausedAt || this.cursor;
-      var end = endTime;
-
-      if (!end && selected.end !== selected.start && selected.end > start) {
-        end = selected.end;
-      }
-
-      if (this.isPlaying()) {
-        return this.restartPlayFrom(start, end);
-      }
-
-      this.tracks.forEach(function (track) {
-        track.setState('cursor');
-        playoutPromises.push(track.schedulePlay(currentTime, start, end, {
-          shouldPlay: _this7.shouldTrackPlay(track),
-          masterGain: _this7.masterGain
-        }));
-      });
-
-      this.lastPlay = currentTime;
-      // use these to track when the playlist has fully stopped.
-      this.playoutPromises = playoutPromises;
-      this.startAnimation(start);
-
-      return Promise.all(this.playoutPromises);
-    }
-  }, {
-    key: 'pause',
-    value: function pause() {
-      if (!this.isPlaying()) {
-        return Promise.all(this.playoutPromises);
-      }
-
-      this.pausedAt = this.getCurrentTime();
-      return this.playbackReset();
-    }
-  }, {
-    key: 'stop',
-    value: function stop() {
-      if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
-        this.mediaRecorder.stop();
-      }
-
-      this.pausedAt = undefined;
-      this.playbackSeconds = 0;
-      return this.playbackReset();
-    }
-  }, {
-    key: 'playbackReset',
-    value: function playbackReset() {
-      var _this8 = this;
-
-      this.lastSeeked = undefined;
-      this.stopAnimation();
-
-      this.tracks.forEach(function (track) {
-        track.scheduleStop();
-        track.setState(_this8.getState());
-      });
-
-      this.drawRequest();
-      return Promise.all(this.playoutPromises);
-    }
-  }, {
-    key: 'rewind',
-    value: function rewind() {
-      var _this9 = this;
-
-      return this.stop().then(function () {
-        _this9.scrollLeft = 0;
-        _this9.ee.emit('select', 0, 0);
-      });
-    }
-  }, {
-    key: 'fastForward',
-    value: function fastForward() {
-      var _this10 = this;
-
-      return this.stop().then(function () {
-        if (_this10.viewDuration < _this10.duration) {
-          _this10.scrollLeft = _this10.duration - _this10.viewDuration;
-        } else {
-          _this10.scrollLeft = 0;
-        }
-
-        _this10.ee.emit('select', _this10.duration, _this10.duration);
-      });
-    }
-  }, {
-    key: 'clear',
-    value: function clear(trackPos) {
-      var _this11 = this;
-
-      return this.stop().then(function () {
-        var newArray = [] 
-          if(trackPos || trackPos === 0){
-              _this11.tracks.splice(trackPos, 1)
-              newArray = _this11.tracks
-          }     
-        _this11.tracks = newArray;
-        _this11.soloedTracks = [];
-        _this11.mutedTracks = [];
-        _this11.playoutPromises = [];
-
-        _this11.cursor = 0;
-        _this11.playbackSeconds = 0;
-        _this11.duration = 0;
-        _this11.scrollLeft = 0;
-
-        _this11.seek(0, 0, undefined);
-      });
-    }
-  }, {
-    key: 'record',
-    value: function record() {
-      var _this12 = this;
-
-      var playoutPromises = [];
-      this.mediaRecorder.start(300);
-
-      this.tracks.forEach(function (track) {
-        track.setState('none');
-        playoutPromises.push(track.schedulePlay(_this12.ac.currentTime, 0, undefined, {
-          shouldPlay: _this12.shouldTrackPlay(track)
-        }));
-      });
-
-      this.playoutPromises = playoutPromises;
-    }
-  }, {
-    key: 'startAnimation',
-    value: function startAnimation(startTime) {
-      var _this13 = this;
-
-      this.lastDraw = this.ac.currentTime;
-      this.animationRequest = window.requestAnimationFrame(function () {
-        _this13.updateEditor(startTime);
-      });
-    }
-  }, {
-    key: 'stopAnimation',
-    value: function stopAnimation() {
-      window.cancelAnimationFrame(this.animationRequest);
-      this.lastDraw = undefined;
-    }
-  }, {
-    key: 'seek',
-    value: function seek(start, end, track) {
-      if (this.isPlaying()) {
-        this.lastSeeked = start;
-        this.pausedAt = undefined;
-        this.restartPlayFrom(start);
-      } else {
-        // reset if it was paused.
-        this.setActiveTrack(track || this.tracks[0]);
-        this.pausedAt = start;
-        this.setTimeSelection(start, end);
-        if (this.getSeekStyle() === 'fill') {
-          this.playbackSeconds = start;
-        }
-      }
-    }
-
-    /*
-    * Animation function for the playlist.
-    * Keep under 16.7 milliseconds based on a typical screen refresh rate of 60fps.
-    */
-
-  }, {
-    key: 'updateEditor',
-    value: function updateEditor(cursor) {
-      var _this14 = this;
-
-      var currentTime = this.ac.currentTime;
-      var selection = this.getTimeSelection();
-      var cursorPos = cursor || this.cursor;
-      var elapsed = currentTime - this.lastDraw;
-
-      if (this.isPlaying()) {
-        var playbackSeconds = cursorPos + elapsed;
-        this.ee.emit('timeupdate', playbackSeconds);
-        this.animationRequest = window.requestAnimationFrame(function () {
-          _this14.updateEditor(playbackSeconds);
-        });
-
-        this.playbackSeconds = playbackSeconds;
+        this.tracks = this.tracks.concat(tracks);
+        this.adjustDuration();
         this.draw(this.render());
-        this.lastDraw = currentTime;
-      } else {
-        if (cursorPos + elapsed >= (this.isSegmentSelection() ? selection.end : this.duration)) {
-          this.ee.emit('finished');
-        }
 
-        this.stopAnimation();
-
-        this.resetDrawTimer = setTimeout(function () {
-          _this14.pausedAt = undefined;
-          _this14.lastSeeked = undefined;
-          _this14.setState(_this14.getState());
-
-          _this14.playbackSeconds = 0;
-          _this14.draw(_this14.render());
-        }, 0);
-      }
-    }
-  }, {
-    key: 'drawRequest',
-    value: function drawRequest() {
-      var _this15 = this;
-
-      window.requestAnimationFrame(function () {
-        _this15.draw(_this15.render());
+        this.ee.emit("audiosourcesrendered");
+      })
+      .catch((e) => {
+        this.ee.emit("audiosourceserror", e);
       });
-    }
-  }, {
-    key: 'draw',
-    value: function draw(newTree) {
-      var patches = (0, _diff2.default)(this.tree, newTree);
-      this.rootNode = (0, _patch2.default)(this.rootNode, patches);
-      this.tree = newTree;
-
-      // use for fast forwarding.
-      this.viewDuration = (0, _conversions.pixelsToSeconds)(this.rootNode.clientWidth - this.controls.width, this.samplesPerPixel, this.sampleRate);
-    }
-  }, {
-    key: 'getTrackRenderData',
-    value: function getTrackRenderData() {
-      var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-      var defaults = {
-        height: this.waveHeight,
-        resolution: this.samplesPerPixel,
-        sampleRate: this.sampleRate,
-        controls: this.controls,
-        isActive: false,
-        timeSelection: this.getTimeSelection(),
-        playlistLength: this.duration,
-        playbackSeconds: this.playbackSeconds,
-        colors: this.colors
-      };
-
-      return (0, _lodash2.default)(data, defaults);
-    }
-  }, {
-    key: 'isActiveTrack',
-    value: function isActiveTrack(track) {
-      var activeTrack = this.getActiveTrack();
-
-      if (this.isSegmentSelection()) {
-        return activeTrack === track;
-      }
-
-      return true;
-    }
-  }, {
-    key: 'renderAnnotations',
-    value: function renderAnnotations() {
-      return this.annotationList.render();
-    }
-  }, {
-    key: 'renderTimeScale',
-    value: function renderTimeScale() {
-      var controlWidth = this.controls.show ? this.controls.width : 0;
-      var timeScale = new _TimeScale2.default(this.duration, this.scrollLeft, this.samplesPerPixel, this.sampleRate, controlWidth, this.colors);
-
-      return timeScale.render();
-    }
-  }, {
-    key: 'renderTrackSection',
-    value: function renderTrackSection() {
-      var _this16 = this;
-
-      var trackElements = this.tracks.map(function (track) {
-        return track.render(_this16.getTrackRenderData({
-          isActive: _this16.isActiveTrack(track),
-          shouldPlay: _this16.shouldTrackPlay(track),
-          soloed: _this16.soloedTracks.indexOf(track) > -1,
-          muted: _this16.mutedTracks.indexOf(track) > -1
-        }));
-      });
-
-      return (0, _h2.default)('div.playlist-tracks', {
-        attributes: {
-          style: 'overflow: auto;'
-        },
-        onscroll: function onscroll(e) {
-          _this16.scrollLeft = (0, _conversions.pixelsToSeconds)(e.target.scrollLeft, _this16.samplesPerPixel, _this16.sampleRate);
-
-          _this16.ee.emit('scroll', _this16.scrollLeft);
-        },
-        hook: new _ScrollHook2.default(this)
-      }, trackElements);
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      var containerChildren = [];
-
-      if (this.showTimescale) {
-        containerChildren.push(this.renderTimeScale());
-      }
-
-      containerChildren.push(this.renderTrackSection());
-
-      if (this.annotationList.length) {
-        containerChildren.push(this.renderAnnotations());
-      }
-
-      return (0, _h2.default)('div.playlist', {
-        attributes: {
-          style: 'overflow: hidden; position: relative;'
-        }
-      }, containerChildren);
-    }
-  }, {
-    key: 'getInfo',
-    value: function getInfo() {
-      var info = [];
-
-      this.tracks.forEach(function (track) {
-        info.push(track.getTrackDetails());
-      });
-
-      return info;
-    }
-  }]);
-
-  return _class;
-}();
-
-exports.default = _class;
-},{"lodash.defaults":"../node_modules/lodash.defaults/index.js","virtual-dom/h":"../node_modules/virtual-dom/h.js","virtual-dom/diff":"../node_modules/virtual-dom/diff.js","virtual-dom/patch":"../node_modules/virtual-dom/patch.js","inline-worker":"../node_modules/inline-worker/index.js","./utils/conversions":"../node_modules/waveform-playlist/lib/utils/conversions.js","./track/loader/LoaderFactory":"../node_modules/waveform-playlist/lib/track/loader/LoaderFactory.js","./render/ScrollHook":"../node_modules/waveform-playlist/lib/render/ScrollHook.js","./TimeScale":"../node_modules/waveform-playlist/lib/TimeScale.js","./Track":"../node_modules/waveform-playlist/lib/Track.js","./Playout":"../node_modules/waveform-playlist/lib/Playout.js","./annotation/AnnotationList":"../node_modules/waveform-playlist/lib/annotation/AnnotationList.js","./utils/recorderWorker":"../node_modules/waveform-playlist/lib/utils/recorderWorker.js","./utils/exportWavWorker":"../node_modules/waveform-playlist/lib/utils/exportWavWorker.js"}],"../node_modules/waveform-playlist/lib/app.js":[function(require,module,exports) {
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.init = init;
-
-exports.default = function () {
-  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  var ee = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : (0, _eventEmitter2.default)();
-
-  return init(options, ee);
-};
-
-var _lodash = require('lodash.assign');
-
-var _lodash2 = _interopRequireDefault(_lodash);
-
-var _createElement = require('virtual-dom/create-element');
-
-var _createElement2 = _interopRequireDefault(_createElement);
-
-var _eventEmitter = require('event-emitter');
-
-var _eventEmitter2 = _interopRequireDefault(_eventEmitter);
-
-var _Playlist = require('./Playlist');
-
-var _Playlist2 = _interopRequireDefault(_Playlist);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function init() {
-  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  var ee = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : (0, _eventEmitter2.default)();
-
-  if (options.container === undefined) {
-    throw new Error('DOM element container must be given.');
   }
 
-  window.OfflineAudioContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
-  window.AudioContext = window.AudioContext || window.webkitAudioContext;
+  /*
+    track instance of Track.
+  */
+  setActiveTrack(track) {
+    this.activeTrack = track;
+  }
 
-  var audioContext = new window.AudioContext();
+  getActiveTrack() {
+    return this.activeTrack;
+  }
 
-  var defaults = {
-    ac: audioContext,
-    sampleRate: audioContext.sampleRate,
+  isSegmentSelection() {
+    return this.timeSelection.start !== this.timeSelection.end;
+  }
+
+  /*
+    start, end in seconds.
+  */
+  setTimeSelection(start = 0, end) {
+    this.timeSelection = {
+      start,
+      end: end === undefined ? start : end,
+    };
+
+    this.cursor = start;
+  }
+
+  async startOfflineRender(type) {
+    if (this.isRendering) {
+      return;
+    }
+
+    this.isRendering = true;
+    this.offlineAudioContext = new OfflineAudioContext(
+      2,
+      44100 * this.duration,
+      44100
+    );
+
+    const setUpChain = [];
+
+    this.ee.emit(
+      "audiorenderingstarting",
+      this.offlineAudioContext,
+      setUpChain
+    );
+
+    const currentTime = this.offlineAudioContext.currentTime;
+    const mg = this.offlineAudioContext.createGain();
+
+    this.tracks.forEach((track) => {
+      const playout = new Playout(this.offlineAudioContext, track.buffer, mg);
+      playout.setEffects(track.effectsGraph);
+      playout.setMasterEffects(this.effectsGraph);
+      track.setOfflinePlayout(playout);
+
+      track.schedulePlay(currentTime, 0, 0, {
+        shouldPlay: this.shouldTrackPlay(track),
+        masterGain: 1,
+        isOffline: true,
+      });
+    });
+
+    /*
+      TODO cleanup of different audio playouts handling.
+    */
+    await Promise.all(setUpChain);
+    const audioBuffer = await this.offlineAudioContext.startRendering();
+
+    if (type === "buffer") {
+      this.ee.emit("audiorenderingfinished", type, audioBuffer);
+      this.isRendering = false;
+    } else if (type === "wav") {
+      this.exportWorker.postMessage({
+        command: "init",
+        config: {
+          sampleRate: 44100,
+        },
+      });
+
+      // callback for `exportWAV`
+      this.exportWorker.onmessage = (e) => {
+        this.ee.emit("audiorenderingfinished", type, e.data);
+        this.isRendering = false;
+
+        // clear out the buffer for next renderings.
+        this.exportWorker.postMessage({
+          command: "clear",
+        });
+      };
+
+      // send the channel data from our buffer to the worker
+      this.exportWorker.postMessage({
+        command: "record",
+        buffer: [audioBuffer.getChannelData(0), audioBuffer.getChannelData(1)],
+      });
+
+      // ask the worker for a WAV
+      this.exportWorker.postMessage({
+        command: "exportWAV",
+        type: "audio/wav",
+      });
+    }
+  }
+
+  getTimeSelection() {
+    return this.timeSelection;
+  }
+
+  setState(state) {
+    this.state = state;
+
+    this.tracks.forEach((track) => {
+      track.setState(state);
+    });
+  }
+
+  getState() {
+    return this.state;
+  }
+
+  setZoomIndex(index) {
+    this.zoomIndex = index;
+  }
+
+  setZoomLevels(levels) {
+    this.zoomLevels = levels;
+  }
+
+  setZoom(zoom) {
+    this.samplesPerPixel = zoom;
+    this.zoomIndex = this.zoomLevels.indexOf(zoom);
+    this.tracks.forEach((track) => {
+      track.calculatePeaks(zoom, this.sampleRate);
+    });
+  }
+
+  muteTrack(track) {
+    const index = this.mutedTracks.indexOf(track);
+
+    if (index > -1) {
+      this.mutedTracks.splice(index, 1);
+    } else {
+      this.mutedTracks.push(track);
+    }
+  }
+
+  soloTrack(track) {
+    const index = this.soloedTracks.indexOf(track);
+
+    if (index > -1) {
+      this.soloedTracks.splice(index, 1);
+    } else if (this.exclSolo) {
+      this.soloedTracks = [track];
+    } else {
+      this.soloedTracks.push(track);
+    }
+  }
+
+  collapseTrack(track, opts) {
+    if (opts.collapsed) {
+      this.collapsedTracks.push(track);
+    } else {
+      const index = this.collapsedTracks.indexOf(track);
+
+      if (index > -1) {
+        this.collapsedTracks.splice(index, 1);
+      }
+    }
+  }
+
+  removeTrack(track) {
+    if (track.isPlaying()) {
+      track.scheduleStop();
+    }
+
+    const trackLists = [
+      this.mutedTracks,
+      this.soloedTracks,
+      this.collapsedTracks,
+      this.tracks,
+    ];
+    trackLists.forEach((list) => {
+      const index = list.indexOf(track);
+      if (index > -1) {
+        list.splice(index, 1);
+      }
+    });
+  }
+
+  adjustTrackPlayout() {
+    this.tracks.forEach((track) => {
+      track.setShouldPlay(this.shouldTrackPlay(track));
+    });
+  }
+
+  adjustDuration() {
+    this.duration = this.tracks.reduce(
+      (duration, track) => Math.max(duration, track.getEndTime()),
+      0
+    );
+  }
+
+  shouldTrackPlay(track) {
+    let shouldPlay;
+    // if there are solo tracks, only they should play.
+    if (this.soloedTracks.length > 0) {
+      shouldPlay = false;
+      if (this.soloedTracks.indexOf(track) > -1) {
+        shouldPlay = true;
+      }
+    } else {
+      // play all tracks except any muted tracks.
+      shouldPlay = true;
+      if (this.mutedTracks.indexOf(track) > -1) {
+        shouldPlay = false;
+      }
+    }
+
+    return shouldPlay;
+  }
+
+  isPlaying() {
+    return this.tracks.reduce(
+      (isPlaying, track) => isPlaying || track.isPlaying(),
+      false
+    );
+  }
+
+  /*
+   *   returns the current point of time in the playlist in seconds.
+   */
+  getCurrentTime() {
+    const cursorPos = this.lastSeeked || this.pausedAt || this.cursor;
+
+    return cursorPos + this.getElapsedTime();
+  }
+
+  getElapsedTime() {
+    return this.ac.currentTime - this.lastPlay;
+  }
+
+  setMasterGain(gain) {
+    this.ee.emit("mastervolumechange", gain);
+  }
+
+  restartPlayFrom(start, end) {
+    this.stopAnimation();
+
+    this.tracks.forEach((editor) => {
+      editor.scheduleStop();
+    });
+
+    return Promise.all(this.playoutPromises).then(
+      this.play.bind(this, start, end)
+    );
+  }
+
+  play(startTime, endTime) {
+    clearTimeout(this.resetDrawTimer);
+
+    const currentTime = this.ac.currentTime;
+    const selected = this.getTimeSelection();
+    const playoutPromises = [];
+
+    const start = startTime || this.pausedAt || this.cursor;
+    let end = endTime;
+
+    if (!end && selected.end !== selected.start && selected.end > start) {
+      end = selected.end;
+    }
+
+    if (this.isPlaying()) {
+      return this.restartPlayFrom(start, end);
+    }
+
+    // TODO refector this in upcoming modernisation.
+    if (this.effectsGraph)
+      this.tracks && this.tracks[0].playout.setMasterEffects(this.effectsGraph);
+
+    this.tracks.forEach((track) => {
+      track.setState("cursor");
+      playoutPromises.push(
+        track.schedulePlay(currentTime, start, end, {
+          shouldPlay: this.shouldTrackPlay(track),
+          masterGain: this.masterGain,
+        })
+      );
+    });
+
+    this.lastPlay = currentTime;
+    // use these to track when the playlist has fully stopped.
+    this.playoutPromises = playoutPromises;
+    this.startAnimation(start);
+
+    return Promise.all(this.playoutPromises);
+  }
+
+  pause() {
+    if (!this.isPlaying()) {
+      return Promise.all(this.playoutPromises);
+    }
+
+    this.pausedAt = this.getCurrentTime();
+    return this.playbackReset();
+  }
+
+  stop() {
+    if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
+      this.mediaRecorder.stop();
+    }
+
+    this.pausedAt = undefined;
+    this.playbackSeconds = 0;
+    return this.playbackReset();
+  }
+
+  playbackReset() {
+    this.lastSeeked = undefined;
+    this.stopAnimation();
+
+    this.tracks.forEach((track) => {
+      track.scheduleStop();
+      track.setState(this.getState());
+    });
+
+    // TODO improve this.
+    this.masterGainNode.disconnect();
+    this.drawRequest();
+    return Promise.all(this.playoutPromises);
+  }
+
+  rewind() {
+    return this.stop().then(() => {
+      this.scrollLeft = 0;
+      this.ee.emit("select", 0, 0);
+    });
+  }
+
+  fastForward() {
+    return this.stop().then(() => {
+      if (this.viewDuration < this.duration) {
+        this.scrollLeft = this.duration - this.viewDuration;
+      } else {
+        this.scrollLeft = 0;
+      }
+
+      this.ee.emit("select", this.duration, this.duration);
+    });
+  }
+
+  clear() {
+    return this.stop().then(() => {
+      this.tracks = [];
+      this.soloedTracks = [];
+      this.mutedTracks = [];
+      this.playoutPromises = [];
+
+      this.cursor = 0;
+      this.playbackSeconds = 0;
+      this.duration = 0;
+      this.scrollLeft = 0;
+
+      this.seek(0, 0, undefined);
+    });
+  }
+
+  record() {
+    const playoutPromises = [];
+    this.mediaRecorder.start(300);
+
+    this.tracks.forEach((track) => {
+      track.setState("none");
+      playoutPromises.push(
+        track.schedulePlay(this.ac.currentTime, 0, undefined, {
+          shouldPlay: this.shouldTrackPlay(track),
+        })
+      );
+    });
+
+    this.playoutPromises = playoutPromises;
+  }
+
+  startAnimation(startTime) {
+    this.lastDraw = this.ac.currentTime;
+    this.animationRequest = window.requestAnimationFrame(() => {
+      this.updateEditor(startTime);
+    });
+  }
+
+  stopAnimation() {
+    window.cancelAnimationFrame(this.animationRequest);
+    this.lastDraw = undefined;
+  }
+
+  seek(start, end, track) {
+    if (this.isPlaying()) {
+      this.lastSeeked = start;
+      this.pausedAt = undefined;
+      this.restartPlayFrom(start);
+    } else {
+      // reset if it was paused.
+      this.setActiveTrack(track || this.tracks[0]);
+      this.pausedAt = start;
+      this.setTimeSelection(start, end);
+      if (this.getSeekStyle() === "fill") {
+        this.playbackSeconds = start;
+      }
+    }
+  }
+
+  /*
+   * Animation function for the playlist.
+   * Keep under 16.7 milliseconds based on a typical screen refresh rate of 60fps.
+   */
+  updateEditor(cursor) {
+    const currentTime = this.ac.currentTime;
+    const selection = this.getTimeSelection();
+    const cursorPos = cursor || this.cursor;
+    const elapsed = currentTime - this.lastDraw;
+
+    if (this.isPlaying()) {
+      const playbackSeconds = cursorPos + elapsed;
+      this.ee.emit("timeupdate", playbackSeconds);
+      this.animationRequest = window.requestAnimationFrame(() => {
+        this.updateEditor(playbackSeconds);
+      });
+
+      this.playbackSeconds = playbackSeconds;
+      this.draw(this.render());
+      this.lastDraw = currentTime;
+    } else {
+      if (
+        cursorPos + elapsed >=
+        (this.isSegmentSelection() ? selection.end : this.duration)
+      ) {
+        this.ee.emit("finished");
+      }
+
+      this.stopAnimation();
+
+      this.resetDrawTimer = setTimeout(() => {
+        this.pausedAt = undefined;
+        this.lastSeeked = undefined;
+        this.setState(this.getState());
+
+        this.playbackSeconds = 0;
+        this.draw(this.render());
+      }, 0);
+    }
+  }
+
+  drawRequest() {
+    window.requestAnimationFrame(() => {
+      this.draw(this.render());
+    });
+  }
+
+  draw(newTree) {
+    const patches = diff_default()(this.tree, newTree);
+    this.rootNode = patch_default()(this.rootNode, patches);
+    this.tree = newTree;
+
+    // use for fast forwarding.
+    this.viewDuration = pixelsToSeconds(
+      this.rootNode.clientWidth - this.controls.width,
+      this.samplesPerPixel,
+      this.sampleRate
+    );
+  }
+
+  getTrackRenderData(data = {}) {
+    const defaults = {
+      height: this.waveHeight,
+      resolution: this.samplesPerPixel,
+      sampleRate: this.sampleRate,
+      controls: this.controls,
+      isActive: false,
+      timeSelection: this.getTimeSelection(),
+      playlistLength: this.duration,
+      playbackSeconds: this.playbackSeconds,
+      colors: this.colors,
+      barWidth: this.barWidth,
+      barGap: this.barGap,
+    };
+
+    return lodash_defaultsdeep_default()({}, data, defaults);
+  }
+
+  isActiveTrack(track) {
+    const activeTrack = this.getActiveTrack();
+
+    if (this.isSegmentSelection()) {
+      return activeTrack === track;
+    }
+
+    return true;
+  }
+
+  renderAnnotations() {
+    return this.annotationList.render();
+  }
+
+  renderTimeScale() {
+    const controlWidth = this.controls.show ? this.controls.width : 0;
+    const timeScale = new src_TimeScale(
+      this.duration,
+      this.scrollLeft,
+      this.samplesPerPixel,
+      this.sampleRate,
+      controlWidth,
+      this.colors
+    );
+
+    return timeScale.render();
+  }
+
+  renderTrackSection() {
+    const trackElements = this.tracks.map((track) => {
+      const collapsed = this.collapsedTracks.indexOf(track) > -1;
+      return track.render(
+        this.getTrackRenderData({
+          isActive: this.isActiveTrack(track),
+          shouldPlay: this.shouldTrackPlay(track),
+          soloed: this.soloedTracks.indexOf(track) > -1,
+          muted: this.mutedTracks.indexOf(track) > -1,
+          collapsed,
+          height: collapsed ? this.collapsedWaveHeight : this.waveHeight,
+          barGap: this.barGap,
+          barWidth: this.barWidth,
+        })
+      );
+    });
+
+    return h_default()(
+      "div.playlist-tracks",
+      {
+        attributes: {
+          style: "overflow: auto;",
+        },
+        onscroll: (e) => {
+          this.scrollLeft = pixelsToSeconds(
+            e.target.scrollLeft,
+            this.samplesPerPixel,
+            this.sampleRate
+          );
+
+          this.ee.emit("scroll");
+        },
+        hook: new ScrollHook(this),
+      },
+      trackElements
+    );
+  }
+
+  render() {
+    const containerChildren = [];
+
+    if (this.showTimescale) {
+      containerChildren.push(this.renderTimeScale());
+    }
+
+    containerChildren.push(this.renderTrackSection());
+
+    if (this.annotationList.length) {
+      containerChildren.push(this.renderAnnotations());
+    }
+
+    return h_default()(
+      "div.playlist",
+      {
+        attributes: {
+          style: "overflow: hidden; position: relative;",
+        },
+      },
+      containerChildren
+    );
+  }
+
+  getInfo() {
+    const tracks = [];
+
+    this.tracks.forEach((track) => {
+      tracks.push(track.getTrackDetails());
+    });
+
+    return {
+      tracks,
+      effects: this.effectsGraph,
+    };
+  }
+});
+
+;// CONCATENATED MODULE: ./src/app.js
+
+
+
+
+
+function init(options = {}, ee = event_emitter_default()()) {
+  if (options.container === undefined) {
+    throw new Error("DOM element container must be given.");
+  }
+
+  const defaults = {
     samplesPerPixel: 4096,
     mono: true,
-    fadeType: 'logarithmic',
+    fadeType: "logarithmic",
     exclSolo: false,
     timescale: false,
     controls: {
       show: false,
-      width: 150
+      width: 150,
+      widgets: {
+        muteOrSolo: true,
+        volume: true,
+        stereoPan: true,
+        collapse: true,
+        remove: true,
+      },
     },
     colors: {
-      waveOutlineColor: 'white',
-      timeColor: 'grey',
-      fadeColor: 'black'
+      waveOutlineColor: "white",
+      timeColor: "grey",
+      fadeColor: "black",
     },
-    seekStyle: 'line',
+    seekStyle: "line",
     waveHeight: 128,
-    state: 'cursor',
+    collapsedWaveHeight: 30,
+    barWidth: 1,
+    barGap: 0,
+    state: "cursor",
     zoomLevels: [512, 1024, 2048, 4096],
     annotationList: {
       annotations: [],
       controls: [],
       editable: false,
       linkEndpoints: false,
-      isContinuousPlay: false
+      isContinuousPlay: false,
     },
-    isAutomaticScroll: false
+    isAutomaticScroll: false,
   };
 
-  var config = (0, _lodash2.default)(defaults, options);
-  var zoomIndex = config.zoomLevels.indexOf(config.samplesPerPixel);
+  const config = lodash_defaultsdeep_default()({}, options, defaults);
+  const zoomIndex = config.zoomLevels.indexOf(config.samplesPerPixel);
 
   if (zoomIndex === -1) {
-    throw new Error('initial samplesPerPixel must be included in array zoomLevels');
+    throw new Error(
+      "initial samplesPerPixel must be included in array zoomLevels"
+    );
   }
 
-  var playlist = new _Playlist2.default();
-  playlist.setSampleRate(config.sampleRate);
+  const playlist = new Playlist();
+  const ctx = config.ac || new AudioContext();
+  playlist.setAudioContext(ctx);
+  playlist.setSampleRate(config.sampleRate || ctx.sampleRate);
   playlist.setSamplesPerPixel(config.samplesPerPixel);
-  playlist.setAudioContext(config.ac);
   playlist.setEventEmitter(ee);
   playlist.setUpEventEmitter();
   playlist.setTimeSelection(0, 0);
   playlist.setState(config.state);
   playlist.setControlOptions(config.controls);
   playlist.setWaveHeight(config.waveHeight);
+  playlist.setCollapsedWaveHeight(config.collapsedWaveHeight);
   playlist.setColors(config.colors);
   playlist.setZoomLevels(config.zoomLevels);
   playlist.setZoomIndex(zoomIndex);
@@ -8973,13 +12702,20 @@ function init() {
   playlist.setShowTimeScale(config.timescale);
   playlist.setSeekStyle(config.seekStyle);
   playlist.setAnnotations(config.annotationList);
+  playlist.setBarGap(config.barGap);
+  playlist.setBarWidth(config.barWidth);
   playlist.isAutomaticScroll = config.isAutomaticScroll;
   playlist.isContinuousPlay = config.isContinuousPlay;
   playlist.linkedEndpoints = config.linkedEndpoints;
 
+  if (config.effects) {
+    playlist.setEffects(config.effects);
+  }
+
   // take care of initial virtual dom rendering.
-  var tree = playlist.render();
-  var rootNode = (0, _createElement2.default)(tree);
+
+  const tree = playlist.render();
+  const rootNode = create_element_default()(tree);
 
   config.container.appendChild(rootNode);
   playlist.tree = tree;
@@ -8987,7 +12723,18 @@ function init() {
 
   return playlist;
 }
-},{"lodash.assign":"../node_modules/lodash.assign/index.js","virtual-dom/create-element":"../node_modules/virtual-dom/create-element.js","event-emitter":"../node_modules/event-emitter/index.js","./Playlist":"../node_modules/waveform-playlist/lib/Playlist.js"}],"song/record.js":[function(require,module,exports) {
+
+/* harmony default export */ function app(options = {}, ee = event_emitter_default()()) {
+  return init(options, ee);
+}
+
+})();
+
+/******/ 	return __webpack_exports__;
+/******/ })()
+;
+});
+},{"process":"../node_modules/process/browser.js","buffer":"../node_modules/buffer/index.js"}],"song/record.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9048,7 +12795,7 @@ var queryString = window.location.search;
 var SONG_ID = parseFloat(queryString.split('songId=')[1]);
 exports.SONG_ID = SONG_ID;
 var goHomeLink = document.getElementById('goHome');
-if (window.location.host === 'localhost:80') {
+if (window.location.host === 'localhost:80' || window.location.origin === 'http://localhost') {
   goHomeLink.href = window.location.origin + '/index.html';
 } else {
   goHomeLink.href = window.location.origin;
@@ -9079,9 +12826,15 @@ var playlist = (0, _waveformPlaylist.default)({
   },
   controls: {
     show: true,
-    width: 200
+    width: 200,
+    widgets: {
+      stereoPan: false,
+      collapse: false,
+      remove: false
+    }
   },
   zoomLevels: [500, 1000, 3000, 5000],
+  isAutomaticScroll: true,
   timescale: true
 });
 exports.playlist = playlist;
@@ -9093,7 +12846,7 @@ var recorder = new _record.Recorder();
 exports.recorder = recorder;
 var songId = SONG_ID;
 (0, _song_helper.getSong)(songId, _song_helper.doAfterSongFetched);
-},{"./track_handler":"song/track_handler.js","./fileuploader":"song/fileuploader.js","waveform-playlist":"../node_modules/waveform-playlist/lib/app.js","./song_helper":"song/song_helper.js","./record":"song/record.js"}],"song/eventemitter.js":[function(require,module,exports) {
+},{"./track_handler":"song/track_handler.js","./fileuploader":"song/fileuploader.js","waveform-playlist":"../node_modules/waveform-playlist/build/waveform-playlist.umd.js","./song_helper":"song/song_helper.js","./record":"song/record.js"}],"song/eventemitter.js":[function(require,module,exports) {
 "use strict";
 
 var _song = require("./song");
@@ -9214,7 +12967,7 @@ $container.on("click", ".btn-stop", function () {
   if (isRecording) {
     isRecording = false;
     if (_song.USER_PERMISSION) {
-      var newTrackPos = _song.playlist.getInfo().length - 1;
+      var newTrackPos = _song.playlist.getInfo().tracks.length - 1;
       ee.emit('startaudiorendering', 'wav', newTrackPos);
     }
   }
@@ -9289,7 +13042,7 @@ $container.on("click", ".btn-zoom-out", function () {
 $container.on("click", ".btn-trim-audio", function () {
   ee.emit("trim");
 });
-$container.on("click", ".btn-info", function () {
+$container.on("click", ".btn.print", function () {
   console.log(_song.playlist.getInfo());
 });
 $container.on("click", ".btn-download", function () {
@@ -9398,6 +13151,9 @@ ee.on("audiosourcesloaded", function () {
 ee.on("audiosourcesrendered", function () {
   displayLoadingData("Tracks have been rendered");
 });
+ee.on("audiosourceserror", function (e) {
+  displayLoadingData(e.message);
+});
 ee.on('audiorenderingfinished', function (type, data, trackPos) {
   // trackPos is the param sent at btn-stop when stop recording
   // but received from Playlist.js in event audiorenderingfinished  
@@ -9446,7 +13202,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "59131" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60623" + '/');
   ws.onmessage = function (event) {
     checkedAssets = {};
     assetsToAccept = [];
