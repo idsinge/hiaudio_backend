@@ -62,21 +62,12 @@ def index():
     else:
         return redirect(request.base_url+"public/index.html")
 
-@app.route("/register")
 @app.route("/profile")
 def register():
     if current_user.is_authenticated:
-        return (
-            "<p>Hello, {}! You're logged in! Email: {}</p>"
-            "<div><p>Google Profile Picture:</p>"
-            '<img src="{}" alt="Google profile pic"></img></div>'
-            '<a class="button" href="/">Go Home</a><br>'
-            '<a class="button" href="/logout">Logout</a>'.format(
-                current_user.name, current_user.email, current_user.profile_pic
-            )
-        )
+        return jsonify({"ok":True, "name":current_user.name, "email":current_user.email, "profile_pic":current_user.profile_pic})       
     else:
-        return '<a class="button" href="/login">Google Login</a>'
+        return jsonify({"ok":False})        
 
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
