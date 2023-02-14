@@ -1,8 +1,7 @@
-import os, json
-from flask import Flask, request, redirect, url_for, jsonify, send_from_directory
+import os
+from flask import Flask, request, url_for, redirect, jsonify, send_from_directory
 
 from flask_cors import CORS, cross_origin
-from werkzeug.utils import secure_filename
 
 from orm import db, Song, Track, User
 
@@ -10,25 +9,17 @@ from flask_login import (
     LoginManager,
     current_user,
     login_required,
-    login_user,
     logout_user,
 )
-from oauthlib.oauth2 import WebApplicationClient
-import requests
 
-# Configuration
-GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
-GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None)
-GOOGLE_DISCOVERY_URL = (
-    "https://accounts.google.com/.well-known/openid-configuration"
-)
+import api.auth
+import api.song
+import api.track
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 DB_FILE = os.path.join(basedir, 'database.db')
 DATA_BASEDIR = os.path.join(basedir, "../data/")
-
-ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg'}
 
 app = Flask(__name__)
 # allow uploads up to 16MB
@@ -45,8 +36,6 @@ app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-# OAuth 2 client setup
-client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 # Flask-Login helper to retrieve a user from our db
 @login_manager.user_loader
@@ -69,81 +58,15 @@ def register():
     else:
         return jsonify({"ok":False})        
 
-def get_google_provider_cfg():
-    return requests.get(GOOGLE_DISCOVERY_URL).json()
-
 @app.route("/login")
 def login():
-    # Find out what URL to hit for Google login
-    google_provider_cfg = get_google_provider_cfg()
-    authorization_endpoint = google_provider_cfg["authorization_endpoint"]
-
-    print (request.base_url)
-    # Use library to construct the request for Google login and provide
-    # scopes that let you retrieve user's profile from Google
-    request_uri = client.prepare_request_uri(
-        authorization_endpoint,
-        redirect_uri=request.base_url + "/callback",
-        #redirect_uri= "https://localhost:80/index.html?auth=true",                
-        scope=["openid", "email", "profile"],
-    )
+    request_uri = api.auth.login()
     return redirect(request_uri)
 
 @app.route("/login/callback")
-def callback():    
-    # Get authorization code Google sent back to you
-    code = request.args.get("code")
-    # Find out what URL to hit to get tokens that allow you to ask for
-    # things on behalf of a user
-    google_provider_cfg = get_google_provider_cfg()
-    token_endpoint = google_provider_cfg["token_endpoint"]
-    # Prepare and send a request to get tokens! Yay tokens!
-    token_url, headers, body = client.prepare_token_request(
-        token_endpoint,
-        authorization_response=request.url,        
-        redirect_url=request.base_url,
-        #redirect_url= "https://127.0.0.1:7007",  
-        code=code
-    )
-    token_response = requests.post(
-        token_url,
-        headers=headers,
-        data=body,
-        auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
-    )
-
-    # Parse the tokens!
-    client.parse_request_body_response(json.dumps(token_response.json()))
-    # Now that you have tokens (yay) let's find and hit the URL
-    # from Google that gives you the user's profile information,
-    # including their Google profile image and email
-    userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
-    uri, headers, body = client.add_token(userinfo_endpoint)
-    userinfo_response = requests.get(uri, headers=headers, data=body)
-    # You want to make sure their email is verified.
-    # The user authenticated with Google, authorized your
-    # app, and now you've verified their email through Google!
-    if userinfo_response.json().get("email_verified"):
-        unique_id = userinfo_response.json()["sub"]
-        users_email = userinfo_response.json()["email"]
-        picture = userinfo_response.json()["picture"]
-        users_name = userinfo_response.json()["given_name"]
-    else:
-        return "User email not available or not verified by Google.", 400
-    
-    # Create a user in your db with the information provided
-    # by Google
-    user = User(id=unique_id, name=users_name, email=users_email, profile_pic=picture)
-   
-    # Doesn't exist? Add it to the database.  
-    if not User.query.get(unique_id):
-        db.session.add(user)
-        db.session.commit()
-
-    # Begin user session by logging the user in    
-    login_user(user)
-
-    # Send user back to homepage
+def callback():  
+    result = api.auth.callback(User, db)  
+    # TODO: check if result is correct   
     return redirect(url_for("index"))
 
 @app.route("/logout")
@@ -179,16 +102,15 @@ def songs():
 @app.route('/song/<int:id>')
 @cross_origin()
 def song(id):
-    user_auth = current_user.get_id()    
-    song = Song.query.get_or_404(id)
-    owner = False
-    if song.user.id == user_auth:
-        owner = True
-    data = song.to_dict( rules=('-path',) )
-    data['owner'] = owner
-    jsong = jsonify(data)    
-    return jsong
+    result = api.song.song(id, current_user, Song)
+    return result
 
+@app.route('/newsong', methods=['POST'])
+@login_required
+@cross_origin()
+def newsong():
+    result = api.song.newsong(current_user,User, Song, db)
+    return result
 
 @app.route('/trackfile/<int:id>')
 @cross_origin()
@@ -200,71 +122,15 @@ def trackfile(id):
 @login_required
 @cross_origin()
 def deletetrack(id):
-    track = Track.query.get(id) 
-
-    # TODO: delete file from folder   
-    if(track is None):
-        return jsonify({"error":"track not found"})
-    else:
-        db.session.delete(track)
-        db.session.commit()
-        return jsonify({"ok":"true", "result":track.id})
-
-@app.route('/newsong', methods=['POST'])
-@login_required
-@cross_origin()
-def newsong():
-    if current_user.is_authenticated:        
-        title = request.get_json()["title"]
-        user = User.query.get(current_user.get_id())
-        song = Song(title=title, user=user)
-
-        db.session.add(song)
-        db.session.commit()
-
-        return jsonify(song=song.to_dict( rules=('-path',) ))
-    
-    else:
-        return jsonify({"error":"not authenticated"})
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+   result = api.track.deletetrack(id, Track, db)
+   return result
 
 @app.route('/fileUpload', methods=['POST'])
 @cross_origin()
 @login_required
-def fileupload():
-    user_auth = current_user.get_id()    
-    songid = request.form['song_id']
-    song = Song.query.get_or_404(songid)
-    if song.user.id == user_auth:        
-
-        file = request.files['audio']
-
-
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            trackpath = f"songs/{songid}/{filename}"
-            fullpath = os.path.join(DATA_BASEDIR, trackpath )
-
-            os.makedirs(os.path.dirname(fullpath), exist_ok=True);
-
-            file.save( fullpath )
-
-            newtrack = Track(title=filename, path=trackpath, song=song)
-            db.session.add(newtrack)
-            db.session.commit()
-            data=newtrack.to_dict( rules=('-path',) )
-            respInfo ={"message":{
-                "audio":{"songid":songid, "title":filename, "path":trackpath, "file_unique_id":data['id']}}, 
-                "date":"123456789", 
-                "message_id":"messageid"}
-            return jsonify({"ok":"true", "result":respInfo})
-        else: 
-            return jsonify({"error":"type not allowed"})
-    else:
-        return jsonify({"error":"not valid user"})
+def fileupload():    
+    result=api.track.fileupload(current_user, Song, Track, db)
+    return result
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):    
