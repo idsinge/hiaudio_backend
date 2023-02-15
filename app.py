@@ -46,7 +46,10 @@ db.init_app(app)
 
 @app.route('/')
 def index():
-    if current_user.is_authenticated:        
+    if current_user.is_authenticated:    
+        # TODO: Find a different way to redirect to home page with auth
+        # It could be implemented at /songs  API level by returning 
+        # a param in the response
         return redirect(request.base_url+"public/index.html?auth=true")
     else:
         return redirect(request.base_url+"public/index.html")
