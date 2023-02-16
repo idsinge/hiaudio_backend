@@ -1,5 +1,5 @@
-from app import app, DATA_BASEDIR, DB_FILE
-from orm import db, Song, Track, User
+from app import app, DB_FILE
+from orm import db, Composition, Recording, User
 import os
 
 with app.app_context():
@@ -16,14 +16,14 @@ with app.app_context():
     db.session.add(user1)
     db.session.commit()
 
-    song1 = Song(title="Live Together", user=user1)
+    composition1 = Composition(title="Live Together", user=user1)
 
-    db.session.add(song1)
+    db.session.add(composition1)
     db.session.commit()
 
 
 
-    track1 = Track(title="Acoustic", path=f"songs/{song1.id}/acoustic_1-mastered.mp3", song=song1)
-    track2 = Track(title="Methronome", path=f"songs/{song1.id}/methronome_110.mp3", song=song1)
-    db.session.add_all({track1, track2})
+    recording1 = Recording(title="Acoustic", path=f"compositions/{composition1.id}/acoustic_1-mastered.mp3", composition=composition1)
+    recording2 = Recording(title="Methronome", path=f"compositions/{composition1.id}/methronome_110.mp3", composition=composition1)
+    db.session.add_all({recording1, recording2})
     db.session.commit()

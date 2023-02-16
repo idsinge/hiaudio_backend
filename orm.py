@@ -12,38 +12,38 @@ class User(db.Model, UserMixin):
     name = db.Column(db.String(100))
     email = db.Column(db.String(100))
     profile_pic = db.Column(db.String(100))
-    songs = db.relationship('Song', backref='user')   
+    compositions = db.relationship('Composition', backref='user')   
 
     def __repr__(self):
         return f'<User "{self.email}">'
 
 
 
-class Song(db.Model, SerializerMixin):
+class Composition(db.Model, SerializerMixin):
 
     serialize_rules = ('-user', )
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100))
-    tracks = db.relationship('Track', backref='song')
+    recordings = db.relationship('Recording', backref='composition')
 
     user_id = db.Column(db.String(100), db.ForeignKey('user.id'))
 
     def __repr__(self):
-        return f'<Song "{self.title}">'
+        return f'<Composition "{self.title}">'
 
 
 
 
-class Track(db.Model, SerializerMixin):
+class Recording(db.Model, SerializerMixin):
 
-    serialize_rules = ('-song', )
+    serialize_rules = ('-composition', )
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100))
     path = db.Column(db.String(1024))
 
-    song_id = db.Column(db.Integer, db.ForeignKey('song.id'))
+    composition_id = db.Column(db.Integer, db.ForeignKey('composition.id'))
 
     def __repr__(self):
-        return f'<Track "{self.title}">'
+        return f'<Recording "{self.title}">'
