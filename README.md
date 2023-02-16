@@ -50,4 +50,6 @@ rename "beatbytebot_webapp" to "webapp"
 
 # follow below instructions at:
 https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally
+
+[Debuggable Frontend with Backend](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Debuggable-Frontend-with-Backend)
 ```
