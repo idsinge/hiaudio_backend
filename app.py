@@ -16,11 +16,8 @@ import api.auth
 import api.song
 import api.track
 
-basedir = os.path.abspath(os.path.dirname(__file__))
 
-DB_FILE = os.path.join(basedir, 'database.db')
-DATA_BASEDIR = os.path.join(basedir, "../data/")
-
+DB_FILE = os.path.join(api.track.BASEDIR, 'database.db')
 app = Flask(__name__)
 # allow uploads up to 16MB
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
@@ -119,7 +116,7 @@ def newsong():
 @cross_origin()
 def trackfile(id):
     track = Track.query.get_or_404(id)
-    return send_from_directory( DATA_BASEDIR, track.path )
+    return send_from_directory( api.track.DATA_BASEDIR, track.path )
 
 @app.route('/deletetrack/<int:id>', methods=['DELETE'])
 @login_required

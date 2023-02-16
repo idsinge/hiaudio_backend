@@ -1,8 +1,11 @@
 import os
 from flask import request, jsonify
 from werkzeug.utils import secure_filename
-from app import DATA_BASEDIR
+
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg'}
+CURRENTDIR = os.path.abspath(os.path.dirname(__file__))
+BASEDIR = os.path.abspath(CURRENTDIR + "/../")
+DATA_BASEDIR = os.path.join(BASEDIR, "../data/")
 
 def allowed_file(filename):
     return '.' in filename and \

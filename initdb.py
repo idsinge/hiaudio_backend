@@ -1,4 +1,4 @@
-from app import app, DATA_BASEDIR, DB_FILE
+from app import app, DB_FILE
 from orm import db, Song, Track, User
 import os
 
