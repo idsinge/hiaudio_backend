@@ -1,4 +1,4 @@
-Usage: 
+## General usage: 
 
 ```bash
 git clone https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt.git
@@ -39,17 +39,20 @@ python app.py
 # Verify it's running
 Open -> https://localhost:7007/
 
-# To make the frontend work together with the backend
-# in local DEV mode/environment
+```
+
+## To make the frontend work together with the backend in local DEV mode/environment
 
 
-# Inside backend repo clone:
+Inside backend repo clone:
+```
 git clone https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp.git
 
-rename "beatbytebot_webapp" to "webapp"
-
-# follow below instructions at:
-https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally
-
-[Debuggable Frontend with Backend](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Debuggable-Frontend-with-Backend)
 ```
+
+Then rename the folder `beatbytebot_webapp` to `webapp`
+
+### More info:
+- https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally
+
+- [Debuggable Frontend with Backend](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Debuggable-Frontend-with-Backend)
