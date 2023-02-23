@@ -12,9 +12,9 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def deletetrack(id, Track, db):
-    track = Track.query.get(id) 
+    track = Track.query.get(id)
 
-    # TODO: delete file from folder   
+    # TODO: delete file from folder
     if(track is None):
         return jsonify({"error":"track not found"})
     else:
@@ -23,10 +23,10 @@ def deletetrack(id, Track, db):
         return jsonify({"ok":"true", "result":track.id})
 
 def fileupload(current_user, Song, Track, db):
-    user_auth = current_user.get_id()    
+    user_auth = current_user.get_id()
     songid = request.form['song_id']
     song = Song.query.get_or_404(songid)
-    if song.user.id == user_auth:        
+    if song.user.id == user_auth:
 
         file = request.files['audio']
 
@@ -45,11 +45,11 @@ def fileupload(current_user, Song, Track, db):
             db.session.commit()
             data=newtrack.to_dict( rules=('-path',) )
             respInfo ={"message":{
-                "audio":{"songid":songid, "title":filename, "path":trackpath, "file_unique_id":data['id']}}, 
-                "date":"123456789", 
+                "audio":{"songid":songid, "title":filename, "path":trackpath, "file_unique_id":data['id']}},
+                "date":"123456789",
                 "message_id":"messageid"}
             return jsonify({"ok":"true", "result":respInfo})
-        else: 
+        else:
             return jsonify({"error":"type not allowed"})
     else:
         return jsonify({"error":"not valid user"})

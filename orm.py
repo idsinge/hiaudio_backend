@@ -5,14 +5,14 @@ from sqlalchemy_serializer import SerializerMixin
 
 db = SQLAlchemy()
 
-class User(db.Model, UserMixin):
+class User(db.Model, UserMixin, SerializerMixin):
 
     id = db.Column(db.String(100), primary_key=True)
     username = db.Column(db.String(100))
     name = db.Column(db.String(100))
     email = db.Column(db.String(100))
     profile_pic = db.Column(db.String(100))
-    songs = db.relationship('Song', backref='user')   
+    songs = db.relationship('Song', backref='user')
 
     def __repr__(self):
         return f'<User "{self.email}">'
