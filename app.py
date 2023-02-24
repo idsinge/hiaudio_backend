@@ -13,7 +13,7 @@ from flask_login import (
 )
 
 import api.auth
-import api.song
+import api.composition
 import api.track
 
 
@@ -100,14 +100,14 @@ def compositions():
 @app.route('/composition/<int:id>')
 @cross_origin()
 def composition(id):
-    result = api.song.composition(id, current_user, Composition)
+    result = api.composition.composition(id, current_user, Composition)
     return result
 
 @app.route('/newcomposition', methods=['POST'])
 @login_required
 @cross_origin()
 def newcomposition():
-    result = api.song.newcomposition(current_user,User, Composition, db)
+    result = api.composition.newcomposition(current_user,User, Composition, db)
     return result
 
 @app.route('/trackfile/<int:id>')
