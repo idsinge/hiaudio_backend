@@ -22,30 +22,30 @@ def deletetrack(id, Track, db):
         db.session.commit()
         return jsonify({"ok":"true", "result":track.id})
 
-def fileupload(current_user, Song, Track, db):
+def fileupload(current_user, Composition, Track, db):
     user_auth = current_user.get_id()
-    songid = request.form['song_id']
-    song = Song.query.get_or_404(songid)
-    if song.user.id == user_auth:
+    compositionid = request.form['composition_id']
+    composition = Composition.query.get_or_404(compositionid)
+    if composition.user.id == user_auth:
 
         file = request.files['audio']
 
 
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
-            trackpath = f"songs/{songid}/{filename}"
+            trackpath = f"compositions/{compositionid}/{filename}"
             fullpath = os.path.join(DATA_BASEDIR, trackpath )
 
             os.makedirs(os.path.dirname(fullpath), exist_ok=True);
 
             file.save( fullpath )
 
-            newtrack = Track(title=filename, path=trackpath, song=song)
+            newtrack = Track(title=filename, path=trackpath, composition=composition)
             db.session.add(newtrack)
             db.session.commit()
             data=newtrack.to_dict( rules=('-path',) )
             respInfo ={"message":{
-                "audio":{"songid":songid, "title":filename, "path":trackpath, "file_unique_id":data['id']}},
+                "audio":{"compositionid":compositionid, "title":filename, "path":trackpath, "file_unique_id":data['id']}},
                 "date":"123456789",
                 "message_id":"messageid"}
             return jsonify({"ok":"true", "result":respInfo})

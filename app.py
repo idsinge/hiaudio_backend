@@ -3,7 +3,7 @@ from flask import Flask, request, url_for, redirect, jsonify, send_from_director
 
 from flask_cors import CORS, cross_origin
 
-from orm import db, Song, Track, User
+from orm import db, Composition, Track, User
 
 from flask_login import (
     LoginManager,
@@ -13,7 +13,7 @@ from flask_login import (
 )
 
 import api.auth
-import api.song
+import api.composition
 import api.track
 
 
@@ -45,7 +45,7 @@ db.init_app(app)
 def index():
     if current_user.is_authenticated:
         # TODO: Find a different way to redirect to home page with auth
-        # It could be implemented at /songs  API level by returning
+        # It could be implemented at /compositions  API level by returning
         # a param in the response
         return redirect(request.base_url+"public/index.html?auth=true")
     else:
@@ -79,7 +79,7 @@ def logout():
 @cross_origin()
 def users():
     users = User.query.all()
-    jusers = jsonify(users=[ user.to_dict( rules=('-songs','-email') ) for user in users])
+    jusers = jsonify(users=[ user.to_dict( rules=('-compositions','-email') ) for user in users])
     return jusers
 
 @app.route('/user/<string:id>')
@@ -89,25 +89,25 @@ def user(id):
     juser = jsonify(user.to_dict( rules=('-path','-email') ))
     return juser
 
-@app.route('/songs')
+@app.route('/compositions')
 @cross_origin()
-def songs():
-    songs = Song.query.all()
-    jsongs = jsonify(songs=[ song.to_dict( rules=('-tracks',) ) for song in songs])
-    return jsongs
+def compositions():
+    compositions = Composition.query.all()
+    jcompositions = jsonify(compositions=[ composition.to_dict( rules=('-tracks',) ) for composition in compositions])
+    return jcompositions
 
 
-@app.route('/song/<int:id>')
+@app.route('/composition/<int:id>')
 @cross_origin()
-def song(id):
-    result = api.song.song(id, current_user, Song)
+def composition(id):
+    result = api.composition.composition(id, current_user, Composition)
     return result
 
-@app.route('/newsong', methods=['POST'])
+@app.route('/newcomposition', methods=['POST'])
 @login_required
 @cross_origin()
-def newsong():
-    result = api.song.newsong(current_user,User, Song, db)
+def newcomposition():
+    result = api.composition.newcomposition(current_user,User, Composition, db)
     return result
 
 @app.route('/trackfile/<int:id>')
@@ -127,7 +127,7 @@ def deletetrack(id):
 @cross_origin()
 @login_required
 def fileupload():
-    result=api.track.fileupload(current_user, Song, Track, db)
+    result=api.track.fileupload(current_user, Composition, Track, db)
     return result
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
