@@ -75,21 +75,19 @@ def logout():
     logout_user()
     return redirect(url_for("index"))
 
-# NOT WORKING
 @app.route('/users')
 @cross_origin()
 def users():
     users = User.query.all()
-    jusers = jsonify(users=[ user.to_dict( rules=('-songs',) ) for user in users])
+    jusers = jsonify(users=[ user.to_dict( rules=('-songs','-email') ) for user in users])
     return jusers
 
-# @app.route('/users/<string:id>')
-# @cross_origin()
-# def user(id):
-#     user = User.query.get_or_404(id)
-#     juser = jsonify(user.to_dict( rules=('-path',) ))
-#     return juser
-# END NOT WORKING
+@app.route('/user/<string:id>')
+@cross_origin()
+def user(id):
+    user = User.query.get_or_404(id)
+    juser = jsonify(user.to_dict( rules=('-path','-email') ))
+    return juser
 
 @app.route('/songs')
 @cross_origin()
