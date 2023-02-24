@@ -14,10 +14,12 @@ def allowed_file(filename):
 def deletetrack(id, Track, db):
     track = Track.query.get(id)
 
-    # TODO: delete file from folder
     if(track is None):
         return jsonify({"error":"track not found"})
     else:
+        trackpath = f"compositions/{track.composition_id}/{track.title}"        
+        fullpath = os.path.join(DATA_BASEDIR, trackpath )          
+        os.remove(fullpath)        
         db.session.delete(track)
         db.session.commit()
         return jsonify({"ok":"true", "result":track.id})
