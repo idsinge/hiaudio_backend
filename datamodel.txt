@@ -1,13 +1,13 @@
 
 
-* index page: list of songs
-* song page: list tracks
+* index page: list of compositions
+* composition page: list tracks
 
 * file structure:
 - users/
   - <userid>
-    - songs/
-      - <songid>/
+    - compositions/
+      - <compositionid>/
         - tracks/
           - <track filename>
 
@@ -19,9 +19,9 @@ User:
  - name
  - email
  - profile_pic
- - songs
+ - compositions
 
-Song:
+Composition:
  - id
  - userid
  - title
@@ -30,7 +30,7 @@ Song:
 
 Track:
  - id
- - songid
+ - compositionid
  - title
  - author? userid?
  - filepath
@@ -42,7 +42,7 @@ Perm:
  - id
  - userid   [null=wildcard]
  - groupid  [null=wildcard]
- - songid
+ - compositionid
  - read?
  - write?
 
