@@ -3,7 +3,7 @@ from oauthlib.oauth2 import WebApplicationClient
 from flask import request
 import requests
 from flask_login import (
-    login_user   
+    login_user
 )
 # Configuration
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
@@ -24,18 +24,18 @@ def login():
     # Find out what URL to hit for Google login
     google_provider_cfg = get_google_provider_cfg()
     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
-    
+
     # Use library to construct the request for Google login and provide
     # scopes that let you retrieve user's profile from Google
     request_uri = client.prepare_request_uri(
         authorization_endpoint,
-        redirect_uri=request.base_url + "/callback",                       
+        redirect_uri=request.base_url + "/callback",
         scope=["openid", "email", "profile"],
     )
     return request_uri
 
 
-def callback(User, db):    
+def callback(User, db):
     result="ok", 200
     # Get authorization code Google sent back to you
     code = request.args.get("code")
@@ -46,8 +46,8 @@ def callback(User, db):
     # Prepare and send a request to get tokens! Yay tokens!
     token_url, headers, body = client.prepare_token_request(
         token_endpoint,
-        authorization_response=request.url,        
-        redirect_url=request.base_url,          
+        authorization_response=request.url,
+        redirect_url=request.base_url,
         code=code
     )
     token_response = requests.post(
@@ -75,17 +75,17 @@ def callback(User, db):
         users_name = userinfo_response.json()["given_name"]
     else:
         result="User email not available or not verified by Google.", 400
-    
+
     # Create a user in your db with the information provided
     # by Google
     user = User(id=unique_id, name=users_name, email=users_email, profile_pic=picture)
-   
-    # Doesn't exist? Add it to the database.  
+
+    # Doesn't exist? Add it to the database.
     if not User.query.get(unique_id):
         db.session.add(user)
         db.session.commit()
 
-    # Begin user session by logging the user in    
+    # Begin user session by logging the user in
     login_user(user)
 
     # Send user back to homepage
