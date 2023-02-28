@@ -16,7 +16,7 @@ with app.app_context():
     db.session.add(user1)
     db.session.commit()
 
-    composition1 = Composition(title="Live Together", user=user1)
+    composition1 = Composition(title="ADASP", user=user1)
 
     db.session.add(composition1)
     db.session.commit()
