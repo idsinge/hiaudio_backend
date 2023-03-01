@@ -19,8 +19,8 @@ import api.track
 
 DB_FILE = os.path.join(api.track.BASEDIR, 'database.db')
 app = Flask(__name__)
-# allow uploads up to 16MB
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1000 * 1000
+# allow uploads up to 50MB
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1000 * 1000
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
