@@ -2,7 +2,7 @@ import os
 from flask import request, jsonify
 from werkzeug.utils import secure_filename
 
-ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg'}
+ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'm4a'}
 CURRENTDIR = os.path.abspath(os.path.dirname(__file__))
 BASEDIR = os.path.abspath(CURRENTDIR + "/../")
 DATA_BASEDIR = os.path.join(BASEDIR, "../data/")
