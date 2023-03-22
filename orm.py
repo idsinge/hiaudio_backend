@@ -23,6 +23,7 @@ class Composition(db.Model, SerializerMixin):
     serialize_rules = ('-user', )
 
     id = db.Column(db.Integer, primary_key=True)
+    privacy = db.Column(db.Integer)
     title = db.Column(db.String(100))
     tracks = db.relationship('Track', backref='composition')
 
