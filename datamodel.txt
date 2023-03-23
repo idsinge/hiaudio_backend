@@ -25,6 +25,7 @@ Composition:
  - id
  - userid
  - title
+ - privacy
  - perms
  - tracks
 
