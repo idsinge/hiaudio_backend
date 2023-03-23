@@ -12,7 +12,7 @@ class User(db.Model, UserMixin):
     name = db.Column(db.String(100))
     email = db.Column(db.String(100))
     profile_pic = db.Column(db.String(100))
-    songs = db.relationship('Song', backref='user')   
+    songs = db.relationship('Song', backref='user')
 
     def __repr__(self):
         return f'<User "{self.email}">'
@@ -26,6 +26,7 @@ class Song(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100))
     tracks = db.relationship('Track', backref='song')
+    privacy = db.Column(db.Integer, nullable=False, server_default="1")
 
     user_id = db.Column(db.String(100), db.ForeignKey('user.id'))
 

@@ -12,6 +12,8 @@ from flask_login import (
     logout_user,
 )
 
+from flask_migrate import Migrate
+
 import api.auth
 import api.song
 import api.track
@@ -33,6 +35,7 @@ app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+migrate = Migrate(app, db)
 
 # Flask-Login helper to retrieve a user from our db
 @login_manager.user_loader
@@ -43,9 +46,9 @@ db.init_app(app)
 
 @app.route('/')
 def index():
-    if current_user.is_authenticated:    
+    if current_user.is_authenticated:
         # TODO: Find a different way to redirect to home page with auth
-        # It could be implemented at /songs  API level by returning 
+        # It could be implemented at /songs  API level by returning
         # a param in the response
         return redirect(request.base_url+"public/index.html?auth=true")
     else:
@@ -54,9 +57,9 @@ def index():
 @app.route("/profile")
 def register():
     if current_user.is_authenticated:
-        return jsonify({"ok":True, "name":current_user.name, "email":current_user.email, "profile_pic":current_user.profile_pic})       
+        return jsonify({"ok":True, "name":current_user.name, "email":current_user.email, "profile_pic":current_user.profile_pic})
     else:
-        return jsonify({"ok":False})        
+        return jsonify({"ok":False})
 
 @app.route("/login")
 def login():
@@ -64,9 +67,9 @@ def login():
     return redirect(request_uri)
 
 @app.route("/login/callback")
-def callback():  
-    result = api.auth.callback(User, db)  
-    # TODO: check if result is correct   
+def callback():
+    result = api.auth.callback(User, db)
+    # TODO: check if result is correct
     return redirect(url_for("index"))
 
 @app.route("/logout")
@@ -80,14 +83,14 @@ def logout():
 # @cross_origin()
 # def users():
 #     users = User.query.all()
-#     jusers = jsonify(users=[ user.to_dict( rules=('-songs',) ) for user in users])    
+#     jusers = jsonify(users=[ user.to_dict( rules=('-songs',) ) for user in users])
 #     return jusers
 
 # @app.route('/users/<string:id>')
 # @cross_origin()
 # def user(id):
 #     user = User.query.get_or_404(id)
-#     juser = jsonify(user.to_dict( rules=('-path',) ))    
+#     juser = jsonify(user.to_dict( rules=('-path',) ))
 #     return juser
 # END NOT WORKING
 
@@ -95,7 +98,7 @@ def logout():
 @cross_origin()
 def songs():
     songs = Song.query.all()
-    jsongs = jsonify(songs=[ song.to_dict( rules=('-tracks',) ) for song in songs])    
+    jsongs = jsonify(songs=[ song.to_dict( rules=('-tracks',) ) for song in songs])
     return jsongs
 
 
@@ -128,12 +131,12 @@ def deletetrack(id):
 @app.route('/fileUpload', methods=['POST'])
 @cross_origin()
 @login_required
-def fileupload():    
+def fileupload():
     result=api.track.fileupload(current_user, Song, Track, db)
     return result
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
-def page(filename):    
+def page(filename):
     filename = filename or 'public/index.html'
     if request.method == 'GET':
         return send_from_directory('.', filename)
@@ -145,5 +148,5 @@ if __name__ == "__main__":
     app.run(ssl_context="adhoc", host='0.0.0.0', port=7007, debug=True)
 
 # FOR HTTP
-# if __name__ == "__main__":    
+# if __name__ == "__main__":
 #     app.run(host='0.0.0.0', port=7007, debug=True)
