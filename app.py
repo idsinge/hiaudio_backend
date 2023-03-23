@@ -92,9 +92,8 @@ def user(id):
 @app.route('/compositions')
 @cross_origin()
 def compositions():
-    compositions = Composition.query.all()
-    jcompositions = jsonify(compositions=[ composition.to_dict( rules=('-tracks',) ) for composition in compositions])
-    return jcompositions
+    compositions = api.composition.compositions(current_user, Composition)
+    return compositions
 
 
 @app.route('/composition/<int:id>')
