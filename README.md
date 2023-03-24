@@ -60,3 +60,5 @@ Then rename the folder `beatbytebot_webapp` to `webapp`
 - https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally
 
 - [Debuggable Frontend with Backend](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Debuggable-Frontend-with-Backend)
+
+- Flask-Migrate: https://flask-migrate.readthedocs.io/en/latest/#example
