@@ -10,12 +10,12 @@
       - <compositionid>/
         - tracks/
           - <track filename>
+        - contributors
+          - <contributor userid>
 
 
 User:
- - id
- - username 
- - groups
+ - id 
  - name
  - email
  - profile_pic
@@ -25,17 +25,20 @@ Composition:
  - id
  - userid
  - title
- - privacy
- - perms
+ - privacy (1=Public, 2=Only Reg, 3=Private)
+ - contributors
  - tracks
 
 Track:
  - id
  - compositionid
  - title
- - author? userid?
- - filepath
+ - path
 
+Contributor:
+ - id
+ - userid
+ - role (1=Owner, 2=Admin, 3=Member, 4=Guest)
 
 ---
 

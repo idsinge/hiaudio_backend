@@ -29,6 +29,8 @@ class Composition(db.Model, SerializerMixin):
 
     user_id = db.Column(db.String(100), db.ForeignKey('user.id'))
 
+    contributors = db.relationship('Contributor', backref='composition')
+
     def __repr__(self):
         return f'<Composition "{self.title}">'
 
@@ -47,3 +49,16 @@ class Track(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f'<Track "{self.title}">'
+
+
+class Contributor(db.Model, SerializerMixin):
+
+    serialize_rules = ('-composition', )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(100), db.ForeignKey('user.id'))
+    composition_id = db.Column(db.Integer, db.ForeignKey('composition.id'))
+    role = db.Column(db.Integer, nullable=False, server_default="4")
+
+    def __repr__(self):
+        return f'<Contributor "{self.user_id}">'
