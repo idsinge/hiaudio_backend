@@ -1,6 +1,6 @@
 import os
 from flask import Flask, request, url_for, redirect, jsonify, send_from_directory
-
+from flask_migrate import Migrate
 from flask_cors import CORS, cross_origin
 
 from orm import db, Composition, Track, User
@@ -33,6 +33,7 @@ app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+migrate = Migrate(app, db)
 
 # Flask-Login helper to retrieve a user from our db
 @login_manager.user_loader
