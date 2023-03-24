@@ -8,7 +8,7 @@ def compositions(current_user, Composition):
         if ((user_auth is None) and (comp.privacy == 1)):           
             compositions.append(comp)
         else:
-            if(comp.privacy != 3 ):                
+            if((comp.privacy != 3 ) and (user_auth is not None)):                
                 compositions.append(comp)
             else:
                 if(comp.user.id == user_auth):
