@@ -22,6 +22,7 @@ source venv/bin/activate
 # install requirements
 pip install -r requirements.txt
 pip install python-dotenv
+pip install Flask-Migrate
 
 # create .env file with the following content
 # Google Values: https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Google-OAuth-Setup
@@ -32,6 +33,9 @@ SECRET_KEY=*****
 
 # init DB
 python initdb.py
+
+# This will add a migrations folder to your application. The contents of this folder need to be added to version control along with other source files.
+flask db init
 
 # run the server 
 python app.py
