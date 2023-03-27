@@ -1,5 +1,3 @@
-
-
 * index page: list of compositions
 * composition page: list tracks
 
