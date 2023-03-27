@@ -94,7 +94,7 @@ def user(id):
 @app.route('/compositions')
 @cross_origin()
 def compositions():
-    compositions = api.composition.compositions(current_user, Composition)
+    compositions = api.composition.compositions(current_user, Composition, Contributor)
     return compositions
 
 

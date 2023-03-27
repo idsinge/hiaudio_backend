@@ -1,6 +1,6 @@
 from flask import request, jsonify
 
-def compositions(current_user, Composition):
+def compositions(current_user, Composition, Contributor):
     user_auth = current_user.get_id()    
     allcompositions = Composition.query.all()
     compositions = []
@@ -13,6 +13,11 @@ def compositions(current_user, Composition):
             else:
                 if(comp.user.id == user_auth):
                     compositions.append(comp)
+                else:                    
+                    iscontributor = Contributor.query.filter_by(composition_id=comp.id).first()                    
+                    if(iscontributor is not None):
+                        compositions.append(comp)
+
     jcompositions = jsonify(compositions=[ composition.to_dict( rules=('-tracks',) ) for composition in compositions])
     return jcompositions
 
