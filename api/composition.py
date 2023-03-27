@@ -14,7 +14,7 @@ def compositions(current_user, Composition, Contributor):
                 if(comp.user.id == user_auth):
                     compositions.append(comp)
                 else:                    
-                    iscontributor = Contributor.query.filter_by(composition_id=comp.id).first()                    
+                    iscontributor = Contributor.query.filter_by(composition_id=comp.id, user_id=user_auth).first()                    
                     if(iscontributor is not None):
                         compositions.append(comp)
 
