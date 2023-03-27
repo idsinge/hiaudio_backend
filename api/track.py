@@ -48,7 +48,7 @@ def fileupload(current_user, Composition, Track, Contributor, db):
 
             thefile.save( fullpath )
 
-            newtrack = Track(title=filename, path=trackpath, composition=composition)
+            newtrack = Track(title=filename, path=trackpath, composition=composition, user_id=user_auth)
             db.session.add(newtrack)
             db.session.commit()
             data=newtrack.to_dict( rules=('-path',) )
