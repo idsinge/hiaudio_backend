@@ -24,33 +24,39 @@ def deletetrack(id, Track, db):
         db.session.commit()
         return jsonify({"ok":"true", "result":track.id})
 
-def fileupload(current_user, Composition, Track, db):
+def fileupload(current_user, Composition, Track, Contributor, db):
     user_auth = current_user.get_id()
     compositionid = request.form['composition_id']
     composition = Composition.query.get_or_404(compositionid)
-    if composition.user.id == user_auth:
+    role = 0
+    istheowner = composition.user.id == user_auth
+    if not istheowner:
+        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()    
+        if(iscontributor is not None):
+            role = iscontributor.role 
+    if ((istheowner) or (1<= role <= 3)):
 
-        file = request.files['audio']
+        thefile = request.files['audio']
 
 
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
+        if thefile and allowed_file(thefile.filename):
+            filename = secure_filename(thefile.filename)
             trackpath = f"compositions/{compositionid}/{filename}"
             fullpath = os.path.join(DATA_BASEDIR, trackpath )
 
             os.makedirs(os.path.dirname(fullpath), exist_ok=True);
 
-            file.save( fullpath )
+            thefile.save( fullpath )
 
             newtrack = Track(title=filename, path=trackpath, composition=composition)
             db.session.add(newtrack)
             db.session.commit()
             data=newtrack.to_dict( rules=('-path',) )
-            respInfo ={"message":{
+            respinfo ={"message":{
                 "audio":{"compositionid":compositionid, "title":filename, "path":trackpath, "file_unique_id":data['id']}},
                 "date":"123456789",
                 "message_id":"messageid"}
-            return jsonify({"ok":"true", "result":respInfo})
+            return jsonify({"ok":"true", "result":respinfo})
         else:
             return jsonify({"error":"type not allowed"})
     else:

@@ -128,7 +128,7 @@ def deletetrack(id):
 @cross_origin()
 @login_required
 def fileupload():
-    result=api.track.fileupload(current_user, Composition, Track, db)
+    result=api.track.fileupload(current_user, Composition, Track, Contributor, db)
     return result
 
 @app.route('/addcontributor', methods=['POST'])
