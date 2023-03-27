@@ -3,7 +3,7 @@ from flask import Flask, request, url_for, redirect, jsonify, send_from_director
 from flask_migrate import Migrate
 from flask_cors import CORS, cross_origin
 
-from orm import db, Composition, Track, User
+from orm import db, Composition, Track, User, Contributor
 
 from flask_login import (
     LoginManager,
@@ -15,6 +15,7 @@ from flask_login import (
 import api.auth
 import api.composition
 import api.track
+import api.contributor
 
 
 DB_FILE = os.path.join(api.track.BASEDIR, 'database.db')
@@ -128,6 +129,13 @@ def deletetrack(id):
 @login_required
 def fileupload():
     result=api.track.fileupload(current_user, Composition, Track, db)
+    return result
+
+@app.route('/addcontributor', methods=['POST'])
+@cross_origin()
+@login_required
+def addcontributor():
+    result=api.contributor.addcontributor(current_user, Composition, Contributor, User, db)
     return result
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
