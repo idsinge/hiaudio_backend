@@ -101,7 +101,7 @@ def compositions():
 @app.route('/composition/<int:id>')
 @cross_origin()
 def composition(id):
-    result = api.composition.composition(id, current_user, Composition)
+    result = api.composition.composition(id, current_user, Composition, Contributor)
     return result
 
 @app.route('/newcomposition', methods=['POST'])
