@@ -23,20 +23,25 @@ def compositions(current_user, Composition, Contributor):
 
 
 # if privacy= 2 or 3, and not logged => not accesible
-# if privacy=3 and not the owner => not accesible
+# if privacy=3 and not either owner/contributor => not accesible
 
-def composition(id, current_user, Composition):
+def composition(id, current_user, Composition, Contributor):
     user_auth = current_user.get_id()
     composition = Composition.query.get_or_404(id)
     if ((user_auth is None) and ((composition.privacy == 2) or (composition.privacy == 3))):
         return jsonify({"error":"composition not accesible"})
     else:
-        owner = composition.user.id == user_auth        
-        if((composition.privacy == 3) and (composition.user.id != user_auth)):
+        owner = composition.user.id == user_auth
+        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
+        role = 0        
+        if(iscontributor is not None):
+            role = iscontributor.role            
+        if((composition.privacy == 3) and (composition.user.id != user_auth) and (role == 0)):
             return jsonify({"error":"composition not accesible"})
         else:
             data = composition.to_dict( rules=('-path',) )
             data['owner'] = owner
+            data['role'] = role
             jcomposition = jsonify(data)
             return jcomposition
 
