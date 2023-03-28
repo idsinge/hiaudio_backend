@@ -11,18 +11,34 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def deletetrack(id, Track, db):
+def deletefromdb(trackinfo, db):    
+    trackpath = f"compositions/{trackinfo.composition_id}/{trackinfo.title}"        
+    fullpath = os.path.join(DATA_BASEDIR, trackpath )          
+    os.remove(fullpath)        
+    db.session.delete(trackinfo)
+    db.session.commit()
+
+def deletetrack(id, current_user, Track, Composition, Contributor, db):
     track = Track.query.get(id)
 
     if(track is None):
         return jsonify({"error":"track not found"})
     else:
-        trackpath = f"compositions/{track.composition_id}/{track.title}"        
-        fullpath = os.path.join(DATA_BASEDIR, trackpath )          
-        os.remove(fullpath)        
-        db.session.delete(track)
-        db.session.commit()
-        return jsonify({"ok":"true", "result":track.id})
+        user_auth = current_user.get_id()        
+        if(track.user_id == user_auth):           
+            deletefromdb(track, db)
+            return jsonify({"ok":"true", "result":track.id})
+        else: 
+            composition = Composition.query.get_or_404(track.composition_id)
+            role = 0            
+            iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()            
+            if(iscontributor is not None):
+                role = iscontributor.role            
+            if (1<= role <= 2):
+                deletefromdb(track, db)
+                return jsonify({"ok":"true", "result":track.id})
+            else:
+                return jsonify({"error":"not permission to delete"})
 
 def fileupload(current_user, Composition, Track, Contributor, db):
     user_auth = current_user.get_id()
