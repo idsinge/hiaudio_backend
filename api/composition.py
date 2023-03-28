@@ -33,7 +33,9 @@ def composition(id, current_user, Composition, Contributor):
     else:
         owner = composition.user.id == user_auth
         iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
-        role = 0        
+        role = 0 
+        if(composition.user.id == user_auth):
+              role = 1          
         if(iscontributor is not None):
             role = iscontributor.role            
         if((composition.privacy == 3) and (composition.user.id != user_auth) and (role == 0)):
@@ -42,6 +44,7 @@ def composition(id, current_user, Composition, Contributor):
             data = composition.to_dict( rules=('-path',) )
             data['owner'] = owner
             data['role'] = role
+            data['viewer_id'] = user_auth
             jcomposition = jsonify(data)
             return jcomposition
 
