@@ -27,7 +27,7 @@ def deletetrack(id, current_user, Track, Composition, Contributor, db):
         user_auth = current_user.get_id()        
         if(track.user_id == user_auth):           
             deletefromdb(track, db)
-            return jsonify({"ok":"true", "result":track.id})
+            return jsonify({"ok":"true", "result":track.id, "role":1})
         else: 
             composition = Composition.query.get_or_404(track.composition_id)
             role = 0            
@@ -36,7 +36,7 @@ def deletetrack(id, current_user, Track, Composition, Contributor, db):
                 role = iscontributor.role            
             if (1<= role <= 2):
                 deletefromdb(track, db)
-                return jsonify({"ok":"true", "result":track.id})
+                return jsonify({"ok":"true", "result":track.id, "role":role })
             else:
                 return jsonify({"error":"not permission to delete"})
 
@@ -69,7 +69,7 @@ def fileupload(current_user, Composition, Track, Contributor, db):
             db.session.commit()
             data=newtrack.to_dict( rules=('-path',) )
             respinfo ={"message":{
-                "audio":{"compositionid":compositionid, "title":filename, "path":trackpath, "file_unique_id":data['id']}},
+                "audio":{"compositionid":compositionid, "title":filename, "path":trackpath, "file_unique_id":data['id'], "user_id":user_auth}},
                 "date":"123456789",
                 "message_id":"messageid"}
             return jsonify({"ok":"true", "result":respinfo})
