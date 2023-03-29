@@ -1,4 +1,6 @@
 from flask import request, jsonify
+from api.track import deletetrack
+from orm import Track
 
 def compositions(current_user, Composition, Contributor):
     user_auth = current_user.get_id()    
@@ -63,6 +65,29 @@ def newcomposition(current_user,User, Composition, db):
     else:
         return jsonify({"error":"not authenticated"})
 
+def deletecomposition(current_user, Composition, Contributor, db):
+    compid = request.get_json()['id']      
+    user_auth = current_user.get_id()    
+    composition =  Composition.query.get_or_404(compid)
+    iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
+    role = 0 
+    if(composition.user.id == user_auth):
+        role = 1          
+    if(iscontributor is not None):
+        role = iscontributor.role    
+    if(role == 1):                
+        compdict = composition.to_dict( rules=('-path',))       
+        if(len(compdict['tracks'])):           
+            for track in compdict['tracks']:                
+                deleted = deletetrack(track['id'], current_user, Track, Composition, Contributor, db)   
+                #TODO: check deletion is OK to continue or break loop
+        
+        db.session.delete(composition)
+        db.session.commit()
+        return jsonify({"ok":"true", "result": "composition deleted successfully"})
+    else:
+        return jsonify({"error":"user is not authorized"})
+    
 def updateprivacy(current_user, Composition, Contributor, db):
    return updatecompfield(current_user, Composition, Contributor, db ,'privacy')    
 

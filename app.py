@@ -111,6 +111,13 @@ def newcomposition():
     result = api.composition.newcomposition(current_user,User, Composition, db)
     return result
 
+@app.route('/deletecomposition', methods=['DELETE'])
+@login_required
+@cross_origin()
+def deletecomposition():
+    result = api.composition.deletecomposition(current_user, Composition, Contributor, db)
+    return result
+
 @app.route('/updateprivacy', methods=['PATCH'])
 @login_required
 @cross_origin()
