@@ -118,6 +118,13 @@ def updateprivacy():
     result = api.composition.updateprivacy(current_user,Composition, Contributor, db)
     return result
 
+@app.route('/updatecomptitle', methods=['PATCH'])
+@login_required
+@cross_origin()
+def updatecomptitle():
+    result = api.composition.updatecomptitle(current_user,Composition, Contributor, db)
+    return result
+
 @app.route('/trackfile/<int:id>')
 @cross_origin()
 def trackfile(id):

@@ -64,8 +64,14 @@ def newcomposition(current_user,User, Composition, db):
         return jsonify({"error":"not authenticated"})
 
 def updateprivacy(current_user, Composition, Contributor, db):
+   return updatecompfield(current_user, Composition, Contributor, db ,'privacy')    
+
+def updatecomptitle(current_user, Composition, Contributor, db):
+    return updatecompfield(current_user, Composition, Contributor, db ,'title')
+
+def updatecompfield(current_user, Composition, Contributor, db, field):
     compid = request.get_json()['id']
-    lvl = request.get_json()['role'] 
+    fieldvalue = request.get_json()[field]    
     user_auth = current_user.get_id()    
     composition =  Composition.query.get_or_404(compid)
     iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
@@ -74,9 +80,9 @@ def updateprivacy(current_user, Composition, Contributor, db):
         role = 1          
     if(iscontributor is not None):
         role = iscontributor.role    
-    if(role == 1):               
-        composition.privacy = lvl
+    if(role == 1):        
+        setattr(composition, field, fieldvalue)
         db.session.commit()
-        return jsonify({"ok":"true", "result":"privacy updated successfully"})
+        return jsonify({"ok":"true", "result": field + " updated successfully"})
     else:
         return jsonify({"error":"not possible to update privacy"})
