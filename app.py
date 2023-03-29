@@ -111,6 +111,13 @@ def newcomposition():
     result = api.composition.newcomposition(current_user,User, Composition, db)
     return result
 
+@app.route('/updateprivacy', methods=['PATCH'])
+@login_required
+@cross_origin()
+def updateprivacy():
+    result = api.composition.updateprivacy(current_user,Composition, Contributor, db)
+    return result
+
 @app.route('/trackfile/<int:id>')
 @cross_origin()
 def trackfile(id):
