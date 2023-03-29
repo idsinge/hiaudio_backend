@@ -26,12 +26,12 @@ def addcontributor(current_user, Composition, Contributor, User, db):
             if(iscontributor is not None):
                 querycontributor.update({"role":role})
                 db.session.commit()
-                return jsonify({"ok":"true", "result":"updated successfully"})
+                return jsonify({"ok":"true", "result":"role updated successfully"})
             else:    
                 contributor = Contributor(role=role, user_id=user2.id, composition=composition)          
                 db.session.add(contributor)
                 db.session.commit()        
-                return jsonify({"ok":"true", "result":"added successfully"})
+                return jsonify({"ok":"true", "result":"role added successfully"})
         else:
             return jsonify({"error":"not valid contributor"})
     else:
