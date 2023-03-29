@@ -56,7 +56,7 @@ def index():
 @app.route("/profile")
 def register():
     if current_user.is_authenticated:
-        return jsonify({"ok":True, "name":current_user.name, "email":current_user.email, "profile_pic":current_user.profile_pic})
+        return jsonify({"ok":True, "name":current_user.name, "email":current_user.email, "profile_pic":current_user.profile_pic, "user_id":current_user.id})
     else:
         return jsonify({"ok":False})
 
