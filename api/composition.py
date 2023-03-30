@@ -1,5 +1,6 @@
+import os
 from flask import request, jsonify
-from api.track import deletetrack
+from api.track import deletetrack, DATA_BASEDIR
 from orm import Track
 
 def compositions(current_user, Composition, Contributor):
@@ -82,6 +83,9 @@ def deletecomposition(current_user, Composition, Contributor, db):
                 deleted = deletetrack(track['id'], current_user, Track, Composition, Contributor, db)   
                 #TODO: check deletion is OK to continue or break loop
         
+        compositionpath = f"compositions/{compid}/"        
+        fullpath = os.path.join(DATA_BASEDIR, compositionpath )          
+        os.rmdir(fullpath)
         db.session.delete(composition)
         db.session.commit()
         return jsonify({"ok":"true", "result": "composition deleted successfully"})
