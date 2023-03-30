@@ -1,6 +1,7 @@
 import os
 from flask import request, jsonify
 from api.track import deletetrack, DATA_BASEDIR
+from api.contributor import deletecontributor
 from orm import Track
 
 def compositions(current_user, Composition, Contributor):
@@ -80,8 +81,14 @@ def deletecomposition(current_user, Composition, Contributor, db):
         compdict = composition.to_dict( rules=('-path',))       
         if(len(compdict['tracks'])):           
             for track in compdict['tracks']:                
-                deleted = deletetrack(track['id'], current_user, Track, Composition, Contributor, db)   
+                deletedtrack = deletetrack(track['id'], current_user, Track, Composition, Contributor, db)
+                #print(deletedtrack.get_json())   
                 #TODO: check deletion is OK to continue or break loop
+        if(len(compdict['contributors'])):  
+            for contrib in compdict['contributors']:                
+                deletedcontrib = deletecontributor(contrib['id'], compid, current_user, Composition, Contributor, db)
+                #TODO: check deletion is OK to continue or break loop
+                #print(deletedcontrib.get_json())
         
         compositionpath = f"compositions/{compid}/"        
         fullpath = os.path.join(DATA_BASEDIR, compositionpath )          
