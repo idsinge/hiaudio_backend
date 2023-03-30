@@ -8,6 +8,8 @@ def addcontributor(current_user, Composition, Contributor, User, db):
     compositionid = request.get_json()['composition_id']
     composition = Composition.query.get_or_404(compositionid)
     
+    # if the person who tries to add the contributor is the owner
+    # TODO: check if the role is 1
     if composition.user.id == user_auth:        
         email = request.get_json()["email"] 
         # check is gmail address       
@@ -36,4 +38,26 @@ def addcontributor(current_user, Composition, Contributor, User, db):
             return jsonify({"error":"not valid contributor"})
     else:
         return jsonify({"error":"not valid owner"})
- 
+
+def deletecontributor(contribid, compid, current_user, Composition, Contributor, db):
+    user_auth = current_user.get_id()
+    contributor = Contributor.query.get(contribid)
+    if(contributor is not None):
+        composition = Composition.query.get_or_404(compid)
+        role = 0
+        if(composition.user_id == user_auth):
+            role = 1
+            db.session.delete(contributor)
+            db.session.commit()
+            return jsonify({"ok":"true", "result":contribid, "role":role })
+        else:
+            role = contributor.role 
+            if (1<= role <= 2):
+                db.session.delete(contributor)
+                db.session.commit()
+                return jsonify({"ok":"true", "result":contribid, "role":role })
+            else:
+                return jsonify({"error":"not permission to delete"})
+    else:
+        return jsonify({"error":"contributor not found"})                  
+            
