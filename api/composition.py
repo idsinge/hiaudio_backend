@@ -91,8 +91,9 @@ def deletecomposition(current_user, Composition, Contributor, db):
                 #print(deletedcontrib.get_json())
         
         compositionpath = f"compositions/{compid}/"        
-        fullpath = os.path.join(DATA_BASEDIR, compositionpath )          
-        os.rmdir(fullpath)
+        fullpath = os.path.join(DATA_BASEDIR, compositionpath )
+        if os.path.exists(fullpath):     
+            os.rmdir(fullpath)
         db.session.delete(composition)
         db.session.commit()
         return jsonify({"ok":"true", "result": "composition deleted successfully"})
