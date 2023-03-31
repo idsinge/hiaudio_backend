@@ -39,23 +39,29 @@ def addcontributor(current_user, Composition, Contributor, User, db):
     else:
         return jsonify({"error":"not valid owner"})
 
-def deletecontributor(contribid, compid, current_user, Composition, Contributor, db):
+def deletecontributor(contribid, current_user, Composition, Contributor, db):
     user_auth = current_user.get_id()
     contributor = Contributor.query.get(contribid)
     if(contributor is not None):
-        composition = Composition.query.get_or_404(compid)
-        role = 0
-        if(composition.user_id == user_auth):
-            role = 1
+        compid = contributor.composition_id        
+        composition = Composition.query.get_or_404(compid)        
+        # the action is done by the creator of the composition
+        if(composition.user_id == user_auth):            
             db.session.delete(contributor)
             db.session.commit()
-            return jsonify({"ok":"true", "result":contribid, "role":role })
+            return jsonify({"ok":"true", "result":contribid})
+        # the action is done by an authorized role of the composition
         else:
-            role = contributor.role 
-            if (1<= role <= 2):
-                db.session.delete(contributor)
-                db.session.commit()
-                return jsonify({"ok":"true", "result":contribid, "role":role })
+            queryauthorized = Contributor.query.filter_by(user_id=user_auth, composition_id=compid)
+            isauthorized = queryauthorized.first() 
+            if (isauthorized is not None):
+                role = isauthorized.role 
+                if (1<= role <= 2):
+                    db.session.delete(contributor)
+                    db.session.commit()
+                    return jsonify({"ok":"true", "result":contribid})
+                else:
+                    return jsonify({"error":"not permission to delete"})
             else:
                 return jsonify({"error":"not permission to delete"})
     else:
