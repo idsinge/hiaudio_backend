@@ -34,7 +34,7 @@ def deletetrack(id, current_user, Track, Composition, Contributor, db):
             iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()            
             if(iscontributor is not None):
                 role = iscontributor.role            
-            if (1<= role <= 2):
+            if ((1<= role <= 2) or (composition.user.id == user_auth)):
                 deletefromdb(track, db)
                 return jsonify({"ok":"true", "result":track.id, "role":role })
             else:
