@@ -86,7 +86,7 @@ def deletecomposition(current_user, Composition, Contributor, db):
                 #TODO: check deletion is OK to continue or break loop
         if(len(compdict['contributors'])):  
             for contrib in compdict['contributors']:                
-                deletedcontrib = deletecontributor(contrib['id'], compid, current_user, Composition, Contributor, db)
+                deletedcontrib = deletecontributor(contrib['id'], current_user, Composition, Contributor, db)
                 #TODO: check deletion is OK to continue or break loop
                 #print(deletedcontrib.get_json())
         

@@ -159,6 +159,13 @@ def addcontributor():
     result=api.contributor.addcontributor(current_user, Composition, Contributor, User, db)
     return result
 
+@app.route('/deletecontributor/<int:id>', methods=['DELETE'])
+@login_required
+@cross_origin()
+def deletecontributor(id):
+   result = api.contributor.deletecontributor(id, current_user, Composition, Contributor, db)
+   return result
+
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):
     filename = filename or 'public/index.html'
