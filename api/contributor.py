@@ -10,6 +10,7 @@ def addcontributor(current_user, Composition, Contributor, User, db):
     
     # if the person who tries to add the contributor is the owner
     # TODO: check if the role is 1
+    # control that permission is not changed to creator of the composition
     if composition.user.id == user_auth:        
         email = request.get_json()["email"] 
         # check is gmail address       
