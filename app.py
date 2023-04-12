@@ -152,11 +152,18 @@ def fileupload():
     result=api.track.fileupload(current_user, Composition, Track, Contributor, db)
     return result
 
-@app.route('/addcontributor', methods=['POST'])
+@app.route('/addcontributorbyemail', methods=['POST'])
 @cross_origin()
 @login_required
-def addcontributor():
-    result=api.contributor.addcontributor(current_user, Composition, Contributor, User, db)
+def addcontributorbyemail():
+    result=api.contributor.addcontributorbyemail(current_user, Composition, Contributor, User, db)
+    return result
+
+@app.route('/addcontributorbyid', methods=['POST'])
+@cross_origin()
+@login_required
+def addcontributorbyid():
+    result=api.contributor.addcontributorbyid(current_user, Composition, Contributor, User, db)
     return result
 
 @app.route('/deletecontributor/<int:id>', methods=['DELETE'])
