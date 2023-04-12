@@ -20,7 +20,7 @@ with app.app_context():
 
     db.session.commit()
 
-    composition1 = Composition(title="ADASP", user=user1, privacy=3)
+    composition1 = Composition(title="ADASP", user=user1, privacy=3, opentocontrib=0)
 
     db.session.add(composition1)
     db.session.commit()
