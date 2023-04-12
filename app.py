@@ -132,6 +132,13 @@ def updatecomptitle():
     result = api.composition.updatecomptitle(current_user,Composition, Contributor, db)
     return result
 
+@app.route('/updatecomptocontrib', methods=['PATCH'])
+@login_required
+@cross_origin()
+def updatecomptocontrib():
+    result = api.composition.updatecomptocontrib(current_user,Composition, Contributor, db)
+    return result
+
 @app.route('/trackfile/<int:id>')
 @cross_origin()
 def trackfile(id):
