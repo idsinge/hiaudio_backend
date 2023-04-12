@@ -106,6 +106,9 @@ def updateprivacy(current_user, Composition, Contributor, db):
 def updatecomptitle(current_user, Composition, Contributor, db):
     return updatecompfield(current_user, Composition, Contributor, db ,'title')
 
+def updatecomptocontrib(current_user, Composition, Contributor, db):
+    return updatecompfield(current_user, Composition, Contributor, db ,'opentocontrib')
+
 def updatecompfield(current_user, Composition, Contributor, db, field):
     compid = request.get_json()['id']
     fieldvalue = request.get_json()[field]    
@@ -122,4 +125,4 @@ def updatecompfield(current_user, Composition, Contributor, db, field):
         db.session.commit()
         return jsonify({"ok":"true", "result": field + " updated successfully"})
     else:
-        return jsonify({"error":"not possible to update privacy"})
+        return jsonify({"error":"not possible to update composition field " + field})
