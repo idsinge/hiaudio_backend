@@ -109,13 +109,8 @@ def updateprivacy(current_user, Composition, Contributor, db):
 def updatecomptitle(current_user, Composition, Contributor, db):
     return updatecompfield(current_user, Composition, Contributor, db ,'title')
 
-def updatecomptocontrib(current_user, Composition, Contributor, db):
-    compid = request.get_json()['id']
-    composition =  Composition.query.get_or_404(compid)    
-    if(composition.privacy == 3):        
-        return jsonify({"error":"Can't change contribution to private composition"})
-    else:
-        return updatecompfield(current_user, Composition, Contributor, db ,'opentocontrib')
+def updatecomptocontrib(current_user, Composition, Contributor, db):  
+    return updatecompfield(current_user, Composition, Contributor, db ,'opentocontrib')
 
 def updatecompfield(current_user, Composition, Contributor, db, field):
     compid = request.get_json()['id']
