@@ -38,6 +38,9 @@ def composition(id, current_user, Composition, Contributor):
         owner = composition.user.id == user_auth
         iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
         role = 0 
+        isopen = composition.opentocontrib
+        if(isopen):
+            role = 3
         if(composition.user.id == user_auth):
               role = 1          
         if(iscontributor is not None):
@@ -107,7 +110,12 @@ def updatecomptitle(current_user, Composition, Contributor, db):
     return updatecompfield(current_user, Composition, Contributor, db ,'title')
 
 def updatecomptocontrib(current_user, Composition, Contributor, db):
-    return updatecompfield(current_user, Composition, Contributor, db ,'opentocontrib')
+    compid = request.get_json()['id']
+    composition =  Composition.query.get_or_404(compid)    
+    if(composition.privacy == 3):        
+        return jsonify({"error":"Can't change contribution to private composition"})
+    else:
+        return updatecompfield(current_user, Composition, Contributor, db ,'opentocontrib')
 
 def updatecompfield(current_user, Composition, Contributor, db, field):
     compid = request.get_json()['id']

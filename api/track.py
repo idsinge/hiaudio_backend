@@ -46,6 +46,9 @@ def fileupload(current_user, Composition, Track, Contributor, db):
     composition = Composition.query.get_or_404(compositionid)
     role = 0
     istheowner = composition.user.id == user_auth
+    isopen = composition.opentocontrib
+    if(isopen):
+        role = 3
     if not istheowner:
         iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()    
         if(iscontributor is not None):
