@@ -40,7 +40,10 @@ def composition(id, current_user, Composition, Contributor):
         role = 0 
         isopen = composition.opentocontrib
         if(isopen):
-            role = 3
+            if (user_auth is None):
+                role = 0
+            else:
+                role = 3
         if(composition.user.id == user_auth):
               role = 1          
         if(iscontributor is not None):
