@@ -58,6 +58,7 @@ def addcontributortodb(Contributor, user2id, composition, role, db):
     querycontributor = Contributor.query.filter_by(user_id=user2id, composition_id=composition.id)
     iscontributor = querycontributor.first()                    
     # if is already contributor => UPDATE role
+    # TODO: check current role is not the same to avoid running db statement
     if(iscontributor is not None):
         querycontributor.update({"role":role})
         db.session.commit()
