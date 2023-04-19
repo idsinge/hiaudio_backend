@@ -4,12 +4,12 @@ import os
 
 with app.app_context():
 
-    if os.path.exists(DB_FILE):
+    if DB_FILE is not None and os.path.exists(DB_FILE):
         print('The file exists')
         os.remove(DB_FILE)
     else:
-        print('The file does not exist')       
-    
+        print('The file does not exist')
+
     db.create_all()
 
     user1 = User(id="123456789", name="Super Admin", email="gilpanal+2@gmail.com", profile_pic="https://lh3.googleusercontent.com/a/AEdFTp5F-T3LomGACzwOvVRbctIfx84OMUoNqZpLjq_-fg=s96-c")

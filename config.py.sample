@@ -1,0 +1,19 @@
+
+
+# sqllite config example
+
+import os
+
+DB_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'database.db')
+DB_CNX = 'sqlite:///' +  DB_FILE
+
+
+
+## mysql config example
+
+# MYSQL_HOST="localhost"
+# MYSQL_USER="ubuntu"
+# MYSQL_PASS="hiaudio"
+# MYSQL_DB="hiaudio"
+
+# DB_CNX = f"mysql://{MYSQL_USER}:{MYSQL_PASS}@{MYSQL_HOST}/{MYSQL_DB}"
