@@ -23,6 +23,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 pip install python-dotenv
 pip install Flask-Migrate
+pip install mysqlclient
 
 # create .env file with the following content
 # Google Values: https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Google-OAuth-Setup
@@ -31,8 +32,23 @@ GOOGLE_CLIENT_ID=*****
 GOOGLE_CLIENT_SECRET=*****
 SECRET_KEY=*****
 
-# init DB
+# For DB setup and installation, check:
+https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/HOSTING/Change-DB-type-to-MySQL
+
+# Option 1: init DB to work with SQLite
+# In config.py choose:
+DB_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'database.db')
+DB_CNX = 'sqlite:///' +  DB_FILE
+
+# Then run:
 python initdb.py
+
+# Option 2: init DB to work with MySQL
+# In config.py choose:
+DB_CNX = f"mysql://{MYSQL_USER}:{MYSQL_PASS}@{MYSQL_HOST}/{MYSQL_DB}"
+
+# Then run:
+mysql -u <user> -p <DBNAME> < mysql.initdb.sql
 
 # This will add a migrations folder to your application. The contents of this folder need to be added to version control along with other source files.
 flask db init

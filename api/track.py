@@ -14,7 +14,8 @@ def allowed_file(filename):
 def deletefromdb(trackinfo, db):    
     trackpath = f"compositions/{trackinfo.composition_id}/{trackinfo.title}"        
     fullpath = os.path.join(DATA_BASEDIR, trackpath )          
-    os.remove(fullpath)        
+    if os.path.exists(fullpath):
+        os.remove(fullpath)        
     db.session.delete(trackinfo)
     db.session.commit()
 

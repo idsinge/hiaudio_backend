@@ -1,4 +1,5 @@
 import os
+import shutil
 from flask import request, jsonify
 from api.track import deletetrack, DATA_BASEDIR
 from api.contributor import deletecontributor
@@ -99,7 +100,7 @@ def deletecomposition(current_user, Composition, Contributor, db):
         compositionpath = f"compositions/{compid}/"        
         fullpath = os.path.join(DATA_BASEDIR, compositionpath )
         if os.path.exists(fullpath):     
-            os.rmdir(fullpath)
+            shutil.rmtree(fullpath)
         db.session.delete(composition)
         db.session.commit()
         return jsonify({"ok":"true", "result": "composition deleted successfully"})

@@ -4,7 +4,7 @@ import os
 
 with app.app_context():
 
-    if os.path.exists(DB_FILE):
+    if DB_FILE is not None and os.path.exists(DB_FILE):
         print('The file exists')
         os.remove(DB_FILE)
     else:
