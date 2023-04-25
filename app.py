@@ -17,15 +17,16 @@ import api.composition
 import api.track
 import api.contributor
 
+import config
 
-DB_FILE = os.path.join(api.track.BASEDIR, 'database.db')
+DB_FILE = config.DB_FILE if hasattr(config, 'DB_FILE') else None
 app = Flask(__name__)
 # allow uploads up to 50MB
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1000 * 1000
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' +  DB_FILE
+app.config['SQLALCHEMY_DATABASE_URI'] = config.DB_CNX
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
