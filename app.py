@@ -1,4 +1,5 @@
 import os
+import re
 from flask import Flask, request, url_for, redirect, jsonify, send_from_directory
 from flask_migrate import Migrate
 from flask_cors import CORS, cross_origin
@@ -91,6 +92,27 @@ def user(id):
     user = User.query.get_or_404(id)
     juser = jsonify(user.to_dict( rules=('-path','-email') ))
     return juser
+
+# TODO: this API method could change in the future to allow filtering users in the app search bar when adding a new contributor
+@app.route('/checkuser/<string:info>')
+@cross_origin()
+def checkuser(info):
+    result = None
+    if (info.isnumeric()):
+        user = User.query.get(info)
+        if(user is not None):
+            result = jsonify({"ok":True})       
+    elif (re.search(r'@gmail.', info)):
+        user = User.query.filter_by(email=info).first()
+        if(user is not None):
+            result = jsonify({"ok":True})        
+    else:
+        user = User.query.filter_by(name=info).all()
+        if user:            
+            result = jsonify({"ok":True})        
+    if result is None:
+        result = jsonify({"error":"User Not Found"})
+    return result
 
 @app.route('/compositions')
 @cross_origin()
