@@ -1,5 +1,37 @@
 import re
-from flask import request, jsonify
+from flask import request, jsonify, make_response
+
+def custom_error(message, status_code): 
+    return make_response(jsonify(message), status_code)
+
+def checkuser(current_user, User, info):
+    result = None
+    userid = None
+    if (info.isnumeric()):
+        user = User.query.get(info)
+        if(user is not None):
+            userid = user.id
+            result = jsonify({"ok":True, "user_id":userid})       
+    elif (re.search(r'@gmail.', info)):
+        user = User.query.filter_by(email=info).first()
+        if(user is not None):
+            userid = user.id
+            result = jsonify({"ok":True, "user_id":user.id})        
+    else:
+        user = User.query.filter_by(name=info).first()
+        if user:         
+            userid = user.id
+            result = jsonify({"ok":True, "user_id":user.id})
+
+    if result is None:
+        result = custom_error({"error":"User Not Found"}, 404)
+    else:
+        ownerid = current_user.get_id()
+        if(userid == ownerid):
+            result = custom_error({"error":"Same User"}, 403)
+    
+    return result
+
 
 def addcontributorbyemail(current_user, Composition, Contributor, User, db):
   
