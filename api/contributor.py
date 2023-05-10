@@ -93,12 +93,12 @@ def addcontributortodb(Contributor, user2id, composition, role, db):
     if(iscontributor is not None):
         querycontributor.update({"role":role})
         db.session.commit()
-        return jsonify({"ok":"true", "result":"role updated successfully"})
+        return jsonify({"ok":"true", "result":"role updated successfully", "contribid":iscontributor.id})
     else:    
         contributor = Contributor(role=role, user_id=user2id, composition=composition)          
         db.session.add(contributor)
-        db.session.commit()        
-        return jsonify({"ok":"true", "result":"role added successfully"})
+        db.session.commit()         
+        return jsonify({"ok":"true", "result":"role added successfully", "contribid":contributor.id})
     
 def deletecontributor(contribid, current_user, Composition, Contributor, db):
     user_auth = current_user.get_id()
