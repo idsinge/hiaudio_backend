@@ -1,5 +1,4 @@
 import os
-import re
 from flask import Flask, request, url_for, redirect, jsonify, send_from_directory
 from flask_migrate import Migrate
 from flask_cors import CORS, cross_origin
@@ -93,6 +92,30 @@ def user(id):
     juser = jsonify(user.to_dict( rules=('-path','-email') ))
     return juser
 
+@app.route('/deleteuser/<string:id>', methods=['DELETE'])
+@cross_origin()
+@login_required
+def deleteuser(id):
+    if current_user.is_authenticated: 
+        user_auth = current_user.get_id()
+        if(user_auth == id):
+            user = User.query.get_or_404(id) 
+            # TODO: in the future (when implmented) delete also all collections 
+            ## NOTE: If it was contributor at other compositions
+            ## the data files will remain but user id no
+            compositions = Composition.query.filter_by(user_id=user_auth).all()
+            if(len(compositions)):           
+                for comp in compositions:                                    
+                    api.composition.deletecompfolder(comp.id)                 
+            db.session.delete(user)
+            db.session.commit()         
+                      
+            return jsonify({"ok":True, "result":"user deleted successfully"})
+        else:
+            return jsonify({"error":"not allowed"})
+    else:
+        return jsonify({"error":"not authenticated"})
+
 # TODO: this API method could change in the future to allow filtering users in the app search bar when adding a new contributor
 @app.route('/checkuser/<string:info>')
 @cross_origin()
@@ -121,11 +144,11 @@ def newcomposition():
     result = api.composition.newcomposition(current_user,User, Composition, db)
     return result
 
-@app.route('/deletecomposition', methods=['DELETE'])
+@app.route('/deletecomposition/<int:id>', methods=['DELETE'])
 @login_required
 @cross_origin()
-def deletecomposition():
-    result = api.composition.deletecomposition(current_user, Composition, Contributor, db)
+def deletecomposition(id):
+    result = api.composition.deletecomposition(id, current_user, Composition, Contributor, db)
     return result
 
 @app.route('/updateprivacy', methods=['PATCH'])

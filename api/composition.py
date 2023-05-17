@@ -1,9 +1,7 @@
 import os
 import shutil
 from flask import request, jsonify
-from api.track import deletetrack, DATA_BASEDIR
-from api.contributor import deletecontributor
-from orm import Track
+from api.track import DATA_BASEDIR
 
 def compositions(current_user, Composition, Contributor):
     user_auth = current_user.get_id()    
@@ -74,8 +72,13 @@ def newcomposition(current_user,User, Composition, db):
     else:
         return jsonify({"error":"not authenticated"})
 
-def deletecomposition(current_user, Composition, Contributor, db):
-    compid = request.get_json()['id']      
+def deletecompfolder(compid):
+    compositionpath = f"compositions/{compid}/"        
+    fullpath = os.path.join(DATA_BASEDIR, compositionpath )
+    if os.path.exists(fullpath):     
+        shutil.rmtree(fullpath)
+
+def deletecomposition(compid, current_user, Composition, Contributor, db):
     user_auth = current_user.get_id()    
     composition =  Composition.query.get_or_404(compid)
     iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
@@ -84,23 +87,8 @@ def deletecomposition(current_user, Composition, Contributor, db):
         role = 1          
     if(iscontributor is not None):
         role = iscontributor.role    
-    if(role == 1):                
-        compdict = composition.to_dict( rules=('-path',))       
-        if(len(compdict['tracks'])):           
-            for track in compdict['tracks']:                
-                deletedtrack = deletetrack(track['id'], current_user, Track, Composition, Contributor, db)
-                #print(deletedtrack.get_json())   
-                #TODO: check deletion is OK to continue or break loop
-        if(len(compdict['contributors'])):  
-            for contrib in compdict['contributors']:                
-                deletedcontrib = deletecontributor(contrib['id'], current_user, Composition, Contributor, db)
-                #TODO: check deletion is OK to continue or break loop
-                #print(deletedcontrib.get_json())
-        
-        compositionpath = f"compositions/{compid}/"        
-        fullpath = os.path.join(DATA_BASEDIR, compositionpath )
-        if os.path.exists(fullpath):     
-            shutil.rmtree(fullpath)
+    if(role == 1):       
+        deletecompfolder(compid)
         db.session.delete(composition)
         db.session.commit()
         return jsonify({"ok":"true", "result": "composition deleted successfully"})
