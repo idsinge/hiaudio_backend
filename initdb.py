@@ -10,6 +10,7 @@ with app.app_context():
     else:
         print('The file does not exist')       
     
+    db.drop_all()
     db.create_all()
 
     user1 = User(id="123456789", name="Super Admin", email="gilpanal+2@gmail.com", profile_pic="https://lh3.googleusercontent.com/a/AEdFTp5F-T3LomGACzwOvVRbctIfx84OMUoNqZpLjq_-fg=s96-c")

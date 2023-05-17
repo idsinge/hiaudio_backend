@@ -11,7 +11,7 @@ class User(db.Model, UserMixin, SerializerMixin):
     name = db.Column(db.String(100))
     email = db.Column(db.String(100))
     profile_pic = db.Column(db.String(100))
-    compositions = db.relationship('Composition', backref='user')
+    compositions = db.relationship('Composition', backref='user', cascade="all, delete-orphan")
 
     def __repr__(self):
         return f'<User "{self.email}">'
@@ -25,11 +25,11 @@ class Composition(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     privacy = db.Column(db.Integer, nullable=False, server_default="1")
     title = db.Column(db.String(100))
-    tracks = db.relationship('Track', backref='composition')
+    tracks = db.relationship('Track', backref='composition', cascade="all, delete-orphan")
 
-    user_id = db.Column(db.String(100), db.ForeignKey('user.id'))
+    user_id = db.Column(db.String(100), db.ForeignKey('user.id', ondelete='CASCADE'))
 
-    contributors = db.relationship('Contributor', backref='composition')
+    contributors = db.relationship('Contributor', backref='composition', cascade="all, delete-orphan")
     opentocontrib = db.Column(db.Boolean, nullable=False, server_default='0')
 
     def __repr__(self):
@@ -46,7 +46,7 @@ class Track(db.Model, SerializerMixin):
     title = db.Column(db.String(100))
     path = db.Column(db.String(1024))
     user_id = db.Column(db.String(100))
-    composition_id = db.Column(db.Integer, db.ForeignKey('composition.id'))
+    composition_id = db.Column(db.Integer, db.ForeignKey('composition.id', ondelete='CASCADE'))
 
     def __repr__(self):
         return f'<Track "{self.title}">'
@@ -57,8 +57,8 @@ class Contributor(db.Model, SerializerMixin):
     serialize_rules = ('-composition', )
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.String(100), db.ForeignKey('user.id'))
-    composition_id = db.Column(db.Integer, db.ForeignKey('composition.id'))
+    user_id = db.Column(db.String(100), db.ForeignKey('user.id', ondelete='CASCADE'))
+    composition_id = db.Column(db.Integer, db.ForeignKey('composition.id', ondelete='CASCADE'))
     role = db.Column(db.Integer, nullable=False, server_default="4")
 
     def __repr__(self):
