@@ -1,5 +1,6 @@
 import os, json
 from oauthlib.oauth2 import WebApplicationClient
+from random_username.generate import generate_username
 from flask import request
 import requests
 from flask_login import (
@@ -72,13 +73,17 @@ def callback(User, db):
         unique_id = userinfo_response.json()["sub"]
         users_email = userinfo_response.json()["email"]
         picture = userinfo_response.json()["picture"]
-        users_name = userinfo_response.json()["given_name"]
+        #users_name = userinfo_response.json()["given_name"]
     else:
         result="User email not available or not verified by Google.", 400
 
     # Create a user in your db with the information provided
     # by Google
-    user = User(id=unique_id, name=users_name, email=users_email, profile_pic=picture)
+    rdmusername = generate_username() 
+
+    # TODO: check the random username is not already there in DB (must be unique)
+
+    user = User(id=unique_id, name=rdmusername[0], email=users_email, profile_pic=picture)
 
     # Doesn't exist? Add it to the database.
     if not User.query.get(unique_id):

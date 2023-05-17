@@ -24,6 +24,7 @@ pip install -r requirements.txt
 pip install python-dotenv
 pip install Flask-Migrate
 pip install mysqlclient
+pip install random-username
 
 # create .env file with the following content
 # Google Values: https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Google-OAuth-Setup
