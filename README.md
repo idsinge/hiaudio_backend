@@ -21,10 +21,6 @@ source venv/bin/activate
 
 # install requirements
 pip install -r requirements.txt
-pip install python-dotenv
-pip install Flask-Migrate
-pip install mysqlclient
-pip install random-username
 
 # create .env file with the following content
 # Google Values: https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Google-OAuth-Setup
@@ -36,22 +32,30 @@ SECRET_KEY=*****
 # For DB setup and installation, check:
 https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/HOSTING/Change-DB-type-to-MySQL
 
+# When finished MySQL setup then run
+pip install mysqlclient
+
 # Option 1: init DB to work with SQLite
 # In config.py choose:
 DB_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'database.db')
 DB_CNX = 'sqlite:///' +  DB_FILE
 
-# Then run:
+# To initialize SQLite run:
 python initdb.py
 
 # Option 2: init DB to work with MySQL
-# In config.py choose:
+# In config.py choose and fill the details:
 DB_CNX = f"mysql://{MYSQL_USER}:{MYSQL_PASS}@{MYSQL_HOST}/{MYSQL_DB}"
 
-# Then run:
-mysql -u <user> -p <DBNAME> < mysql.initdb.sql
+MYSQL_HOST="localhost"
+MYSQL_USER="ubuntu"
+MYSQL_PASS="hiaudio"
+MYSQL_DB="hiaudio"
 
-# This will add a migrations folder to your application. The contents of this folder need to be added to version control along with other source files.
+# To initialize MySQL run:
+mysql -u ubuntu -p hiaudio < mysql.initdb.sql
+
+# TO CONFIRM: to add a migrations folder to your application. The contents of this folder need to be added to version control along with other source files.
 flask db init
 
 # run the server 

@@ -7,3 +7,4 @@ sqlite_db
 webapp
 config.py
 *.sql
+__pycache__

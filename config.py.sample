@@ -2,8 +2,8 @@
 
 import os
 
-DB_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'database.db')
-DB_CNX = 'sqlite:///' +  DB_FILE
+# DB_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'database.db')
+# DB_CNX = 'sqlite:///' +  DB_FILE
 
 
 
@@ -14,4 +14,4 @@ MYSQL_USER=""
 MYSQL_PASS=""
 MYSQL_DB=""
 
-# DB_CNX = f"mysql://{MYSQL_USER}:{MYSQL_PASS}@{MYSQL_HOST}/{MYSQL_DB}"
+DB_CNX = f"mysql://{MYSQL_USER}:{MYSQL_PASS}@{MYSQL_HOST}/{MYSQL_DB}"

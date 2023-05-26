@@ -7,3 +7,6 @@ oauthlib
 pyOpenSSL
 requests
 Flask-Login
+python-dotenv
+Flask-Migrate
+random-username
