@@ -52,7 +52,10 @@ MYSQL_USER="ubuntu"
 MYSQL_PASS="hiaudio"
 MYSQL_DB="hiaudio"
 
-# To initialize MySQL run:
+# To initialize MySQL DB download the below SQL file, remove the .txt extension and locate it at project's root
+https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/uploads/2869af50594687b918d010bd9d75335a/mysql.initdb.sql
+
+# Then execute the following command:
 mysql -u ubuntu -p hiaudio < mysql.initdb.sql
 
 # TO CONFIRM: to add a migrations folder to your application. The contents of this folder need to be added to version control along with other source files.
