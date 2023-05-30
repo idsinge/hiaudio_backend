@@ -8,6 +8,7 @@ db = SQLAlchemy()
 class User(db.Model, UserMixin, SerializerMixin):
 
     id = db.Column(db.String(100), primary_key=True)
+    uid = db.Column(db.String(100))
     name = db.Column(db.String(100))
     email = db.Column(db.String(100))
     profile_pic = db.Column(db.String(100))
