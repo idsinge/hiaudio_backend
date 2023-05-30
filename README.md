@@ -6,18 +6,17 @@ git clone https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt.git
 cd musicplatform_mgmt
 
 # create python virtualenv
-virtualenv -p python3 venv
-
-# or 
-
 python3 -m venv venv
 
+# or (aurelien)
+virtualenv -p python3 venv
+
 # activate virtualenv
+. venv/bin/activate
+
+# or (aurelien)
 source venv/bin/activate
 
-# or
-
-. venv/bin/activate
 
 # install requirements
 pip install -r requirements.txt
@@ -29,37 +28,38 @@ GOOGLE_CLIENT_ID=*****
 GOOGLE_CLIENT_SECRET=*****
 SECRET_KEY=*****
 
-# For DB setup and installation, check:
-https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/HOSTING/Change-DB-type-to-MySQL
+
+# For Mac, for Linux see (4) below
+brew install mysql
+
+# Start MySQL server
+mysql.server start
+
+# Login as root
+mysql -u root -p
+
+# Then create DB and add new user (ubuntu) at localhost
+create database hiaudio ; 
+CREATE USER 'ubuntu'@'localhost' IDENTIFIED BY 'hiaudio';
+GRANT ALL PRIVILEGES ON hiaudio.* TO 'ubuntu'@'localhost';
+FLUSH PRIVILEGES;
+
+mysql > exit
 
 # When finished MySQL setup then run
 pip install mysqlclient
 
-# Option 1: init DB to work with SQLite
-# In config.py choose:
-DB_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'database.db')
-DB_CNX = 'sqlite:///' +  DB_FILE
-
-# To initialize SQLite run:
-python initdb.py
-
-# Option 2: init DB to work with MySQL
-# In config.py choose and fill the details:
+# Default Option for MySQL connection at config.py
 DB_CNX = f"mysql://{MYSQL_USER}:{MYSQL_PASS}@{MYSQL_HOST}/{MYSQL_DB}"
 
+# In config.py choose and fill the following details:
 MYSQL_HOST="localhost"
 MYSQL_USER="ubuntu"
 MYSQL_PASS="hiaudio"
 MYSQL_DB="hiaudio"
 
-# To initialize MySQL DB download the below SQL file, remove the .txt extension and locate it at project's root
-https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/uploads/2869af50594687b918d010bd9d75335a/mysql.initdb.sql
-
-# Then execute the following command:
-mysql -u ubuntu -p hiaudio < mysql.initdb.sql
-
-# TO CONFIRM: to add a migrations folder to your application. The contents of this folder need to be added to version control along with other source files.
-flask db init
+# To initialize SQLite run:
+python initdb.py
 
 # run the server 
 python app.py
@@ -81,8 +81,11 @@ git clone https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp.git
 Then rename the folder `beatbytebot_webapp` to `webapp`
 
 ### More info:
-- https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally
+1- https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally
 
-- [Debuggable Frontend with Backend](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Debuggable-Frontend-with-Backend)
+2- [Debuggable Frontend with Backend](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Debuggable-Frontend-with-Backend)
 
-- Flask-Migrate: https://flask-migrate.readthedocs.io/en/latest/#example
+3- Flask-Migrate: https://flask-migrate.readthedocs.io/en/latest/#example
+
+4- DB setup and installation, check:
+https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/HOSTING/Change-DB-type-to-MySQL
