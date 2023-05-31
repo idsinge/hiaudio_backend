@@ -49,10 +49,12 @@ mysql > exit
 # When finished MySQL setup then run
 pip install mysqlclient
 
-# Default Option for MySQL connection at config.py
+# Duplicate config.py.sample and rename it to config.py
+
+# At config.py check default option for MySQL connection is:
 DB_CNX = f"mysql://{MYSQL_USER}:{MYSQL_PASS}@{MYSQL_HOST}/{MYSQL_DB}"
 
-# In config.py choose and fill the following details:
+# In config.py fill the following details:
 MYSQL_HOST="localhost"
 MYSQL_USER="ubuntu"
 MYSQL_PASS="hiaudio"
