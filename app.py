@@ -3,7 +3,7 @@ from flask import Flask, request, url_for, redirect, jsonify, send_from_director
 from flask_migrate import Migrate
 from flask_cors import CORS, cross_origin
 
-from orm import db, Composition, Track, User, Contributor
+from orm import db, Composition, Track, User, UserInfo, Contributor
 
 from flask_login import (
     LoginManager,
@@ -57,7 +57,8 @@ def index():
 @app.route("/profile")
 def register():
     if current_user.is_authenticated:
-        return jsonify({"ok":True, "name":current_user.name, "email":current_user.email, "profile_pic":current_user.profile_pic, "user_id":current_user.id})
+        userinfo = UserInfo.query.get(current_user.get_id())
+        return jsonify({"ok":True, "name":current_user.name, "email":userinfo.google_email, "profile_pic":current_user.profile_pic, "user_uid":current_user.uid})
     else:
         return jsonify({"ok":False})
 
@@ -68,7 +69,7 @@ def login():
 
 @app.route("/login/callback")
 def callback():
-    result = api.auth.callback(User, db)
+    result = api.auth.callback(User, UserInfo, db)
     # TODO: check if result is correct
     return redirect(url_for("index"))
 
@@ -82,24 +83,27 @@ def logout():
 @cross_origin()
 def users():
     users = User.query.all()
-    jusers = jsonify(users=[ user.to_dict( rules=('-compositions','-email') ) for user in users])
+    jusers = jsonify(users=[ user.to_dict( rules=('-compositions', '-userinfo') ) for user in users])
     return jusers
 
-@app.route('/user/<string:id>')
+@app.route('/user/<string:uid>')
 @cross_origin()
-def user(id):
-    user = User.query.get_or_404(id)
-    juser = jsonify(user.to_dict( rules=('-path','-email') ))
-    return juser
+def user(uid):    
+    user = User.query.filter_by(uid=uid).first()    
+    if(user is not None):
+        juser = jsonify(user.to_dict( rules=('-path', '-userinfo') ))
+        return juser
+    else:
+        return jsonify({"error":"Not Found"})
 
-@app.route('/deleteuser/<string:id>', methods=['DELETE'])
+@app.route('/deleteuser/<string:uid>', methods=['DELETE'])
 @cross_origin()
 @login_required
-def deleteuser(id):
+def deleteuser(uid):
     if current_user.is_authenticated: 
         user_auth = current_user.get_id()
-        if(user_auth == id):
-            user = User.query.get_or_404(id) 
+        user = User.query.get_or_404(user_auth)    
+        if(user.uid == uid): 
             # TODO: in the future (when implmented) delete also all collections 
             ## NOTE: If it was contributor at other compositions
             ## the data files will remain but user id no
@@ -117,11 +121,12 @@ def deleteuser(id):
         return jsonify({"error":"not authenticated"})
 
 # TODO: this API method could change in the future to allow filtering users in the app search bar when adding a new contributor
+# param "info" can be either an email address, a user id or a name
 @app.route('/checkuser/<string:info>')
 @cross_origin()
 @login_required
 def checkuser(info):
-    result=api.contributor.checkuser(current_user, User, info)
+    result=api.contributor.checkuser(current_user, User, UserInfo, info)
     return result
 
 @app.route('/compositions')
@@ -196,7 +201,7 @@ def fileupload():
 @cross_origin()
 @login_required
 def addcontributorbyemail():
-    result=api.contributor.addcontributorbyemail(current_user, Composition, Contributor, User, db)
+    result=api.contributor.addcontributorbyemail(current_user, Composition, Contributor, UserInfo, db)
     return result
 
 @app.route('/addcontributorbyid', methods=['POST'])
@@ -206,11 +211,11 @@ def addcontributorbyid():
     result=api.contributor.addcontributorbyid(current_user, Composition, Contributor, User, db)
     return result
 
-@app.route('/deletecontributor/<int:id>', methods=['DELETE'])
+@app.route('/deletecontributor/<string:uid>', methods=['DELETE'])
 @login_required
 @cross_origin()
-def deletecontributor(id):
-   result = api.contributor.deletecontributor(id, current_user, Composition, Contributor, db)
+def deletecontributor(uid):
+   result = api.contributor.deletecontributor(uid, current_user, Composition, Contributor, db)
    return result
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])

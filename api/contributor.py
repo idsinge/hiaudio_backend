@@ -4,41 +4,40 @@ from flask import request, jsonify, make_response
 def custom_error(message, status_code): 
     return make_response(jsonify(message), status_code)
 
-def checkuser(current_user, User, info):
+def checkuser(current_user, User, UserInfo, info):
     result = None
     userid = None
     if (info.isnumeric()):
-        user = User.query.get(info)
+        user = User.query.filter_by(uid=info).first()
         if(user is not None):
-            userid = user.id
-            result = jsonify({"ok":True, "user_id":userid})       
+            userid = user.uid
+            result = jsonify({"ok":True, "user_uid":userid})       
     elif (re.search(r'@gmail.', info)):
-        user = User.query.filter_by(email=info).first()
+        user = UserInfo.query.filter_by(google_email=info).first()
         if(user is not None):
-            userid = user.id
-            result = jsonify({"ok":True, "user_id":user.id})        
+            result = jsonify({"ok":True, "user_uid":user.google_uid})        
     else:
         user = User.query.filter_by(name=info).first()
         if user:         
-            userid = user.id
-            result = jsonify({"ok":True, "user_id":user.id})
+            userid = user.uid
+            result = jsonify({"ok":True, "user_uid":user.uid})
 
     if result is None:
         result = custom_error({"error":"User Not Found"}, 404)
     else:
-        ownerid = current_user.get_id()
+        ownerid = current_user.get_id() and int(current_user.get_id())
         if(userid == ownerid):
             result = custom_error({"error":"Same User"}, 403)
     
     return result
 
-
-def addcontributorbyemail(current_user, Composition, Contributor, User, db):
+# TODO: FIX using UserInfo and add uid when creating new instance at DB
+def addcontributorbyemail(current_user, Composition, Contributor, UserInfo, db):
   
-    user_auth = current_user.get_id()
+    user_auth = current_user.get_id() and int(current_user.get_id())
     compositionid = request.get_json()['composition_id']
     composition = Composition.query.get_or_404(compositionid)
-    
+    user1 = UserInfo.query.get(user_auth)
     # if the person who tries to add the contributor is the owner
     # TODO: check if the role is 1
     # control that permission is not changed to creator of the composition
@@ -48,13 +47,13 @@ def addcontributorbyemail(current_user, Composition, Contributor, User, db):
         match = re.search(r'@gmail.', email)                
         role = request.get_json()['role']  
         # check the email is in DB      
-        user2 = User.query.filter_by(email=email).first()
+        user2 = UserInfo.query.filter_by(google_email=email).first()
         
         # TODO: if user is not in DB we could send an invite email to join
         
         # if Owner tries to add himself throws error
-        if((user2 is not None) and (current_user.email != email) and (match is not None) and (1 <=role <=4)):            
-            return addcontributortodb(Contributor, user2.id, composition, role, db)
+        if((user2 is not None) and (user1.google_email != email) and (match is not None) and (1 <=role <=4)):            
+            return addcontributortodb(Contributor, user2.id, user2.google_uid, composition, role, db)
         else:
             return jsonify({"error":"not valid contributor"})
     else:
@@ -63,7 +62,7 @@ def addcontributorbyemail(current_user, Composition, Contributor, User, db):
 
 def addcontributorbyid(current_user, Composition, Contributor, User, db):
   
-    user_auth = current_user.get_id()
+    user_auth = current_user.get_id() and int(current_user.get_id())
     compositionid = request.get_json()['composition_id']
     composition = Composition.query.get_or_404(compositionid)
     
@@ -71,21 +70,20 @@ def addcontributorbyid(current_user, Composition, Contributor, User, db):
     # TODO: check if the role is 1
     # control that permission is not changed to creator of the composition
     if composition.user.id == user_auth:        
-        userid = request.get_json()["user_id"] 
+        useruid = request.get_json()["user_uid"] 
                        
         role = request.get_json()['role']  
         # check the ID is in DB      
-        user2 = User.query.filter_by(id=userid).first()
-               
+        user2 = User.query.filter_by(uid=useruid).first()
         # if Owner tries to add himself throws error
-        if((user2 is not None) and (user_auth != userid) and (1 <=role <=4)):            
-            return addcontributortodb(Contributor, user2.id, composition, role, db)
+        if((user2 is not None) and (user_auth != user2.id) and (1 <=role <=4)):            
+            return addcontributortodb(Contributor, user2.id, useruid, composition, role, db)
         else:
             return jsonify({"error":"not valid contributor"})
     else:
         return jsonify({"error":"not valid owner"})
 
-def addcontributortodb(Contributor, user2id, composition, role, db):
+def addcontributortodb(Contributor, user2id, user2uid, composition, role, db):
     querycontributor = Contributor.query.filter_by(user_id=user2id, composition_id=composition.id)
     iscontributor = querycontributor.first()                    
     # if is already contributor => UPDATE role
@@ -95,14 +93,14 @@ def addcontributortodb(Contributor, user2id, composition, role, db):
         db.session.commit()
         return jsonify({"ok":"true", "result":"role updated successfully", "contribid":iscontributor.id})
     else:    
-        contributor = Contributor(role=role, user_id=user2id, composition=composition)          
+        contributor = Contributor(role=role, user_id=user2id, user_uid=user2uid, composition=composition)          
         db.session.add(contributor)
         db.session.commit()         
         return jsonify({"ok":"true", "result":"role added successfully", "contribid":contributor.id})
     
 def deletecontributor(contribid, current_user, Composition, Contributor, db):
-    user_auth = current_user.get_id()
-    contributor = Contributor.query.get(contribid)
+    user_auth = current_user.get_id() and int(current_user.get_id())
+    contributor = Contributor.query.filter_by(user_uid=contribid).first()
     if(contributor is not None):
         compid = contributor.composition_id        
         composition = Composition.query.get_or_404(compid)        

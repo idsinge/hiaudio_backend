@@ -4,6 +4,7 @@
 * file structure:
 - users/
   - <userid>
+    - userinfo/
     - compositions/
       - <compositionid>/
         - tracks/
@@ -15,9 +16,17 @@
 User:
  - id 
  - name
- - email
+ - uid
  - profile_pic
  - compositions
+ - userinfo
+
+UserInfo:
+ - id 
+ - google_uid
+ - google_name
+ - google_email
+ - google_profile_pic
 
 Composition:
  - id

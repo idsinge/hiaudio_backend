@@ -36,7 +36,7 @@ def login():
     return request_uri
 
 
-def callback(User, db):
+def callback(User, UserInfo, db):
     result="ok", 200
     # Get authorization code Google sent back to you
     code = request.args.get("code")
@@ -73,21 +73,24 @@ def callback(User, db):
         unique_id = userinfo_response.json()["sub"]
         users_email = userinfo_response.json()["email"]
         picture = userinfo_response.json()["picture"]
-        #users_name = userinfo_response.json()["given_name"]
+        users_name = userinfo_response.json()["given_name"]
     else:
         result="User email not available or not verified by Google.", 400
 
-    # Create a user in your db with the information provided
-    # by Google
+    # TODO: check the random username is not already there in DB (must be unique)
     rdmusername = generate_username() 
 
-    # TODO: check the random username is not already there in DB (must be unique)
+    # TODO: generate a random user profile picture
+    default_picture ="https://raw.githubusercontent.com/gilpanal/beatbytebot_webapp/master/src/img/agp.png"
+    user = User(uid=unique_id, name=rdmusername[0], profile_pic=default_picture)
 
-    user = User(id=unique_id, name=rdmusername[0], email=users_email, profile_pic=picture)
+    # Create a user info entry in your db with the information provided by Google
+    userinfo = UserInfo(user=user, google_uid=unique_id, google_name=users_name, google_profile_pic=picture, google_email=users_email)
 
     # Doesn't exist? Add it to the database.
-    if not User.query.get(unique_id):
+    if not User.query.filter_by(uid=unique_id).first():        
         db.session.add(user)
+        db.session.add(userinfo)
         db.session.commit()
 
     # Begin user session by logging the user in

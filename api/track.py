@@ -25,7 +25,7 @@ def deletetrack(id, current_user, Track, Composition, Contributor, db):
     if(track is None):
         return jsonify({"error":"track not found"})
     else:
-        user_auth = current_user.get_id()        
+        user_auth = current_user.get_id() and int(current_user.get_id())       
         if(track.user_id == user_auth):           
             deletefromdb(track, db)
             return jsonify({"ok":"true", "result":track.id, "role":1})
@@ -42,7 +42,7 @@ def deletetrack(id, current_user, Track, Composition, Contributor, db):
                 return jsonify({"error":"not permission to delete"})
 
 def fileupload(current_user, Composition, Track, Contributor, db):
-    user_auth = current_user.get_id()
+    user_auth = current_user.get_id() and int(current_user.get_id())
     compositionid = request.form['composition_id']
     composition = Composition.query.get_or_404(compositionid)
     role = 0
