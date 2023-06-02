@@ -4,7 +4,7 @@ from flask import request, jsonify
 from api.track import DATA_BASEDIR
 
 def compositions(current_user, Composition, Contributor):
-    user_auth = current_user.get_id()    
+    user_auth = current_user.get_id() and int(current_user.get_id())
     allcompositions = Composition.query.all()
     compositions = []
     for comp in allcompositions:
@@ -29,7 +29,7 @@ def compositions(current_user, Composition, Contributor):
 # if privacy=3 and not either owner/contributor => not accesible
 
 def composition(id, current_user, Composition, Contributor):
-    user_auth = current_user.get_id()
+    user_auth = current_user.get_id() and int(current_user.get_id())
     composition = Composition.query.get_or_404(id)
     if ((user_auth is None) and ((composition.privacy == 2) or (composition.privacy == 3))):
         return jsonify({"error":"composition not accesible"})
@@ -79,7 +79,7 @@ def deletecompfolder(compid):
         shutil.rmtree(fullpath)
 
 def deletecomposition(compid, current_user, Composition, Contributor, db):
-    user_auth = current_user.get_id()    
+    user_auth = current_user.get_id() and int(current_user.get_id())
     composition =  Composition.query.get_or_404(compid)
     iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
     role = 0 
@@ -96,18 +96,23 @@ def deletecomposition(compid, current_user, Composition, Contributor, db):
         return jsonify({"error":"user is not authorized"})
     
 def updateprivacy(current_user, Composition, Contributor, db):
+   # TODO: From API perspective, if the composition is Open To Contribution 
+   # it should not be possible to set privacy level to 3 (private)
+   # according to UI interaction
+   # TODO: control the level of privacy is between 1 and 3
    return updatecompfield(current_user, Composition, Contributor, db ,'privacy')    
 
 def updatecomptitle(current_user, Composition, Contributor, db):
     return updatecompfield(current_user, Composition, Contributor, db ,'title')
 
 def updatecomptocontrib(current_user, Composition, Contributor, db):  
+    # TODO: control the value is boolean
     return updatecompfield(current_user, Composition, Contributor, db ,'opentocontrib')
 
 def updatecompfield(current_user, Composition, Contributor, db, field):
     compid = request.get_json()['id']
     fieldvalue = request.get_json()[field]    
-    user_auth = current_user.get_id()    
+    user_auth = current_user.get_id() and int(current_user.get_id())
     composition =  Composition.query.get_or_404(compid)
     iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
     role = 0 
