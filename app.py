@@ -58,7 +58,7 @@ def index():
 def register():
     if current_user.is_authenticated:
         userinfo = UserInfo.query.get(current_user.get_id())
-        return jsonify({"ok":True, "name":current_user.name, "email":userinfo.google_email, "profile_pic":current_user.profile_pic, "user_uid":current_user.uid})
+        return jsonify({"ok":True, "name":userinfo.name, "email":userinfo.google_email, "profile_pic":userinfo.profile_pic, "user_uid":current_user.uid})
     else:
         return jsonify({"ok":False})
 
@@ -83,7 +83,7 @@ def logout():
 @cross_origin()
 def users():
     users = User.query.all()
-    jusers = jsonify(users=[ user.to_dict( rules=('-compositions', '-userinfo') ) for user in users])
+    jusers = jsonify(users=[ user.to_dict( rules=('-id','-compositions', '-userinfo') ) for user in users])
     return jusers
 
 @app.route('/user/<string:uid>')
@@ -91,7 +91,7 @@ def users():
 def user(uid):    
     user = User.query.filter_by(uid=uid).first()    
     if(user is not None):
-        juser = jsonify(user.to_dict( rules=('-path', '-userinfo') ))
+        juser = jsonify(user.to_dict( rules=('-path', '-id', '-userinfo') ))
         return juser
     else:
         return jsonify({"error":"Not Found"})
