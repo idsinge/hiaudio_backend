@@ -17,10 +17,10 @@ def checkuser(current_user, User, UserInfo, info):
         if(user is not None):
             result = jsonify({"ok":True, "user_uid":user.google_uid})        
     else:
-        user = User.query.filter_by(name=info).first()
+        user = UserInfo.query.filter_by(name=info).first()
         if user:         
-            userid = user.uid
-            result = jsonify({"ok":True, "user_uid":user.uid})
+            userid = user.google_uid
+            result = jsonify({"ok":True, "user_uid":user.google_uid})
 
     if result is None:
         result = custom_error({"error":"User Not Found"}, 404)
@@ -31,7 +31,6 @@ def checkuser(current_user, User, UserInfo, info):
     
     return result
 
-# TODO: FIX using UserInfo and add uid when creating new instance at DB
 def addcontributorbyemail(current_user, Composition, Contributor, UserInfo, db):
   
     user_auth = current_user.get_id() and int(current_user.get_id())

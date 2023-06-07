@@ -9,8 +9,6 @@ class User(db.Model, UserMixin, SerializerMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     uid = db.Column(db.String(100))
-    name = db.Column(db.String(100))
-    profile_pic = db.Column(db.String(100))
     compositions = db.relationship('Composition', backref='user', cascade="all, delete-orphan")
     userinfo = db.relationship('UserInfo', back_populates='user', cascade="all, delete-orphan")
 
@@ -24,6 +22,8 @@ class UserInfo(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     user = db.relationship('User', back_populates='userinfo')
+    name = db.Column(db.String(100))
+    profile_pic = db.Column(db.String(100))
     google_uid = db.Column(db.String(100))
     google_name = db.Column(db.String(100))
     google_email = db.Column(db.String(100))

@@ -13,18 +13,18 @@ with app.app_context():
     db.drop_all()
     db.create_all()
 
-    user1 = User(uid="123456789", name="Super Admin", profile_pic="https://lh3.googleusercontent.com/a/AEdFTp5F-T3LomGACzwOvVRbctIfx84OMUoNqZpLjq_-fg=s96-c")
+    user1 = User(uid="123456789")
     db.session.add(user1)
 
-    user2 = User(uid="987654321", name="Guest", profile_pic="https://lh3.googleusercontent.com/a/AGNmyxbgM4HGdV5vo3K20I8UtDU1gQqorx94Vn_0n3-5=s96-c")
+    user2 = User(uid="987654321")
     db.session.add(user2)
 
     db.session.commit()
 
-    userinfo1 = UserInfo(user=user1, google_uid="123456789", google_name="Google User 1", google_profile_pic="https://lh3.googleusercontent.com/a/AEdFTp5F-T3LomGACzwOvVRbctIfx84OMUoNqZpLjq_-fg=s96-c", google_email="gilpanal+2@gmail.com")
+    userinfo1 = UserInfo(user=user1, google_uid="123456789", google_name="Google User 1", google_profile_pic="https://lh3.googleusercontent.com/a/AEdFTp5F-T3LomGACzwOvVRbctIfx84OMUoNqZpLjq_-fg=s96-c", google_email="gilpanal+2@gmail.com", name="Super Admin", profile_pic="https://raw.githubusercontent.com/gilpanal/beatbytebot_webapp/master/src/img/agp.png")
     db.session.add(userinfo1)
 
-    userinfo2 = UserInfo(user=user2, google_uid="987654321", google_name="Google User 2", google_profile_pic="https://lh3.googleusercontent.com/a/AGNmyxbgM4HGdV5vo3K20I8UtDU1gQqorx94Vn_0n3-5=s96-c", google_email="fandroide+2@gmail.com")
+    userinfo2 = UserInfo(user=user2, google_uid="987654321", google_name="Google User 2", google_profile_pic="https://lh3.googleusercontent.com/a/AGNmyxbgM4HGdV5vo3K20I8UtDU1gQqorx94Vn_0n3-5=s96-c", google_email="fandroide+2@gmail.com", name="Guest", profile_pic="https://raw.githubusercontent.com/gilpanal/beatbytebot_webapp/master/src/img/agp.png")
     db.session.add(userinfo2)
 
     db.session.commit()

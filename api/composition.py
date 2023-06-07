@@ -61,13 +61,14 @@ def newcomposition(current_user,User, Composition, db):
     if current_user.is_authenticated:
         title = request.get_json()["title"]
         privacy = request.get_json()["privacy_level"]
-        user = User.query.get(current_user.get_id())
-        composition = Composition(title=title, user=user, privacy=privacy)
-
-        db.session.add(composition)
-        db.session.commit()
-
-        return jsonify(composition=composition.to_dict( rules=('-path',) ))
+        if(privacy and (privacy is not None) and (1<=int(privacy) <=3)):
+            user = User.query.get(current_user.get_id())
+            composition = Composition(title=title, user=user, privacy=privacy)
+            db.session.add(composition)
+            db.session.commit()
+            return jsonify(composition=composition.to_dict( rules=('-path',) ))
+        else:
+            return jsonify({"error":"privacy value not valid"})
 
     else:
         return jsonify({"error":"not authenticated"})
