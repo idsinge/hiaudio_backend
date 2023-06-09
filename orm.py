@@ -11,6 +11,11 @@ class UserRole(enum.Enum):
     member = 3
     guest = 4
 
+class CompPrivacy(enum.Enum):
+    public = 1
+    onlyreg = 2
+    private = 3
+   
 db = SQLAlchemy()
 
 class User(db.Model, UserMixin, SerializerMixin):
@@ -45,7 +50,7 @@ class Composition(db.Model, SerializerMixin):
     serialize_rules = ('-user', )
 
     id = db.Column(db.Integer, primary_key=True)
-    privacy = db.Column(db.Integer, nullable=False, server_default="1")
+    privacy = db.Column(Enum(CompPrivacy), nullable=False, default=CompPrivacy.public.value)
     title = db.Column(db.String(100))
     tracks = db.relationship('Track', backref='composition', cascade="all, delete-orphan")
 
