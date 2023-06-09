@@ -106,7 +106,7 @@ def deleteuser(uid):
         if(user.uid == uid): 
             # TODO: in the future (when implmented) delete also all collections 
             ## NOTE: If it was contributor at other compositions
-            ## the data files will remain but user id no
+            ## the data files will remain 
             compositions = Composition.query.filter_by(user_id=user_auth).all()
             if(len(compositions)):           
                 for comp in compositions:                                    

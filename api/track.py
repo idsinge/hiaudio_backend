@@ -1,6 +1,7 @@
 import os
 from flask import request, jsonify
 from werkzeug.utils import secure_filename
+from orm import UserRole
 
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'm4a'}
 CURRENTDIR = os.path.abspath(os.path.dirname(__file__))
@@ -28,14 +29,16 @@ def deletetrack(id, current_user, Track, Composition, Contributor, db):
         user_auth = current_user.get_id() and int(current_user.get_id())       
         if(track.user_id == user_auth):           
             deletefromdb(track, db)
-            return jsonify({"ok":"true", "result":track.id, "role":1})
+            # TODO: [issue 133] should not return role Owner 1 if is only member
+            # otherwise the delete option is shown for tracks he does not own
+            return jsonify({"ok":"true", "result":track.id, "role":UserRole.owner.value})
         else: 
             composition = Composition.query.get_or_404(track.composition_id)
-            role = 0            
+            role = UserRole.none.value          
             iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()            
             if(iscontributor is not None):
-                role = iscontributor.role            
-            if ((1<= role <= 2) or (composition.user.id == user_auth)):
+                role = iscontributor.role.value                           
+            if ((UserRole.owner.value <= role <= UserRole.admin.value) or (composition.user.id == user_auth)):
                 deletefromdb(track, db)
                 return jsonify({"ok":"true", "result":track.id, "role":role })
             else:
@@ -45,16 +48,16 @@ def fileupload(current_user, Composition, Track, Contributor, db):
     user_auth = current_user.get_id() and int(current_user.get_id())
     compositionid = request.form['composition_id']
     composition = Composition.query.get_or_404(compositionid)
-    role = 0
+    role = UserRole.none.value
     istheowner = composition.user.id == user_auth
     isopen = composition.opentocontrib
     if(isopen):
-        role = 3
+        role = UserRole.member.value
     if not istheowner:
         iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()    
         if(iscontributor is not None):
-            role = iscontributor.role 
-    if ((istheowner) or (1<= role <= 3)):
+            role = iscontributor.role.value 
+    if ((istheowner) or (UserRole.owner.value <= role <= UserRole.member.value)):
 
         thefile = request.files['audio']
 

@@ -1,7 +1,15 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from sqlalchemy_serializer import SerializerMixin
+import enum
+from sqlalchemy import Enum
 
+class UserRole(enum.Enum):
+    none = 0
+    owner = 1
+    admin = 2
+    member = 3
+    guest = 4
 
 db = SQLAlchemy()
 
@@ -72,7 +80,7 @@ class Contributor(db.Model, SerializerMixin):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     user_uid = db.Column(db.String(100))
     composition_id = db.Column(db.Integer, db.ForeignKey('composition.id', ondelete='CASCADE'))
-    role = db.Column(db.Integer, nullable=False, server_default="4")
+    role = db.Column(Enum(UserRole), nullable=False, default=UserRole.none.value)
 
     def __repr__(self):
         return f'<Contributor "{self.user_id}">'
