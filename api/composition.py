@@ -2,6 +2,8 @@ import os
 import shutil
 from flask import request, jsonify
 from api.track import DATA_BASEDIR
+from orm import UserRole
+
 
 def compositions(current_user, Composition, Contributor):
     user_auth = current_user.get_id() and int(current_user.get_id())
@@ -36,18 +38,18 @@ def composition(id, current_user, Composition, Contributor):
     else:
         owner = composition.user.id == user_auth
         iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
-        role = 0 
+        role = UserRole.none.value
         isopen = composition.opentocontrib
         if(isopen):
             if (user_auth is None):
-                role = 0
+                role = UserRole.none.value
             else:
-                role = 3
+                role = UserRole.member.value
         if(composition.user.id == user_auth):
-              role = 1          
+              role = UserRole.owner.value          
         if(iscontributor is not None):
-            role = iscontributor.role            
-        if((composition.privacy == 3) and (composition.user.id != user_auth) and (role == 0)):
+            role = iscontributor.role.value            
+        if((composition.privacy == 3) and (composition.user.id != user_auth) and (role == UserRole.none.value)):
             return jsonify({"error":"composition not accesible"})
         else:
             data = composition.to_dict( rules=('-path',) )
@@ -83,12 +85,12 @@ def deletecomposition(compid, current_user, Composition, Contributor, db):
     user_auth = current_user.get_id() and int(current_user.get_id())
     composition =  Composition.query.get_or_404(compid)
     iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
-    role = 0 
+    role = UserRole.none.value
     if(composition.user.id == user_auth):
-        role = 1          
+        role = UserRole.owner.value        
     if(iscontributor is not None):
-        role = iscontributor.role    
-    if(role == 1):       
+        role = iscontributor.role.value    
+    if(role == UserRole.owner.value):       
         deletecompfolder(compid)
         db.session.delete(composition)
         db.session.commit()
@@ -116,12 +118,12 @@ def updatecompfield(current_user, Composition, Contributor, db, field):
     user_auth = current_user.get_id() and int(current_user.get_id())
     composition =  Composition.query.get_or_404(compid)
     iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
-    role = 0 
+    role = UserRole.none.value
     if(composition.user.id == user_auth):
-        role = 1          
+        role = UserRole.owner.value          
     if(iscontributor is not None):
-        role = iscontributor.role    
-    if(role == 1):        
+        role = iscontributor.role.value    
+    if(role == UserRole.owner.value):        
         setattr(composition, field, fieldvalue)
         db.session.commit()
         return jsonify({"ok":"true", "result": field + " updated successfully"})

@@ -1,5 +1,6 @@
 import re
 from flask import request, jsonify, make_response
+from orm import UserRole
 
 def custom_error(message, status_code): 
     return make_response(jsonify(message), status_code)
@@ -38,7 +39,7 @@ def addcontributorbyemail(current_user, Composition, Contributor, UserInfo, db):
     composition = Composition.query.get_or_404(compositionid)
     user1 = UserInfo.query.get(user_auth)
     # if the person who tries to add the contributor is the owner
-    # TODO: check if the role is 1
+    # TODO: [issue 89] check if the role is 1 (UserRole.owner.value)
     # control that permission is not changed to creator of the composition
     if composition.user.id == user_auth:        
         email = request.get_json()["email"] 
@@ -51,7 +52,7 @@ def addcontributorbyemail(current_user, Composition, Contributor, UserInfo, db):
         # TODO: if user is not in DB we could send an invite email to join
         
         # if Owner tries to add himself throws error
-        if((user2 is not None) and (user1.google_email != email) and (match is not None) and (1 <=role <=4)):            
+        if((user2 is not None) and (user1.google_email != email) and (match is not None) and (UserRole.owner.value <= role <= UserRole.guest.value)):            
             return addcontributortodb(Contributor, user2.id, user2.google_uid, composition, role, db)
         else:
             return jsonify({"error":"not valid contributor"})
@@ -66,7 +67,7 @@ def addcontributorbyid(current_user, Composition, Contributor, User, db):
     composition = Composition.query.get_or_404(compositionid)
     
     # if the person who tries to add the contributor is the owner
-    # TODO: check if the role is 1
+    # TODO:[issue 89] check if the role is 1 (UserRole.owner.value)
     # control that permission is not changed to creator of the composition
     if composition.user.id == user_auth:        
         useruid = request.get_json()["user_uid"] 
@@ -75,7 +76,7 @@ def addcontributorbyid(current_user, Composition, Contributor, User, db):
         # check the ID is in DB      
         user2 = User.query.filter_by(uid=useruid).first()
         # if Owner tries to add himself throws error
-        if((user2 is not None) and (user_auth != user2.id) and (1 <=role <=4)):            
+        if((user2 is not None) and (user_auth != user2.id) and (UserRole.owner.value <=role <= UserRole.guest.value)):            
             return addcontributortodb(Contributor, user2.id, useruid, composition, role, db)
         else:
             return jsonify({"error":"not valid contributor"})
@@ -88,11 +89,11 @@ def addcontributortodb(Contributor, user2id, user2uid, composition, role, db):
     # if is already contributor => UPDATE role
     # TODO: check current role is not the same to avoid running db statement
     if(iscontributor is not None):
-        querycontributor.update({"role":role})
+        querycontributor.update({"role":UserRole(role).name})
         db.session.commit()
         return jsonify({"ok":"true", "result":"role updated successfully", "contribid":iscontributor.id})
     else:    
-        contributor = Contributor(role=role, user_id=user2id, user_uid=user2uid, composition=composition)          
+        contributor = Contributor(role=UserRole(role).name, user_id=user2id, user_uid=user2uid, composition=composition)          
         db.session.add(contributor)
         db.session.commit()         
         return jsonify({"ok":"true", "result":"role added successfully", "contribid":contributor.id})
@@ -113,8 +114,8 @@ def deletecontributor(contribid, current_user, Composition, Contributor, db):
             queryauthorized = Contributor.query.filter_by(user_id=user_auth, composition_id=compid)
             isauthorized = queryauthorized.first() 
             if (isauthorized is not None):
-                role = isauthorized.role 
-                if (1<= role <= 2):
+                role = isauthorized.role.value 
+                if (UserRole.owner.value<= role <= UserRole.admin.value):
                     db.session.delete(contributor)
                     db.session.commit()
                     return jsonify({"ok":"true", "result":contribid})

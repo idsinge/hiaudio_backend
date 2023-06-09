@@ -45,7 +45,7 @@ Track:
 Contributor:
  - id
  - userid
- - role (1=Owner, 2=Admin, 3=Member, 4=Guest)
+ - role (0=None, 1=Owner, 2=Admin, 3=Member, 4=Guest)
 
 ---
 

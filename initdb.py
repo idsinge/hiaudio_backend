@@ -1,5 +1,5 @@
 from app import app, DB_FILE
-from orm import db, Composition, Track, User, UserInfo, Contributor
+from orm import db, Composition, Track, User, UserInfo, Contributor, UserRole
 import os
 
 with app.app_context():
@@ -40,6 +40,6 @@ with app.app_context():
     db.session.add_all({track1, track2})
     db.session.commit()
 
-    contributor1 = Contributor(role=4, user_id=user2.id, user_uid=user2.uid, composition=composition1)
+    contributor1 = Contributor(role=UserRole.guest, user_id=user2.id, user_uid=user2.uid, composition=composition1)
     db.session.add(contributor1)
     db.session.commit()
