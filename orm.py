@@ -1,7 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from sqlalchemy_serializer import SerializerMixin
+from sqlalchemy_utils import UUIDType
 import enum
+import uuid
 from sqlalchemy import Enum
 
 class UserRole(enum.Enum):
@@ -49,7 +51,7 @@ class Composition(db.Model, SerializerMixin):
 
     serialize_rules = ('-user', )
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
     privacy = db.Column(Enum(CompPrivacy), nullable=False, default=CompPrivacy.public.value)
     title = db.Column(db.String(100))
     tracks = db.relationship('Track', backref='composition', cascade="all, delete-orphan")
@@ -67,11 +69,11 @@ class Track(db.Model, SerializerMixin):
 
     serialize_rules = ('-composition', )
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(UUIDType(binary=False), primary_key=True, default=uuid.uuid4)
     title = db.Column(db.String(100))
     path = db.Column(db.String(1024))
     user_id = db.Column(db.Integer)
-    composition_id = db.Column(db.Integer, db.ForeignKey('composition.id', ondelete='CASCADE'))
+    composition_id = db.Column(UUIDType(binary=False), db.ForeignKey('composition.id', ondelete='CASCADE'))
 
     def __repr__(self):
         return f'<Track "{self.title}">'
@@ -84,7 +86,7 @@ class Contributor(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     user_uid = db.Column(db.String(100))
-    composition_id = db.Column(db.Integer, db.ForeignKey('composition.id', ondelete='CASCADE'))
+    composition_id = db.Column(UUIDType(binary=False), db.ForeignKey('composition.id', ondelete='CASCADE'))
     role = db.Column(Enum(UserRole), nullable=False, default=UserRole.none.value)
 
     def __repr__(self):

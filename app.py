@@ -1,4 +1,5 @@
 import os
+import uuid
 from flask import Flask, request, url_for, redirect, jsonify, send_from_directory
 from flask_migrate import Migrate
 from flask_cors import CORS, cross_origin
@@ -136,7 +137,7 @@ def compositions():
     return compositions
 
 
-@app.route('/composition/<int:id>')
+@app.route('/composition/<uuid:id>')
 @cross_origin()
 def composition(id):
     result = api.composition.composition(id, current_user, Composition, Contributor)
@@ -149,7 +150,7 @@ def newcomposition():
     result = api.composition.newcomposition(current_user,User, Composition, db)
     return result
 
-@app.route('/deletecomposition/<int:id>', methods=['DELETE'])
+@app.route('/deletecomposition/<uuid:id>', methods=['DELETE'])
 @login_required
 @cross_origin()
 def deletecomposition(id):
@@ -177,13 +178,13 @@ def updatecomptocontrib():
     result = api.composition.updatecomptocontrib(current_user,Composition, Contributor, db)
     return result
 
-@app.route('/trackfile/<int:id>')
+@app.route('/trackfile/<uuid:id>')
 @cross_origin()
 def trackfile(id):
     track = Track.query.get_or_404(id)
     return send_from_directory( api.track.DATA_BASEDIR, track.path )
 
-@app.route('/deletetrack/<int:id>', methods=['DELETE'])
+@app.route('/deletetrack/<uuid:id>', methods=['DELETE'])
 @login_required
 @cross_origin()
 def deletetrack(id):
