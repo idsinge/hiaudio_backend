@@ -44,6 +44,8 @@ def load_user(user_id):
 
 db.init_app(app)
 
+trackHandler = api.track.TrackHdlr(app, db)
+
 @app.route('/')
 def index():
     if current_user.is_authenticated:
@@ -175,26 +177,6 @@ def updatecomptitle():
 @cross_origin()
 def updatecomptocontrib():
     result = api.composition.updatecomptocontrib(current_user,Composition, Contributor, db)
-    return result
-
-@app.route('/trackfile/<int:id>')
-@cross_origin()
-def trackfile(id):
-    track = Track.query.get_or_404(id)
-    return send_from_directory( api.track.DATA_BASEDIR, track.path )
-
-@app.route('/deletetrack/<int:id>', methods=['DELETE'])
-@login_required
-@cross_origin()
-def deletetrack(id):
-   result = api.track.deletetrack(id, current_user, Track, Composition, Contributor, db)
-   return result
-
-@app.route('/fileUpload', methods=['POST'])
-@cross_origin()
-@login_required
-def fileupload():
-    result=api.track.fileupload(current_user, Composition, Track, Contributor, db)
     return result
 
 @app.route('/addcontributorbyemail', methods=['POST'])
