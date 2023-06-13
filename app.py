@@ -3,7 +3,7 @@ from flask import Flask, request, url_for, redirect, jsonify, send_from_director
 from flask_migrate import Migrate
 from flask_cors import CORS, cross_origin
 
-from orm import db, Composition, User, UserInfo
+from orm import db, User, UserInfo
 
 from flask_login import (
     LoginManager,
@@ -22,6 +22,7 @@ import config
 
 DB_FILE = config.DB_FILE if hasattr(config, 'DB_FILE') else None
 app = Flask(__name__)
+app.register_blueprint(api.user.user)
 # allow uploads up to 50MB
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1000 * 1000
 cors = CORS(app)
@@ -55,10 +56,6 @@ def index():
     else:
         return redirect(request.base_url+"public/index.html")
 
-@app.route("/profile")
-def register():
-    return api.user.profile()
-
 @app.route("/login")
 def login():
     request_uri = api.auth.login()
@@ -75,31 +72,6 @@ def callback():
 def logout():
     logout_user()
     return redirect(url_for("index"))
-
-@app.route('/users')
-@cross_origin()
-def users():
-    return api.user.users()
-
-@app.route('/user/<string:uid>')
-@cross_origin()
-def user(uid):    
-    return api.user.userbyuid(uid)
-
-@app.route('/deleteuser/<string:uid>', methods=['DELETE'])
-@cross_origin()
-@login_required
-def deleteuser(uid):
-    return api.user.deleteuser(uid)
-
-# TODO: this API method could change in the future to allow filtering users in the app search bar when adding a new contributor
-# param "info" can be either an email address, a user id or a name
-@app.route('/checkuser/<string:info>')
-@cross_origin()
-@login_required
-def checkuser(info):
-    result=api.user.checkuser(info)
-    return result
 
 @app.route('/compositions')
 @cross_origin()

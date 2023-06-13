@@ -1,12 +1,17 @@
 import re
-from flask import jsonify, make_response
+from flask import  Blueprint, jsonify, make_response
 from orm import  db, User, UserInfo, Composition
 from flask_login import current_user
 from api.composition import deletecompfolder
+from flask_cors import cross_origin
+from flask_login import login_required
+
+user = Blueprint('user', __name__)
 
 def custom_error(message, status_code): 
     return make_response(jsonify(message), status_code)
 
+@user.route('/profile')
 def profile():
     if current_user.is_authenticated:
         userinfo = UserInfo.query.get(current_user.get_id())
@@ -14,11 +19,14 @@ def profile():
     else:
         return jsonify({"ok":False})
 
+@user.route('/users')
+@cross_origin()
 def users():
     users = User.query.all()
     jusers = jsonify(users=[ user.to_dict( rules=('-id','-compositions', '-userinfo') ) for user in users])
     return jusers
 
+@user.route('/user/<string:uid>')
 def userbyuid(uid):
     user = User.query.filter_by(uid=uid).first()    
     if(user is not None):
@@ -27,6 +35,9 @@ def userbyuid(uid):
     else:
         return jsonify({"error":"Not Found"})
 
+@user.route('/deleteuser/<string:uid>', methods=['DELETE'])
+@cross_origin()
+@login_required
 def deleteuser(uid):
     if current_user.is_authenticated: 
         user_auth = current_user.get_id()
@@ -48,6 +59,11 @@ def deleteuser(uid):
     else:
         return jsonify({"error":"not authenticated"})
 
+# TODO: this API method could change in the future to allow filtering users in the app search bar when adding a new contributor
+# param "info" can be either an email address, a user id or a name
+@user.route('/checkuser/<string:info>')
+@cross_origin()
+@login_required
 def checkuser(info):
     result = None
     userid = None
