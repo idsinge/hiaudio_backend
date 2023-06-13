@@ -1,7 +1,8 @@
 import os
 from flask import request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
-from orm import UserRole
+from orm import db, UserRole, Track, Composition, Contributor
+from flask_login import current_user
 
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'm4a'}
 CURRENTDIR = os.path.abspath(os.path.dirname(__file__))
@@ -12,7 +13,7 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def deletefromdb(trackinfo, db):    
+def deletefromdb(trackinfo):    
     trackpath = f"compositions/{trackinfo.composition_id}/{trackinfo.title}"        
     fullpath = os.path.join(DATA_BASEDIR, trackpath )          
     if os.path.exists(fullpath):
@@ -20,11 +21,11 @@ def deletefromdb(trackinfo, db):
     db.session.delete(trackinfo)
     db.session.commit()
 
-def trackfile(id, Track):
+def trackfile(id):
     track = Track.query.get_or_404(id)
     return send_from_directory( DATA_BASEDIR, track.path )
 
-def deletetrack(id, current_user, Track, Composition, Contributor, db):
+def deletetrack(id):
     track = Track.query.get(id)
 
     if(track is None):
@@ -32,7 +33,7 @@ def deletetrack(id, current_user, Track, Composition, Contributor, db):
     else:
         user_auth = current_user.get_id() and int(current_user.get_id())       
         if(track.user_id == user_auth):           
-            deletefromdb(track, db)
+            deletefromdb(track)
             # TODO: [issue 133] should not return role Owner 1 if is only member
             # otherwise the delete option is shown for tracks he does not own
             return jsonify({"ok":"true", "result":track.id, "role":UserRole.owner.value})
@@ -43,12 +44,12 @@ def deletetrack(id, current_user, Track, Composition, Contributor, db):
             if(iscontributor is not None):
                 role = iscontributor.role.value                           
             if ((UserRole.owner.value <= role <= UserRole.admin.value) or (composition.user.id == user_auth)):
-                deletefromdb(track, db)
+                deletefromdb(track)
                 return jsonify({"ok":"true", "result":track.id, "role":role })
             else:
                 return jsonify({"error":"not permission to delete"})
 
-def fileupload(current_user, Composition, Track, Contributor, db):
+def fileupload():
     user_auth = current_user.get_id() and int(current_user.get_id())
     compositionid = request.form['composition_id']
     composition = Composition.query.get_or_404(compositionid)

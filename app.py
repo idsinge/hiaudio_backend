@@ -3,7 +3,7 @@ from flask import Flask, request, url_for, redirect, jsonify, send_from_director
 from flask_migrate import Migrate
 from flask_cors import CORS, cross_origin
 
-from orm import db, Composition, Track, User, UserInfo, Contributor
+from orm import db, Composition, User, UserInfo
 
 from flask_login import (
     LoginManager,
@@ -126,95 +126,95 @@ def deleteuser(uid):
 @cross_origin()
 @login_required
 def checkuser(info):
-    result=api.contributor.checkuser(current_user, User, UserInfo, info)
+    result=api.contributor.checkuser(info)
     return result
 
 @app.route('/compositions')
 @cross_origin()
 def compositions():
-    compositions = api.composition.compositions(current_user, Composition, Contributor)
+    compositions = api.composition.compositions()
     return compositions
 
 
 @app.route('/composition/<int:id>')
 @cross_origin()
 def composition(id):
-    result = api.composition.composition(id, current_user, Composition, Contributor)
+    result = api.composition.composition(id)
     return result
 
 @app.route('/newcomposition', methods=['POST'])
 @login_required
 @cross_origin()
 def newcomposition():
-    result = api.composition.newcomposition(current_user,User, Composition, db)
+    result = api.composition.newcomposition()
     return result
 
 @app.route('/deletecomposition/<int:id>', methods=['DELETE'])
 @login_required
 @cross_origin()
 def deletecomposition(id):
-    result = api.composition.deletecomposition(id, current_user, Composition, Contributor, db)
+    result = api.composition.deletecomposition(id)
     return result
 
 @app.route('/updateprivacy', methods=['PATCH'])
 @login_required
 @cross_origin()
 def updateprivacy():
-    result = api.composition.updateprivacy(current_user,Composition, Contributor, db)
+    result = api.composition.updateprivacy()
     return result
 
 @app.route('/updatecomptitle', methods=['PATCH'])
 @login_required
 @cross_origin()
 def updatecomptitle():
-    result = api.composition.updatecomptitle(current_user,Composition, Contributor, db)
+    result = api.composition.updatecomptitle()
     return result
 
 @app.route('/updatecomptocontrib', methods=['PATCH'])
 @login_required
 @cross_origin()
 def updatecomptocontrib():
-    result = api.composition.updatecomptocontrib(current_user,Composition, Contributor, db)
+    result = api.composition.updatecomptocontrib()
     return result
 
 @app.route('/trackfile/<int:id>')
 @cross_origin()
 def trackfile(id):
-    return api.track.trackfile(id, Track)  
+    return api.track.trackfile(id)  
 
 @app.route('/deletetrack/<int:id>', methods=['DELETE'])
 @login_required
 @cross_origin()
 def deletetrack(id):
-   result = api.track.deletetrack(id, current_user, Track, Composition, Contributor, db)
+   result = api.track.deletetrack(id)
    return result
 
 @app.route('/fileUpload', methods=['POST'])
 @cross_origin()
 @login_required
 def fileupload():
-    result=api.track.fileupload(current_user, Composition, Track, Contributor, db)
+    result=api.track.fileupload()
     return result
 
 @app.route('/addcontributorbyemail', methods=['POST'])
 @cross_origin()
 @login_required
 def addcontributorbyemail():
-    result=api.contributor.addcontributorbyemail(current_user, Composition, Contributor, UserInfo, db)
+    result=api.contributor.addcontributorbyemail()
     return result
 
 @app.route('/addcontributorbyid', methods=['POST'])
 @cross_origin()
 @login_required
 def addcontributorbyid():
-    result=api.contributor.addcontributorbyid(current_user, Composition, Contributor, User, db)
+    result=api.contributor.addcontributorbyid()
     return result
 
 @app.route('/deletecontributor/<string:uid>', methods=['DELETE'])
 @login_required
 @cross_origin()
 def deletecontributor(uid):
-   result = api.contributor.deletecontributor(uid, current_user, Composition, Contributor, db)
+   result = api.contributor.deletecontributor(uid)
    return result
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])

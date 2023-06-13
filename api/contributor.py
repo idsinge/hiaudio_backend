@@ -1,11 +1,12 @@
 import re
 from flask import request, jsonify, make_response
-from orm import UserRole
+from orm import db, User, UserRole, Composition, Contributor, UserInfo
+from flask_login import current_user
 
 def custom_error(message, status_code): 
     return make_response(jsonify(message), status_code)
 
-def checkuser(current_user, User, UserInfo, info):
+def checkuser(info):
     result = None
     userid = None
     if (info.isnumeric()):
@@ -32,7 +33,7 @@ def checkuser(current_user, User, UserInfo, info):
     
     return result
 
-def addcontributorbyemail(current_user, Composition, Contributor, UserInfo, db):
+def addcontributorbyemail():
   
     user_auth = current_user.get_id() and int(current_user.get_id())
     compositionid = request.get_json()['composition_id']
@@ -53,14 +54,14 @@ def addcontributorbyemail(current_user, Composition, Contributor, UserInfo, db):
         
         # if Owner tries to add himself throws error
         if((user2 is not None) and (user1.google_email != email) and (match is not None) and (UserRole.owner.value <= role <= UserRole.guest.value)):            
-            return addcontributortodb(Contributor, user2.id, user2.google_uid, composition, role, db)
+            return addcontributortodb(user2.id, user2.google_uid, composition, role)
         else:
             return jsonify({"error":"not valid contributor"})
     else:
         return jsonify({"error":"not valid owner"})
 
 
-def addcontributorbyid(current_user, Composition, Contributor, User, db):
+def addcontributorbyid():
   
     user_auth = current_user.get_id() and int(current_user.get_id())
     compositionid = request.get_json()['composition_id']
@@ -77,13 +78,13 @@ def addcontributorbyid(current_user, Composition, Contributor, User, db):
         user2 = User.query.filter_by(uid=useruid).first()
         # if Owner tries to add himself throws error
         if((user2 is not None) and (user_auth != user2.id) and (UserRole.owner.value <=role <= UserRole.guest.value)):            
-            return addcontributortodb(Contributor, user2.id, useruid, composition, role, db)
+            return addcontributortodb(user2.id, useruid, composition, role)
         else:
             return jsonify({"error":"not valid contributor"})
     else:
         return jsonify({"error":"not valid owner"})
 
-def addcontributortodb(Contributor, user2id, user2uid, composition, role, db):
+def addcontributortodb(user2id, user2uid, composition, role):
     querycontributor = Contributor.query.filter_by(user_id=user2id, composition_id=composition.id)
     iscontributor = querycontributor.first()                    
     # if is already contributor => UPDATE role
@@ -98,7 +99,7 @@ def addcontributortodb(Contributor, user2id, user2uid, composition, role, db):
         db.session.commit()         
         return jsonify({"ok":"true", "result":"role added successfully", "contribid":contributor.id})
     
-def deletecontributor(contribid, current_user, Composition, Contributor, db):
+def deletecontributor(contribid):
     user_auth = current_user.get_id() and int(current_user.get_id())
     contributor = Contributor.query.filter_by(user_uid=contribid).first()
     if(contributor is not None):
