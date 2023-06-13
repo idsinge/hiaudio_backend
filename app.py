@@ -16,6 +16,7 @@ import api.auth
 import api.composition
 import api.track
 import api.contributor
+import api.user
 
 import config
 
@@ -56,11 +57,7 @@ def index():
 
 @app.route("/profile")
 def register():
-    if current_user.is_authenticated:
-        userinfo = UserInfo.query.get(current_user.get_id())
-        return jsonify({"ok":True, "name":userinfo.name, "email":userinfo.google_email, "profile_pic":userinfo.profile_pic, "user_uid":current_user.uid})
-    else:
-        return jsonify({"ok":False})
+    return api.user.profile()
 
 @app.route("/login")
 def login():
@@ -82,43 +79,18 @@ def logout():
 @app.route('/users')
 @cross_origin()
 def users():
-    users = User.query.all()
-    jusers = jsonify(users=[ user.to_dict( rules=('-id','-compositions', '-userinfo') ) for user in users])
-    return jusers
+    return api.user.users()
 
 @app.route('/user/<string:uid>')
 @cross_origin()
 def user(uid):    
-    user = User.query.filter_by(uid=uid).first()    
-    if(user is not None):
-        juser = jsonify(user.to_dict( rules=('-path', '-id', '-userinfo') ))
-        return juser
-    else:
-        return jsonify({"error":"Not Found"})
+    return api.user.userbyuid(uid)
 
 @app.route('/deleteuser/<string:uid>', methods=['DELETE'])
 @cross_origin()
 @login_required
 def deleteuser(uid):
-    if current_user.is_authenticated: 
-        user_auth = current_user.get_id()
-        user = User.query.get_or_404(user_auth)    
-        if(user.uid == uid): 
-            # TODO: in the future (when implmented) delete also all collections 
-            ## NOTE: If it was contributor at other compositions
-            ## the data files will remain 
-            compositions = Composition.query.filter_by(user_id=user_auth).all()
-            if(len(compositions)):           
-                for comp in compositions:                                    
-                    api.composition.deletecompfolder(comp.id)                 
-            db.session.delete(user)
-            db.session.commit()         
-                      
-            return jsonify({"ok":True, "result":"user deleted successfully"})
-        else:
-            return jsonify({"error":"not allowed"})
-    else:
-        return jsonify({"error":"not authenticated"})
+    return api.user.deleteuser(uid)
 
 # TODO: this API method could change in the future to allow filtering users in the app search bar when adding a new contributor
 # param "info" can be either an email address, a user id or a name
@@ -126,7 +98,7 @@ def deleteuser(uid):
 @cross_origin()
 @login_required
 def checkuser(info):
-    result=api.contributor.checkuser(info)
+    result=api.user.checkuser(info)
     return result
 
 @app.route('/compositions')

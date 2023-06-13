@@ -1,37 +1,7 @@
 import re
-from flask import request, jsonify, make_response
+from flask import request, jsonify
 from orm import db, User, UserRole, Composition, Contributor, UserInfo
 from flask_login import current_user
-
-def custom_error(message, status_code): 
-    return make_response(jsonify(message), status_code)
-
-def checkuser(info):
-    result = None
-    userid = None
-    if (info.isnumeric()):
-        user = User.query.filter_by(uid=info).first()
-        if(user is not None):
-            userid = user.uid
-            result = jsonify({"ok":True, "user_uid":userid})       
-    elif (re.search(r'@gmail.', info)):
-        user = UserInfo.query.filter_by(google_email=info).first()
-        if(user is not None):
-            result = jsonify({"ok":True, "user_uid":user.google_uid})        
-    else:
-        user = UserInfo.query.filter_by(name=info).first()
-        if user:         
-            userid = user.google_uid
-            result = jsonify({"ok":True, "user_uid":user.google_uid})
-
-    if result is None:
-        result = custom_error({"error":"User Not Found"}, 404)
-    else:
-        ownerid = current_user.get_id() and int(current_user.get_id())
-        if(userid == ownerid):
-            result = custom_error({"error":"Same User"}, 403)
-    
-    return result
 
 def addcontributorbyemail():
   
