@@ -1,7 +1,7 @@
 import os
 from flask import request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
-from orm import UserRole, Track, Composition, Contributor
+from orm import db, UserRole, Track, Composition, Contributor
 from flask_cors import cross_origin
 from flask_login import (current_user, login_required)
 
@@ -15,9 +15,8 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 class TrackHdlr:
-    def __init__(self, app, db):
-        self.app = app
-        self.db = db
+    def __init__(self, app):
+        self.app = app        
         self.app.route('/trackfile/<int:id>')(self.trackfile)
         self.app.route('/fileUpload', methods=['POST'])(self.fileupload)        
         self.app.route('/deletetrack/<int:id>', methods=['DELETE'])(self.deletetrack)
@@ -32,8 +31,8 @@ class TrackHdlr:
         fullpath = os.path.join(DATA_BASEDIR, trackpath )      
         if os.path.exists(fullpath):
             os.remove(fullpath)    
-        self.db.session.delete(trackinfo)
-        self.db.session.commit()
+        db.session.delete(trackinfo)
+        db.session.commit()
 
     @cross_origin()
     @login_required
@@ -90,8 +89,8 @@ class TrackHdlr:
                 thefile.save( fullpath )
 
                 newtrack = Track(title=filename, path=trackpath, composition=composition, user_id=user_auth)
-                self.db.session.add(newtrack)
-                self.db.session.commit()
+                db.session.add(newtrack)
+                db.session.commit()
                 data=newtrack.to_dict( rules=('-path',) )
                 respinfo ={"message":{
                     "audio":{"compositionid":compositionid, "title":filename, "path":trackpath, "file_unique_id":data['id'], "user_id":user_auth}},

@@ -44,7 +44,7 @@ def load_user(user_id):
 
 db.init_app(app)
 
-trackHandler = api.track.TrackHdlr(app, db)
+trackHandler = api.track.TrackHdlr(app)
 
 @app.route('/')
 def index():
