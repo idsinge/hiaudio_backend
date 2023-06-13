@@ -180,8 +180,7 @@ def updatecomptocontrib():
 @app.route('/trackfile/<int:id>')
 @cross_origin()
 def trackfile(id):
-    track = Track.query.get_or_404(id)
-    return send_from_directory( api.track.DATA_BASEDIR, track.path )
+    return api.track.trackfile(id, Track)  
 
 @app.route('/deletetrack/<int:id>', methods=['DELETE'])
 @login_required

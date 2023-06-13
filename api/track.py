@@ -1,5 +1,5 @@
 import os
-from flask import request, jsonify
+from flask import request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 from orm import UserRole
 
@@ -19,6 +19,10 @@ def deletefromdb(trackinfo, db):
         os.remove(fullpath)        
     db.session.delete(trackinfo)
     db.session.commit()
+
+def trackfile(id, Track):
+    track = Track.query.get_or_404(id)
+    return send_from_directory( DATA_BASEDIR, track.path )
 
 def deletetrack(id, current_user, Track, Composition, Contributor, db):
     track = Track.query.get(id)
