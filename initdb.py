@@ -1,5 +1,5 @@
 from app import app, DB_FILE
-from orm import db, Composition, Track, User, UserInfo, Contributor, UserRole, CompPrivacy
+from orm import db, Composition, Track, User, UserInfo, Contributor, UserRole, CompPrivacy, Collection
 import os
 
 with app.app_context():
@@ -29,7 +29,12 @@ with app.app_context():
 
     db.session.commit()
 
-    composition1 = Composition(title="ADASP", user=user1, privacy=CompPrivacy.private, opentocontrib=0)
+    collection1 = Collection(title="Collection1", user=user1, privacy=CompPrivacy.private)
+
+    db.session.add(collection1)
+    db.session.commit()
+
+    composition1 = Composition(title="ADASP", user=user1, privacy=CompPrivacy.private, opentocontrib=0, collection=collection1)
 
     db.session.add(composition1)
     db.session.commit()

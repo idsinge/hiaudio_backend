@@ -23,6 +23,8 @@ class User(db.Model, UserMixin, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     uid = db.Column(db.String(100))
     compositions = db.relationship('Composition', backref='user', cascade="all, delete-orphan")
+    # NEW
+    collections = db.relationship('Collection', backref='user', cascade="all, delete-orphan")
     userinfo = db.relationship('UserInfo', back_populates='user', cascade="all, delete-orphan")
 
     def __repr__(self):
@@ -45,6 +47,24 @@ class UserInfo(db.Model, SerializerMixin):
     def __repr__(self):
         return f'<UserInfo "{self.google_uid}">'
 
+# NEW
+class Collection(db.Model, SerializerMixin):
+
+    serialize_rules = ('-user', )
+
+    id = db.Column(db.Integer, primary_key=True)
+    privacy = db.Column(Enum(CompPrivacy), nullable=False, default=CompPrivacy.public.value)
+    title = db.Column(db.String(100))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
+    
+    # HOW TO DEFINE??
+    #collections = db.relationship('Collection', backref='collection', cascade="all, delete-orphan")
+    compositions = db.relationship('Composition', backref='collection', cascade="all, delete-orphan")
+    #contributors = db.relationship('Contributor', backref='collection', cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f'<Collection "{self.title}">'
+
 class Composition(db.Model, SerializerMixin):
 
     serialize_rules = ('-user', )
@@ -53,7 +73,8 @@ class Composition(db.Model, SerializerMixin):
     privacy = db.Column(Enum(CompPrivacy), nullable=False, default=CompPrivacy.public.value)
     title = db.Column(db.String(100))
     tracks = db.relationship('Track', backref='composition', cascade="all, delete-orphan")
-
+    # NEW
+    collection_id = db.Column(db.Integer, db.ForeignKey('collection.id', ondelete='CASCADE'), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
 
     contributors = db.relationship('Contributor', backref='composition', cascade="all, delete-orphan")
