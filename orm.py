@@ -58,6 +58,7 @@ class Collection(db.Model, SerializerMixin):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     
     # HOW TO DEFINE??
+    #parent_id = db.Column(db.Integer, db.ForeignKey('collection.id', ondelete='CASCADE'))
     #collections = db.relationship('Collection', backref='collection', cascade="all, delete-orphan")
     compositions = db.relationship('Composition', backref='collection', cascade="all, delete-orphan")
     #contributors = db.relationship('Contributor', backref='collection', cascade="all, delete-orphan")
