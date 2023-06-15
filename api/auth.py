@@ -82,13 +82,18 @@ def callback(User, UserInfo, db):
 
     # TODO: generate a random user profile picture
     default_picture ="https://raw.githubusercontent.com/gilpanal/beatbytebot_webapp/master/src/img/agp.png"
-    user = User(uid=unique_id)
 
-    # Create a user info entry in your db with the information provided by Google
-    userinfo = UserInfo(user=user, google_uid=unique_id, google_name=users_name, google_profile_pic=picture, google_email=users_email, name=rdmusername[0], profile_pic=default_picture)
-
-    # Doesn't exist? Add it to the database.
-    if not User.query.filter_by(uid=unique_id).first():        
+    user = User.query.filter_by(uid=unique_id).first()
+    
+    if user is not None:        
+        userinfo = UserInfo.query.filter_by(google_uid=unique_id)
+        userinfo.update({"google_name":users_name,"google_profile_pic":picture,"google_email":users_email})
+        db.session.commit()
+    else:
+        # Doesn't exist? Add it to the database.
+        user = User(uid=unique_id)
+        # Create a user info entry in your db with the information provided by Google
+        userinfo = UserInfo(user=user, google_uid=unique_id, google_name=users_name, google_profile_pic=picture, google_email=users_email, name=rdmusername[0], profile_pic=default_picture)
         db.session.add(user)
         db.session.commit()
         db.session.add(userinfo)
