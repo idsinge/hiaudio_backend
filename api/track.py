@@ -63,23 +63,17 @@ def deletetrack(id):
     if(track is None):
         return jsonify({"error":"track not found"})
     else:
-        user_auth = current_user.get_id() and int(current_user.get_id())       
-        if(track.user_id == user_auth):           
+        user_auth = current_user.get_id() and int(current_user.get_id())
+        role = UserRole.none.value   
+        composition = Composition.query.get_or_404(track.composition_id)         
+        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()                
+        if(iscontributor is not None):
+            role = iscontributor.role.value                                           
+        if ((track.user_id == user_auth) or (UserRole.owner.value <= role <= UserRole.admin.value) or (composition.user.id == user_auth)):
             deletefromdb(track)
-            # TODO: [issue 133] should not return role Owner 1 if is only member
-            # otherwise the delete option is shown for tracks he does not own
-            return jsonify({"ok":"true", "result":track.id, "role":UserRole.owner.value})
-        else: 
-            composition = Composition.query.get_or_404(track.composition_id)
-            role = UserRole.none.value          
-            iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()            
-            if(iscontributor is not None):
-                role = iscontributor.role.value                           
-            if ((UserRole.owner.value <= role <= UserRole.admin.value) or (composition.user.id == user_auth)):
-                deletefromdb(track)
-                return jsonify({"ok":"true", "result":track.id, "role":role })
-            else:
-                return jsonify({"error":"not permission to delete"})
+            return jsonify({"ok":"true", "result":track.id, "role":role })
+        else:
+            return jsonify({"error":"not permission to delete"})
 
 @track.route('/fileUpload', methods=['POST'])
 @cross_origin()
