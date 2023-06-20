@@ -1,13 +1,16 @@
 import os
-from flask import request, jsonify, send_from_directory
+from flask import Blueprint, request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 from orm import db, UserRole, Track, Composition, Contributor
-from flask_login import current_user
+from flask_login import (current_user, login_required)
+from flask_cors import cross_origin
 
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'm4a'}
 CURRENTDIR = os.path.abspath(os.path.dirname(__file__))
 BASEDIR = os.path.abspath(CURRENTDIR + "/../")
 DATA_BASEDIR = os.path.join(BASEDIR, "../data/")
+
+track = Blueprint('track', __name__)
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -21,10 +24,15 @@ def deletefromdb(trackinfo):
     db.session.delete(trackinfo)
     db.session.commit()
 
+@track.route('/trackfile/<int:id>')
+@cross_origin()
 def trackfile(id):
     track = Track.query.get_or_404(id)
     return send_from_directory( DATA_BASEDIR, track.path )
 
+@track.route('/deletetrack/<int:id>', methods=['DELETE'])
+@login_required
+@cross_origin()
 def deletetrack(id):
     track = Track.query.get(id)
 
@@ -49,6 +57,9 @@ def deletetrack(id):
             else:
                 return jsonify({"error":"not permission to delete"})
 
+@track.route('/fileUpload', methods=['POST'])
+@cross_origin()
+@login_required
 def fileupload():
     user_auth = current_user.get_id() and int(current_user.get_id())
     compositionid = request.form['composition_id']

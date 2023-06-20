@@ -24,6 +24,7 @@ DB_FILE = config.DB_FILE if hasattr(config, 'DB_FILE') else None
 app = Flask(__name__)
 app.register_blueprint(api.user.user)
 app.register_blueprint(api.composition.comp)
+app.register_blueprint(api.track.track)
 # allow uploads up to 50MB
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1000 * 1000
 cors = CORS(app)
@@ -73,25 +74,6 @@ def callback():
 def logout():
     logout_user()
     return redirect(url_for("index"))
-
-@app.route('/trackfile/<int:id>')
-@cross_origin()
-def trackfile(id):
-    return api.track.trackfile(id)  
-
-@app.route('/deletetrack/<int:id>', methods=['DELETE'])
-@login_required
-@cross_origin()
-def deletetrack(id):
-   result = api.track.deletetrack(id)
-   return result
-
-@app.route('/fileUpload', methods=['POST'])
-@cross_origin()
-@login_required
-def fileupload():
-    result=api.track.fileupload()
-    return result
 
 @app.route('/addcontributorbyemail', methods=['POST'])
 @cross_origin()
