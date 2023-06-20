@@ -1,11 +1,16 @@
 import os
 import shutil
-from flask import request, jsonify
+from flask import Blueprint, request, jsonify
 from api.track import DATA_BASEDIR
-from orm import UserRole, CompPrivacy
+from orm import db, User, UserRole, CompPrivacy, Composition, Contributor
+from flask_login import (current_user, login_required)
+from flask_cors import cross_origin
 
+comp = Blueprint('comp', __name__)
 
-def compositions(current_user, Composition, Contributor):
+@comp.route('/compositions')
+@cross_origin()
+def compositions():
     user_auth = current_user.get_id() and int(current_user.get_id())
     allcompositions = Composition.query.all()
     compositions = []
@@ -30,7 +35,9 @@ def compositions(current_user, Composition, Contributor):
 # if privacy= 2 (onlyreg) or 3 (private), and not logged => not accesible
 # if privacy=3 (private) and not either owner/contributor => not accesible
 
-def composition(id, current_user, Composition, Contributor):
+@comp.route('/composition/<int:id>')
+@cross_origin()
+def composition(id):
     user_auth = current_user.get_id() and int(current_user.get_id())
     composition = Composition.query.get_or_404(id)
     if ((user_auth is None) and ((composition.privacy.value == CompPrivacy.onlyreg.value) or (composition.privacy.value == CompPrivacy.private.value))):
@@ -59,7 +66,10 @@ def composition(id, current_user, Composition, Contributor):
             jcomposition = jsonify(data)
             return jcomposition
 
-def newcomposition(current_user,User, Composition, db):
+@comp.route('/newcomposition', methods=['POST'])
+@login_required
+@cross_origin()
+def newcomposition():
     if current_user.is_authenticated:
         title = request.get_json()["title"]
         privacy = request.get_json()["privacy_level"]
@@ -81,9 +91,12 @@ def deletecompfolder(compid):
     if os.path.exists(fullpath):     
         shutil.rmtree(fullpath)
 
-def deletecomposition(compid, current_user, Composition, Contributor, db):
+@comp.route('/deletecomposition/<int:id>', methods=['DELETE'])
+@login_required
+@cross_origin()
+def deletecomposition(id):
     user_auth = current_user.get_id() and int(current_user.get_id())
-    composition =  Composition.query.get_or_404(compid)
+    composition =  Composition.query.get_or_404(id)
     iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
     role = UserRole.none.value
     if(composition.user.id == user_auth):
@@ -91,28 +104,37 @@ def deletecomposition(compid, current_user, Composition, Contributor, db):
     if(iscontributor is not None):
         role = iscontributor.role.value    
     if(role == UserRole.owner.value):       
-        deletecompfolder(compid)
+        deletecompfolder(id)
         db.session.delete(composition)
         db.session.commit()
         return jsonify({"ok":"true", "result": "composition deleted successfully"})
     else:
         return jsonify({"error":"user is not authorized"})
-    
-def updateprivacy(current_user, Composition, Contributor, db):
+
+@comp.route('/updateprivacy', methods=['PATCH'])
+@login_required
+@cross_origin()
+def updateprivacy():
    # TODO: From API perspective, if the composition is Open To Contribution 
    # it should not be possible to set privacy level to 3 (private)
    # according to UI interaction
    # TODO: control the level of privacy is between 1 and 3
-   return updatecompfield(current_user, Composition, Contributor, db ,'privacy')    
+   return updatecompfield('privacy')    
 
-def updatecomptitle(current_user, Composition, Contributor, db):
-    return updatecompfield(current_user, Composition, Contributor, db ,'title')
+@comp.route('/updatecomptitle', methods=['PATCH'])
+@login_required
+@cross_origin()
+def updatecomptitle():
+    return updatecompfield('title')
 
-def updatecomptocontrib(current_user, Composition, Contributor, db):  
+@comp.route('/updatecomptocontrib', methods=['PATCH'])
+@login_required
+@cross_origin()
+def updatecomptocontrib():  
     # TODO: control the value is boolean
-    return updatecompfield(current_user, Composition, Contributor, db ,'opentocontrib')
+    return updatecompfield('opentocontrib')
 
-def updatecompfield(current_user, Composition, Contributor, db, field):
+def updatecompfield(field):
     compid = request.get_json()['id']
     fieldvalue = request.get_json()[field]
     if(field == 'privacy'):        
