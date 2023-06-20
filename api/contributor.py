@@ -1,8 +1,14 @@
 import re
-from flask import request, jsonify
+from flask import Blueprint, request, jsonify
 from orm import db, User, UserRole, Composition, Contributor, UserInfo
-from flask_login import current_user
+from flask_login import (current_user, login_required)
+from flask_cors import cross_origin
 
+contrib = Blueprint('contrib', __name__)
+
+@contrib.route('/addcontributorbyemail', methods=['POST'])
+@cross_origin()
+@login_required
 def addcontributorbyemail():
   
     user_auth = current_user.get_id() and int(current_user.get_id())
@@ -31,6 +37,9 @@ def addcontributorbyemail():
         return jsonify({"error":"not valid owner"})
 
 
+@contrib.route('/addcontributorbyid', methods=['POST'])
+@cross_origin()
+@login_required
 def addcontributorbyid():
   
     user_auth = current_user.get_id() and int(current_user.get_id())
@@ -68,10 +77,13 @@ def addcontributortodb(user2id, user2uid, composition, role):
         db.session.add(contributor)
         db.session.commit()         
         return jsonify({"ok":"true", "result":"role added successfully", "contribid":contributor.id})
-    
-def deletecontributor(contribid):
+
+@contrib.route('/deletecontributor/<string:uid>', methods=['DELETE'])
+@login_required
+@cross_origin()
+def deletecontributor(uid):
     user_auth = current_user.get_id() and int(current_user.get_id())
-    contributor = Contributor.query.filter_by(user_uid=contribid).first()
+    contributor = Contributor.query.filter_by(user_uid=uid).first()
     if(contributor is not None):
         compid = contributor.composition_id        
         composition = Composition.query.get_or_404(compid)        
@@ -79,7 +91,7 @@ def deletecontributor(contribid):
         if(composition.user_id == user_auth):            
             db.session.delete(contributor)
             db.session.commit()
-            return jsonify({"ok":"true", "result":contribid})
+            return jsonify({"ok":"true", "result":uid})
         # the action is done by an authorized role of the composition
         else:
             queryauthorized = Contributor.query.filter_by(user_id=user_auth, composition_id=compid)
@@ -89,7 +101,7 @@ def deletecontributor(contribid):
                 if (UserRole.owner.value<= role <= UserRole.admin.value):
                     db.session.delete(contributor)
                     db.session.commit()
-                    return jsonify({"ok":"true", "result":contribid})
+                    return jsonify({"ok":"true", "result":uid})
                 else:
                     return jsonify({"error":"not permission to delete"})
             else:

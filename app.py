@@ -25,6 +25,7 @@ app = Flask(__name__)
 app.register_blueprint(api.user.user)
 app.register_blueprint(api.composition.comp)
 app.register_blueprint(api.track.track)
+app.register_blueprint(api.contributor.contrib)
 # allow uploads up to 50MB
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1000 * 1000
 cors = CORS(app)
@@ -74,27 +75,6 @@ def callback():
 def logout():
     logout_user()
     return redirect(url_for("index"))
-
-@app.route('/addcontributorbyemail', methods=['POST'])
-@cross_origin()
-@login_required
-def addcontributorbyemail():
-    result=api.contributor.addcontributorbyemail()
-    return result
-
-@app.route('/addcontributorbyid', methods=['POST'])
-@cross_origin()
-@login_required
-def addcontributorbyid():
-    result=api.contributor.addcontributorbyid()
-    return result
-
-@app.route('/deletecontributor/<string:uid>', methods=['DELETE'])
-@login_required
-@cross_origin()
-def deletecontributor(uid):
-   result = api.contributor.deletecontributor(uid)
-   return result
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):
