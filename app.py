@@ -1,15 +1,12 @@
 import os
-from flask import Flask, request, url_for, redirect, jsonify, send_from_directory
+from flask import Flask, request, redirect, jsonify, send_from_directory
 from flask_migrate import Migrate
-from flask_cors import CORS, cross_origin
-
-from orm import db, User, UserInfo
+from flask_cors import CORS
+from orm import db, User
 
 from flask_login import (
     LoginManager,
-    current_user,
-    login_required,
-    logout_user,
+    current_user
 )
 
 import api.auth
@@ -22,6 +19,7 @@ import config
 
 DB_FILE = config.DB_FILE if hasattr(config, 'DB_FILE') else None
 app = Flask(__name__)
+app.register_blueprint(api.auth.auth)
 app.register_blueprint(api.user.user)
 app.register_blueprint(api.composition.comp)
 app.register_blueprint(api.track.track)
@@ -58,23 +56,6 @@ def index():
         return redirect(request.base_url+"public/index.html?auth=true")
     else:
         return redirect(request.base_url+"public/index.html")
-
-@app.route("/login")
-def login():
-    request_uri = api.auth.login()
-    return redirect(request_uri)
-
-@app.route("/login/callback")
-def callback():
-    result = api.auth.callback(User, UserInfo, db)
-    # TODO: check if result is correct
-    return redirect(url_for("index"))
-
-@app.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for("index"))
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):

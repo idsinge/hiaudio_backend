@@ -1,10 +1,13 @@
 import os, json
 from oauthlib.oauth2 import WebApplicationClient
 from random_username.generate import generate_username
-from flask import request
+from orm import db, User, UserInfo
+from flask import Blueprint, request, redirect, url_for
 import requests
 from flask_login import (
-    login_user
+    login_user,
+    logout_user,
+    login_required
 )
 # Configuration
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
@@ -17,10 +20,12 @@ GOOGLE_DISCOVERY_URL = (
 # OAuth 2 client setup
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
+auth = Blueprint('auth', __name__)
+
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
 
-
+@auth.route("/login")
 def login():
     # Find out what URL to hit for Google login
     google_provider_cfg = get_google_provider_cfg()
@@ -33,10 +38,10 @@ def login():
         redirect_uri=request.base_url + "/callback",
         scope=["openid", "email", "profile"],
     )
-    return request_uri
+    return redirect(request_uri)
 
-
-def callback(User, UserInfo, db):
+@auth.route("/login/callback")
+def callback():
     result="ok", 200
     # Get authorization code Google sent back to you
     code = request.args.get("code")
@@ -103,4 +108,11 @@ def callback(User, UserInfo, db):
     login_user(user)
 
     # Send user back to homepage
-    return result
+    # TODO: check result before forwarding to homepage
+    return redirect(url_for("index"))
+
+@auth.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("index"))
