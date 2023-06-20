@@ -23,6 +23,7 @@ import config
 DB_FILE = config.DB_FILE if hasattr(config, 'DB_FILE') else None
 app = Flask(__name__)
 app.register_blueprint(api.user.user)
+app.register_blueprint(api.composition.comp)
 # allow uploads up to 50MB
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1000 * 1000
 cors = CORS(app)
@@ -72,54 +73,6 @@ def callback():
 def logout():
     logout_user()
     return redirect(url_for("index"))
-
-@app.route('/compositions')
-@cross_origin()
-def compositions():
-    compositions = api.composition.compositions()
-    return compositions
-
-
-@app.route('/composition/<int:id>')
-@cross_origin()
-def composition(id):
-    result = api.composition.composition(id)
-    return result
-
-@app.route('/newcomposition', methods=['POST'])
-@login_required
-@cross_origin()
-def newcomposition():
-    result = api.composition.newcomposition()
-    return result
-
-@app.route('/deletecomposition/<int:id>', methods=['DELETE'])
-@login_required
-@cross_origin()
-def deletecomposition(id):
-    result = api.composition.deletecomposition(id)
-    return result
-
-@app.route('/updateprivacy', methods=['PATCH'])
-@login_required
-@cross_origin()
-def updateprivacy():
-    result = api.composition.updateprivacy()
-    return result
-
-@app.route('/updatecomptitle', methods=['PATCH'])
-@login_required
-@cross_origin()
-def updatecomptitle():
-    result = api.composition.updatecomptitle()
-    return result
-
-@app.route('/updatecomptocontrib', methods=['PATCH'])
-@login_required
-@cross_origin()
-def updatecomptocontrib():
-    result = api.composition.updatecomptocontrib()
-    return result
 
 @app.route('/trackfile/<int:id>')
 @cross_origin()

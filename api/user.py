@@ -1,10 +1,9 @@
 import re
 from flask import  Blueprint, jsonify, make_response
 from orm import  db, User, UserInfo, Composition
-from flask_login import current_user
+from flask_login import (current_user, login_required)
 from api.composition import deletecompfolder
 from flask_cors import cross_origin
-from flask_login import login_required
 
 user = Blueprint('user', __name__)
 
