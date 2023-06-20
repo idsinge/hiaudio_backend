@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
-from orm import db, UserRole, Track, Composition, Contributor
+from orm import db, UserRole, Track, Composition, Contributor, CompPrivacy
 from flask_login import (current_user, login_required)
 from flask_cors import cross_origin
 
@@ -27,8 +27,32 @@ def deletefromdb(trackinfo):
 @track.route('/trackfile/<int:id>')
 @cross_origin()
 def trackfile(id):
-    track = Track.query.get_or_404(id)
-    return send_from_directory( DATA_BASEDIR, track.path )
+    
+    track = Track.query.get(id)
+    if(track is None):
+        return jsonify({"error":"track not found"})
+    else:
+        user_auth = current_user.get_id() and int(current_user.get_id())            
+        composition = Composition.query.get(track.composition_id)
+        privacy = composition.privacy
+        if(privacy.value == CompPrivacy.public.value):
+            return send_from_directory( DATA_BASEDIR, track.path )
+        elif ((privacy.value == CompPrivacy.onlyreg.value) and (user_auth is not None)):
+            return send_from_directory( DATA_BASEDIR, track.path )
+        elif ((privacy.value == CompPrivacy.onlyreg.value) and (user_auth is None)):
+            return jsonify({"error":"user not authorized"})
+        else:            
+            role = UserRole.none.value    
+            if(composition.user_id == user_auth): 
+                role = UserRole.owner.value
+            else:
+                iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
+                if(iscontributor is not None):
+                    role = iscontributor.role.value  
+            if(UserRole.owner.value <= role <= UserRole.guest.value):
+                return send_from_directory( DATA_BASEDIR, track.path )
+            else:
+                return jsonify({"error":"user not authorized"})
 
 @track.route('/deletetrack/<int:id>', methods=['DELETE'])
 @login_required
