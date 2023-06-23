@@ -22,23 +22,23 @@ def upgrade():
         batch_op.add_column(sa.Column('uuid', sa.String(length=22), nullable=False))        
 
     connection = op.get_bind()
-    result = connection.execute("SELECT id FROM composition")
+    result = connection.execute(sa.text("SELECT id FROM composition"))
     rows = result.fetchall()
 
     for row in rows:
         unique_value = shortuuid.uuid()
-        connection.execute("UPDATE composition SET uuid = '{}' WHERE id = '{}'".format(unique_value, row[0]))    
+        connection.execute(sa.text("UPDATE composition SET uuid = '{}' WHERE id = '{}'".format(unique_value, row[0])))    
 
     with op.batch_alter_table('track', schema=None) as batch_op:
         batch_op.add_column(sa.Column('uuid', sa.String(length=22), nullable=False))        
 
     connection = op.get_bind()
-    result = connection.execute("SELECT id FROM track")
+    result = connection.execute(sa.text("SELECT id FROM track"))
     rows = result.fetchall()
 
     for row in rows:
         unique_value = shortuuid.uuid()
-        connection.execute("UPDATE track SET uuid = '{}' WHERE id = '{}'".format(unique_value, row[0]))
+        connection.execute(sa.text("UPDATE track SET uuid = '{}' WHERE id = '{}'".format(unique_value, row[0])))
     # ### end Alembic commands ###
 
 
