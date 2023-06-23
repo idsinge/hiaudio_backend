@@ -3,6 +3,7 @@ from flask_login import UserMixin
 from sqlalchemy_serializer import SerializerMixin
 import enum
 from sqlalchemy import Enum
+import shortuuid
 
 class UserRole(enum.Enum):
     none = 0
@@ -50,6 +51,7 @@ class Composition(db.Model, SerializerMixin):
     serialize_rules = ('-user', )
 
     id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(22), nullable=False, unique=True, default=shortuuid.uuid())
     privacy = db.Column(Enum(CompPrivacy), nullable=False, default=CompPrivacy.public.value)
     title = db.Column(db.String(100))
     tracks = db.relationship('Track', backref='composition', cascade="all, delete-orphan")
@@ -68,6 +70,7 @@ class Track(db.Model, SerializerMixin):
     serialize_rules = ('-composition', )
 
     id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(22), nullable=False, unique=True, default=shortuuid.uuid())
     title = db.Column(db.String(100))
     path = db.Column(db.String(1024))
     user_id = db.Column(db.Integer)
