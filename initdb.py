@@ -1,6 +1,7 @@
 from app import app, DB_FILE
 from orm import db, Composition, Track, User, UserInfo, Contributor, UserRole, CompPrivacy
 import os
+import shortuuid
 
 with app.app_context():
 
@@ -29,13 +30,14 @@ with app.app_context():
 
     db.session.commit()
 
-    composition1 = Composition(title="ADASP", user=user1, privacy=CompPrivacy.private, opentocontrib=0)
+    comp_uuid = shortuuid.uuid()
+    composition1 = Composition(title="ADASP", user=user1, privacy=CompPrivacy.private, opentocontrib=0, uuid=comp_uuid)
 
     db.session.add(composition1)
     db.session.commit()
 
-    track1 = Track(title="Acoustic", path=f"compositions/{composition1.id}/acoustic_1-mastered.mp3", composition=composition1, user_id=user1.id)
-    track2 = Track(title="Methronome", path=f"compositions/{composition1.id}/methronome_110.mp3", composition=composition1, user_id=user1.id)
+    track1 = Track(title="Acoustic", path=f"compositions/{composition1.id}/acoustic_1-mastered.mp3", composition=composition1, user_id=user1.id, uuid=shortuuid.uuid())
+    track2 = Track(title="Methronome", path=f"compositions/{composition1.id}/methronome_110.mp3", composition=composition1, user_id=user1.id, uuid=shortuuid.uuid())
 
     db.session.add_all({track1, track2})
     db.session.commit()
