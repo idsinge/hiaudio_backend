@@ -66,10 +66,14 @@ def deletetrack(id):
         user_auth = current_user.get_id() and int(current_user.get_id())
         role = UserRole.none.value   
         composition = Composition.query.get_or_404(track.composition_id)         
-        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()                
+        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first() 
+        if(composition.opentocontrib):
+            role = UserRole.member.value
+        if(composition.user_id == user_auth):
+            role = UserRole.owner.value
         if(iscontributor is not None):
             role = iscontributor.role.value                                           
-        if ((track.user_id == user_auth) or (UserRole.owner.value <= role <= UserRole.admin.value) or (composition.user.id == user_auth)):
+        if ((UserRole.owner.value <= role <= UserRole.admin.value) or (track.user_id == user_auth)):
             deletefromdb(track)
             return jsonify({"ok":"true", "result":track.id, "role":role })
         else:
