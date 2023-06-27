@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from orm import db, UserRole, Track, Composition, Contributor, CompPrivacy
 from flask_login import (current_user, login_required)
 from flask_cors import cross_origin
+import shortuuid
 
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'm4a'}
 CURRENTDIR = os.path.abspath(os.path.dirname(__file__))
@@ -24,20 +25,18 @@ def deletefromdb(trackinfo):
     db.session.delete(trackinfo)
     db.session.commit()
 
-@track.route('/trackfile/<int:id>')
+@track.route('/trackfile/<string:uuid>')
 @cross_origin()
-def trackfile(id):
+def trackfile(uuid):
     
-    track = Track.query.get(id)
+    track = Track.query.filter_by(uuid=uuid).first()
     if(track is None):
         return jsonify({"error":"track not found"})
     else:
         user_auth = current_user.get_id() and int(current_user.get_id())            
         composition = Composition.query.get(track.composition_id)
         privacy = composition.privacy
-        if(privacy.value == CompPrivacy.public.value):
-            return send_from_directory( DATA_BASEDIR, track.path )
-        elif ((privacy.value == CompPrivacy.onlyreg.value) and (user_auth is not None)):
+        if((privacy.value == CompPrivacy.public.value) or ((privacy.value == CompPrivacy.onlyreg.value) and (user_auth is not None))):
             return send_from_directory( DATA_BASEDIR, track.path )
         elif ((privacy.value == CompPrivacy.onlyreg.value) and (user_auth is None)):
             return jsonify({"error":"user not authorized"})
@@ -54,11 +53,11 @@ def trackfile(id):
             else:
                 return jsonify({"error":"user not authorized"})
 
-@track.route('/deletetrack/<int:id>', methods=['DELETE'])
+@track.route('/deletetrack/<string:uuid>', methods=['DELETE'])
 @login_required
 @cross_origin()
-def deletetrack(id):
-    track = Track.query.get(id)
+def deletetrack(uuid):
+    track = Track.query.filter_by(uuid=uuid).first()
 
     if(track is None):
         return jsonify({"error":"track not found"})
@@ -75,7 +74,7 @@ def deletetrack(id):
             role = iscontributor.role.value                                           
         if ((UserRole.owner.value <= role <= UserRole.admin.value) or (track.user_id == user_auth)):
             deletefromdb(track)
-            return jsonify({"ok":"true", "result":track.id, "role":role })
+            return jsonify({"ok":True, "result":track.id, "role":role })
         else:
             return jsonify({"error":"not permission to delete"})
 
@@ -84,8 +83,8 @@ def deletetrack(id):
 @login_required
 def fileupload():
     user_auth = current_user.get_id() and int(current_user.get_id())
-    compositionid = request.form['composition_id']
-    composition = Composition.query.get_or_404(compositionid)
+    comp_uuid = request.form['composition_id']
+    composition = Composition.query.filter_by(uuid=comp_uuid).first()
     role = UserRole.none.value
     istheowner = composition.user.id == user_auth
     isopen = composition.opentocontrib
@@ -102,22 +101,22 @@ def fileupload():
 
         if thefile and allowed_file(thefile.filename):
             filename = secure_filename(thefile.filename)
-            trackpath = f"compositions/{compositionid}/{filename}"
+            trackpath = f"compositions/{composition.id}/{filename}"
             fullpath = os.path.join(DATA_BASEDIR, trackpath )
 
             os.makedirs(os.path.dirname(fullpath), exist_ok=True);
 
             thefile.save( fullpath )
-
-            newtrack = Track(title=filename, path=trackpath, composition=composition, user_id=user_auth)
+            ## TODO: check uuid is not duplicated
+            newtrack = Track(title=filename, path=trackpath, composition=composition, user_id=user_auth, uuid=shortuuid.uuid())
             db.session.add(newtrack)
             db.session.commit()
             data=newtrack.to_dict( rules=('-path',) )
             respinfo ={"message":{
-                "audio":{"compositionid":compositionid, "title":filename, "path":trackpath, "file_unique_id":data['id'], "user_id":user_auth}},
+                "audio":{"compositionid":comp_uuid, "title":filename, "path":trackpath, "file_unique_id":data['uuid'], "user_id":user_auth}},
                 "date":"123456789",
                 "message_id":"messageid"}
-            return jsonify({"ok":"true", "result":respinfo})
+            return jsonify({"ok":True, "result":respinfo})
         else:
             return jsonify({"error":"type not allowed"})
     else:
