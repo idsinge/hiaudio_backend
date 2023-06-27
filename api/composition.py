@@ -5,6 +5,7 @@ from api.track import DATA_BASEDIR
 from orm import db, User, UserRole, CompPrivacy, Composition, Contributor
 from flask_login import (current_user, login_required)
 from flask_cors import cross_origin
+import shortuuid
 
 comp = Blueprint('comp', __name__)
 
@@ -35,36 +36,40 @@ def compositions():
 # if privacy= 2 (onlyreg) or 3 (private), and not logged => not accesible
 # if privacy=3 (private) and not either owner/contributor => not accesible
 
-@comp.route('/composition/<int:id>')
+@comp.route('/composition/<string:uuid>')
 @cross_origin()
-def composition(id):
+def composition(uuid):
     user_auth = current_user.get_id() and int(current_user.get_id())
-    composition = Composition.query.get_or_404(id)
-    if ((user_auth is None) and ((composition.privacy.value == CompPrivacy.onlyreg.value) or (composition.privacy.value == CompPrivacy.private.value))):
-        return jsonify({"error":"composition not accesible"})
+    composition = Composition.query.filter_by(uuid=uuid).first()
+    if(composition is None):
+        return jsonify({"error":"composition not found"})
     else:
-        owner = composition.user.id == user_auth
-        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
-        role = UserRole.none.value
-        isopen = composition.opentocontrib
-        if(isopen):
-            if (user_auth is None):
-                role = UserRole.none.value
-            else:
-                role = UserRole.member.value
-        if(composition.user.id == user_auth):
-              role = UserRole.owner.value          
-        if(iscontributor is not None):
-            role = iscontributor.role.value            
-        if((composition.privacy.value == CompPrivacy.private.value) and (composition.user.id != user_auth) and (role == UserRole.none.value)):
+        if ((user_auth is None) and ((composition.privacy.value == CompPrivacy.onlyreg.value) or (composition.privacy.value == CompPrivacy.private.value))):
             return jsonify({"error":"composition not accesible"})
         else:
-            data = composition.to_dict( rules=('-path',) )
-            data['owner'] = owner
-            data['role'] = role
-            data['viewer_id'] = user_auth
-            jcomposition = jsonify(data)
-            return jcomposition
+            owner = composition.user.id == user_auth
+            iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
+            role = UserRole.none.value
+            isopen = composition.opentocontrib
+            if(isopen):
+                if (user_auth is None):
+                    role = UserRole.none.value
+                else:
+                    role = UserRole.member.value
+            if(composition.user.id == user_auth):
+                role = UserRole.owner.value        
+            if(iscontributor is not None):
+                role = iscontributor.role.value            
+                        
+            if((composition.privacy.value == CompPrivacy.private.value) and (composition.user.id != user_auth) and (role == UserRole.none.value)):
+                return jsonify({"error":"composition not accesible"})
+            else:
+                data = composition.to_dict( rules=('-path',) )
+                data['owner'] = owner
+                data['role'] = role
+                data['viewer_id'] = user_auth
+                jcomposition = jsonify(data)
+                return jcomposition
 
 @comp.route('/newcomposition', methods=['POST'])
 @login_required
@@ -75,7 +80,8 @@ def newcomposition():
         privacy = request.get_json()["privacy_level"]
         if(privacy and (privacy is not None) and (CompPrivacy.public.value <= int(privacy) <= CompPrivacy.private.value)):
             user = User.query.get(current_user.get_id())
-            composition = Composition(title=title, user=user, privacy=CompPrivacy(int(privacy)).name)
+            ## TODO: check uuid is not duplicated
+            composition = Composition(title=title, user=user, privacy=CompPrivacy(int(privacy)).name, uuid=shortuuid.uuid())
             db.session.add(composition)
             db.session.commit()
             return jsonify(composition=composition.to_dict( rules=('-path',) ))
@@ -91,25 +97,30 @@ def deletecompfolder(compid):
     if os.path.exists(fullpath):     
         shutil.rmtree(fullpath)
 
-@comp.route('/deletecomposition/<int:id>', methods=['DELETE'])
+@comp.route('/deletecomposition/<string:uuid>', methods=['DELETE'])
 @login_required
 @cross_origin()
-def deletecomposition(id):
+def deletecomposition(uuid):
     user_auth = current_user.get_id() and int(current_user.get_id())
-    composition =  Composition.query.get_or_404(id)
-    iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
-    role = UserRole.none.value
-    if(composition.user.id == user_auth):
-        role = UserRole.owner.value        
-    if(iscontributor is not None):
-        role = iscontributor.role.value    
-    if(role == UserRole.owner.value):       
-        deletecompfolder(id)
-        db.session.delete(composition)
-        db.session.commit()
-        return jsonify({"ok":"true", "result": "composition deleted successfully"})
+    composition = Composition.query.filter_by(uuid=uuid).first()
+    if(composition is None):
+        return jsonify({"error":"composition not found"})
     else:
-        return jsonify({"error":"user is not authorized"})
+        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
+        
+        role = UserRole.none.value
+        if(composition.user.id == user_auth):
+            role = UserRole.owner.value    
+        if(iscontributor is not None):
+            role = iscontributor.role.value            
+
+        if(role == UserRole.owner.value):   
+            deletecompfolder(composition.id)
+            db.session.delete(composition)
+            db.session.commit()
+            return jsonify({"ok":True, "result": "composition deleted successfully"})
+        else:
+            return jsonify({"error":"user is not authorized"})
 
 @comp.route('/updateprivacy', methods=['PATCH'])
 @login_required
@@ -135,21 +146,25 @@ def updatecomptocontrib():
     return updatecompfield('opentocontrib')
 
 def updatecompfield(field):
-    compid = request.get_json()['id']
-    fieldvalue = request.get_json()[field]
-    if(field == 'privacy'):        
-        fieldvalue = CompPrivacy(int(fieldvalue)).name
-    user_auth = current_user.get_id() and int(current_user.get_id())
-    composition =  Composition.query.get_or_404(compid)
-    iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
-    role = UserRole.none.value
-    if(composition.user.id == user_auth):
-        role = UserRole.owner.value          
-    if(iscontributor is not None):
-        role = iscontributor.role.value    
-    if(role == UserRole.owner.value):        
-        setattr(composition, field, fieldvalue)
-        db.session.commit()
-        return jsonify({"ok":"true", "result": field + " updated successfully"})
+    comp_uuid = request.get_json()['uuid']   
+    composition = Composition.query.filter_by(uuid=comp_uuid).first()
+    if(composition is None):
+        return jsonify({"error":"composition not found"})
     else:
-        return jsonify({"error":"not possible to update composition field " + field})
+        ## TODO: wrap in try catch and send error, for example for invalid Privacy
+        fieldvalue = request.get_json()[field]
+        if(field == 'privacy'):        
+            fieldvalue = CompPrivacy(int(fieldvalue)).name
+        user_auth = current_user.get_id() and int(current_user.get_id())
+        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
+        role = UserRole.none.value
+        if(composition.user.id == user_auth):
+            role = UserRole.owner.value          
+        if(iscontributor is not None):
+            role = iscontributor.role.value    
+        if(role == UserRole.owner.value):        
+            setattr(composition, field, fieldvalue)
+            db.session.commit()
+            return jsonify({"ok":True, "result": field + " updated successfully"})
+        else:
+            return jsonify({"error":"not possible to update composition field " + field})
