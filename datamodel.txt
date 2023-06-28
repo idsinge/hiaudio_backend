@@ -5,6 +5,8 @@
 - users/
   - <userid>
     - userinfo/
+    - collections/
+      - <collectionid>/
     - compositions/
       - <compositionid>/
         - tracks/
@@ -14,49 +16,50 @@
 
 
 User:
- - id 
- - name
+ - id  
  - uid
- - profile_pic
- - compositions
- - userinfo
 
 UserInfo:
- - id 
+ - id
+ - user_id (duplicated) 
+ - name
+ - profile_pic
  - google_uid
  - google_name
  - google_email
  - google_profile_pic
 
+Collection:
+- id
+- uuid
+- privacy
+- title
+- user_id
+- parent_id
+- compositions
+
 Composition:
  - id
- - userid
+ - uuid
+ - user_id
  - title
+ - collection_id
  - privacy (1=Public, 2=Only Reg, 3=Private)
+ - opentocontrib
  - contributors
  - tracks
 
 Track:
  - id
- - compositionid
+ - uuid
+ - composition_id
  - title
+ - user_id
  - path
 
 Contributor:
  - id
- - userid
+ - user_id
+ - user_uid
+ - composition_id
  - role (0=None, 1=Owner, 2=Admin, 3=Member, 4=Guest)
-
----
-
-Perm:
- - id
- - userid   [null=wildcard]
- - groupid  [null=wildcard]
- - compositionid
- - read?
- - write?
-
-Group:
- - id
- - name
