@@ -14,6 +14,7 @@ import api.composition
 import api.track
 import api.contributor
 import api.user
+import api.collection
 
 import config
 
@@ -24,6 +25,8 @@ app.register_blueprint(api.user.user)
 app.register_blueprint(api.composition.comp)
 app.register_blueprint(api.track.track)
 app.register_blueprint(api.contributor.contrib)
+app.register_blueprint(api.collection.coll)
+
 # allow uploads up to 50MB
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1000 * 1000
 cors = CORS(app)

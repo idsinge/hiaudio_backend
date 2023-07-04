@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
-from orm import db, UserRole, Track, Composition, Contributor, CompPrivacy
+from orm import db, UserRole, Track, Composition, Contributor, LevelPrivacy
 from flask_login import (current_user, login_required)
 from flask_cors import cross_origin
 import shortuuid
@@ -36,9 +36,9 @@ def trackfile(uuid):
         user_auth = current_user.get_id() and int(current_user.get_id())            
         composition = Composition.query.get(track.composition_id)
         privacy = composition.privacy
-        if((privacy.value == CompPrivacy.public.value) or ((privacy.value == CompPrivacy.onlyreg.value) and (user_auth is not None))):
+        if((privacy.value == LevelPrivacy.public.value) or ((privacy.value == LevelPrivacy.onlyreg.value) and (user_auth is not None))):
             return send_from_directory( DATA_BASEDIR, track.path )
-        elif ((privacy.value == CompPrivacy.onlyreg.value) and (user_auth is None)):
+        elif ((privacy.value == LevelPrivacy.onlyreg.value) and (user_auth is None)):
             return jsonify({"error":"user not authorized"})
         else:            
             role = UserRole.none.value    
