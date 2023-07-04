@@ -12,7 +12,7 @@ class UserRole(enum.Enum):
     member = 3
     guest = 4
 
-class CompPrivacy(enum.Enum):
+class LevelPrivacy(enum.Enum):
     public = 1
     onlyreg = 2
     private = 3
@@ -53,7 +53,7 @@ class Collection(db.Model, SerializerMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     uuid = db.Column(db.String(22), nullable=False, unique=True, default=shortuuid.uuid())
-    privacy = db.Column(Enum(CompPrivacy), nullable=False, default=CompPrivacy.public.value)
+    privacy = db.Column(Enum(LevelPrivacy), nullable=False, default=LevelPrivacy.public.value)
     title = db.Column(db.String(100))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))   
     
@@ -69,7 +69,7 @@ class Composition(db.Model, SerializerMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     uuid = db.Column(db.String(22), nullable=False, unique=True, default=shortuuid.uuid())
-    privacy = db.Column(Enum(CompPrivacy), nullable=False, default=CompPrivacy.public.value)
+    privacy = db.Column(Enum(LevelPrivacy), nullable=False, default=LevelPrivacy.public.value)
     title = db.Column(db.String(100))
     tracks = db.relationship('Track', backref='composition', cascade="all, delete-orphan")
 

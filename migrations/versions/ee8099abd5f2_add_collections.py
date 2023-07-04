@@ -21,7 +21,7 @@ def upgrade():
     op.create_table('collection',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('uuid', sa.String(length=22), nullable=False),
-    sa.Column('privacy', sa.Enum('public', 'onlyreg', 'private', name='compprivacy'), nullable=False),
+    sa.Column('privacy', sa.Enum('public', 'onlyreg', 'private', name='levelprivacy'), nullable=False),
     sa.Column('title', sa.String(length=100), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('parent_id', sa.Integer(), nullable=True),

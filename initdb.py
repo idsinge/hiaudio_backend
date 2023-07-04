@@ -1,5 +1,5 @@
 from app import app, DB_FILE
-from orm import db, Composition, Track, User, UserInfo, Contributor, UserRole, CompPrivacy, Collection
+from orm import db, Composition, Track, User, UserInfo, Contributor, UserRole, LevelPrivacy, Collection
 import os
 import shortuuid
 
@@ -30,18 +30,18 @@ with app.app_context():
 
     db.session.commit()
 
-    collection1 = Collection(title="Collection1", user=user1, privacy=CompPrivacy.private, uuid=shortuuid.uuid())
+    collection1 = Collection(title="Collection1", user=user1, privacy=LevelPrivacy.private, uuid=shortuuid.uuid())
 
     db.session.add(collection1)
     db.session.commit()
 
-    collection2 = Collection(title="Collection2", user=user1, privacy=CompPrivacy.private, uuid=shortuuid.uuid(), parent_id=collection1.id)
+    collection2 = Collection(title="Collection2", user=user1, privacy=LevelPrivacy.private, uuid=shortuuid.uuid(), parent_id=collection1.id)
 
     db.session.add(collection2)
     db.session.commit()
 
     comp_uuid = shortuuid.uuid()
-    composition1 = Composition(title="ADASP", user=user1, privacy=CompPrivacy.private, opentocontrib=0, uuid=comp_uuid, collection=collection1)
+    composition1 = Composition(title="ADASP", user=user1, privacy=LevelPrivacy.private, opentocontrib=0, uuid=comp_uuid, collection=collection1)
 
     db.session.add(composition1)
     db.session.commit()
