@@ -134,10 +134,10 @@ def deletecomposition(uuid):
         else:
             return jsonify({"error":"user is not authorized"})
 
-@comp.route('/updateprivacy', methods=['PATCH'])
+@comp.route('/updatecompprivacy', methods=['PATCH'])
 @login_required
 @cross_origin()
-def updateprivacy():
+def updatecompprivacy():
    # TODO: From API perspective, if the composition is Open To Contribution 
    # it should not be possible to set privacy level to 3 (private)
    # according to UI interaction
