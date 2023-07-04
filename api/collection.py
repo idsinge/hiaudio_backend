@@ -164,7 +164,7 @@ def updatecollparent():
                                     return jsonify({"ok":True, "result": "parent moved down successfully and children new parent"})
                                 except Exception as e:
                                     db.session.rollback()
-                                    jsonify({"error":"error updating parent in children"})
+                                    return jsonify({"error":"error updating parent in children"})
                             else:                       
     
                                 setattr(current_collection, "parent_id", parent_collection.id)                
@@ -180,7 +180,7 @@ def updatecollparent():
             return jsonify({"error":"wrong collection or user"})       
   
     else:
-        jsonify({"error":"user not authorized"})
+        return jsonify({"error":"user not authorized"})
 
 def updatecollfield(field, fieldvalue):
     if current_user.is_authenticated:
@@ -195,9 +195,9 @@ def updatecollfield(field, fieldvalue):
                 db.session.commit()
                 return jsonify({"ok":True, "result": field + " updated successfully"})
             else:
-                jsonify({"error":"user not authorized"})  
+                return jsonify({"error":"user not authorized"})  
     else:
-        jsonify({"error":"user not authorized"})
+        return jsonify({"error":"user not authorized"})
     
 
 @coll.route('/deletecollection/<string:uuid>', methods=['DELETE'])

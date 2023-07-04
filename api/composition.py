@@ -160,9 +160,15 @@ def updatecomptocontrib():
 @comp.route('/updatecompcollection', methods=['PATCH'])
 @login_required
 @cross_origin()
-def updatecompcollection():   
-    return updatecompfield('collection_id')
-    
+def updatecompcollection():
+    # TODO: issue-150 other users with owner role can update collection too
+    user_auth = current_user.get_id() and int(current_user.get_id()) 
+    coll_id = request.get_json()['collection_id']   
+    collection = Collection.query.filter_by(uuid=coll_id).first()
+    if((coll_id == '' or coll_id == None) or(collection is not None and collection.user.id == user_auth)):
+        return updatecompfield('collection_id')
+    else:
+        return jsonify({"error":"user not authorized or collection not found"})  
 
 def updatecompfield(field):
     comp_uuid = request.get_json()['uuid']   
