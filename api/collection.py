@@ -58,6 +58,18 @@ def collectionsbyuser(uid):
             else:
                 return jsonify({"error":"user uid not found"})   
 
+
+@coll.route('/mycollections')
+@login_required
+@cross_origin()
+def mycollections():
+    if current_user.is_authenticated:
+        all_collections = Collection.query.filter_by(user_id=current_user.get_id()).all()            
+        jcollections = jsonify(all_collections=[ collection.to_dict( rules=('-id','-compositions',) ) for collection in all_collections])
+        return jcollections         
+    else:
+        return jsonify({"error":"not authenticated"}) 
+
 @coll.route('/newcollection', methods=['POST'])
 @login_required
 @cross_origin()
