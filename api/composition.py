@@ -64,7 +64,10 @@ def composition(uuid):
             if((composition.privacy.value == LevelPrivacy.private.value) and (composition.user.id != user_auth) and (role == UserRole.none.value)):
                 return jsonify({"error":"composition not accesible"})
             else:
-                data = composition.to_dict( rules=('-path','-collection') )
+                data = composition.to_dict( rules=('-path','-collection') )                
+                if(data['collection_id']):
+                    coll = Collection.query.get(data['collection_id'])
+                    data['collection_id'] = coll.uuid                    
                 data['owner'] = owner
                 data['role'] = role
                 data['viewer_id'] = user_auth
