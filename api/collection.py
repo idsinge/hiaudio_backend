@@ -58,6 +58,36 @@ def collectionsbyuser(uid):
             else:
                 return jsonify({"error":"user uid not found"})   
 
+def get_collection_hierarchy(collection):
+    subcollections = Collection.query.filter_by(parent_id=collection.id).all()
+    return {        
+        'uuid': collection.uuid,
+        'privacy': collection.privacy.value,
+        'title': collection.title,
+        'compositions': [get_composition_hierarchy(composition) for composition in collection.compositions],
+        'collections': [get_collection_hierarchy(sub_collection) for sub_collection in subcollections]
+    }
+
+def get_composition_hierarchy(composition):
+    return {        
+        'uuid': composition.uuid,
+        'privacy': composition.privacy.value,
+        'title': composition.title,
+        #'tracks': [track.title for track in composition.tracks],
+        #'contributors': [contributor.name for contributor in composition.contributors],
+        'opentocontrib': composition.opentocontrib,
+    }
+
+@coll.route('/mycollectionsastree', methods=['GET'])
+@login_required
+@cross_origin()
+def mycollectionsastree():
+    if current_user.is_authenticated:
+        root_collections = Collection.query.filter_by(user_id=current_user.get_id(), parent_id=None).all()
+        collections_json = [get_collection_hierarchy(collection) for collection in root_collections]
+        return jsonify(collections_json)
+    else:
+        return jsonify({"error":"not authenticated"}) 
 
 @coll.route('/mycollections')
 @login_required
