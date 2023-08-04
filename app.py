@@ -52,19 +52,13 @@ db.init_app(app)
 
 @app.route('/')
 def index():
-    if current_user.is_authenticated:
-        # TODO: Find a different way to redirect to home page with auth
-        # It could be implemented at /compositions  API level by returning
-        # a param in the response
-        return redirect(request.base_url+"public/index.html?auth=true")
-    else:
-        return redirect(request.base_url+"public/index.html")
+    return page("index.html")
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):
-    filename = filename or 'public/index.html'
+    filename = filename or 'index.html'
     if request.method == 'GET':
-        return send_from_directory('.', filename)
+        return send_from_directory(os.path.join(config.BASEDIR, "public"), filename)
 
     return jsonify(request.data)
 

@@ -1,11 +1,11 @@
 import os
 import shutil
 from flask import Blueprint, request, jsonify
-from api.track import DATA_BASEDIR
 from orm import db, User, UserRole, LevelPrivacy, Composition, Contributor, Collection
 from flask_login import (current_user, login_required)
 from flask_cors import cross_origin
 import shortuuid
+import config
 
 comp = Blueprint('comp', __name__)
 
@@ -16,16 +16,16 @@ def compositions():
     allcompositions = Composition.query.all()
     compositions = []
     for comp in allcompositions:
-        if ((user_auth is None) and (comp.privacy.value == LevelPrivacy.public.value)):           
+        if ((user_auth is None) and (comp.privacy.value == LevelPrivacy.public.value)):
             compositions.append(comp)
         else:
-            if((comp.privacy.value != LevelPrivacy.private.value ) and (user_auth is not None)):                
+            if((comp.privacy.value != LevelPrivacy.private.value ) and (user_auth is not None)):
                 compositions.append(comp)
             else:
                 if(comp.user.id == user_auth):
                     compositions.append(comp)
-                else:                    
-                    iscontributor = Contributor.query.filter_by(composition_id=comp.id, user_id=user_auth).first()                    
+                else:
+                    iscontributor = Contributor.query.filter_by(composition_id=comp.id, user_id=user_auth).first()
                     if(iscontributor is not None):
                         compositions.append(comp)
 
@@ -48,7 +48,7 @@ def composition(uuid):
             return jsonify({"error":"composition not accesible"})
         else:
             owner = composition.user.id == user_auth
-            iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
+            iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
             role = UserRole.none.value
             isopen = composition.opentocontrib
             if(isopen):
@@ -57,17 +57,17 @@ def composition(uuid):
                 else:
                     role = UserRole.member.value
             if(composition.user.id == user_auth):
-                role = UserRole.owner.value        
+                role = UserRole.owner.value
             if(iscontributor is not None):
-                role = iscontributor.role.value            
-                        
+                role = iscontributor.role.value
+
             if((composition.privacy.value == LevelPrivacy.private.value) and (composition.user.id != user_auth) and (role == UserRole.none.value)):
                 return jsonify({"error":"composition not accesible"})
             else:
-                data = composition.to_dict( rules=('-path','-collection') )                
+                data = composition.to_dict( rules=('-path','-collection') )
                 if(data['collection_id']):
                     coll = Collection.query.get(data['collection_id'])
-                    data['collection_id'] = coll.uuid                    
+                    data['collection_id'] = coll.uuid
                 data['owner'] = owner
                 data['role'] = role
                 data['viewer_id'] = user_auth
@@ -79,20 +79,20 @@ def composition(uuid):
 @cross_origin()
 def newcomposition():
     if current_user.is_authenticated:
-        user_auth = current_user.get_id() and int(current_user.get_id())        
+        user_auth = current_user.get_id() and int(current_user.get_id())
         title = request.get_json()["title"]
         privacy = request.get_json()["privacy_level"]
         collection=None
         try:
             parent_uuid = request.get_json()["parent_uuid"]
-        except KeyError:      
+        except KeyError:
             parent_uuid = None
         if(parent_uuid):
                 parent=Collection.query.filter_by(uuid=parent_uuid).first()
                 if(parent and parent.user_id == user_auth):
                     collection=parent
                 else:
-                    return jsonify({"error":"wrong parent uuid"})  
+                    return jsonify({"error":"wrong parent uuid"})
         if(privacy and (privacy is not None) and (LevelPrivacy.public.value <= int(privacy) <= LevelPrivacy.private.value)):
             user = User.query.get(current_user.get_id())
             ## TODO: check uuid is not duplicated
@@ -107,9 +107,9 @@ def newcomposition():
         return jsonify({"error":"not authenticated"})
 
 def deletecompfolder(compid):
-    compositionpath = f"compositions/{compid}/"        
-    fullpath = os.path.join(DATA_BASEDIR, compositionpath )
-    if os.path.exists(fullpath):     
+    compositionpath = f"compositions/{compid}/"
+    fullpath = os.path.join(config.DATA_BASEDIR, compositionpath )
+    if os.path.exists(fullpath):
         shutil.rmtree(fullpath)
 
 @comp.route('/deletecomposition/<string:uuid>', methods=['DELETE'])
@@ -121,15 +121,15 @@ def deletecomposition(uuid):
     if(composition is None):
         return jsonify({"error":"composition not found"})
     else:
-        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
-        
+        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
+
         role = UserRole.none.value
         if(composition.user.id == user_auth):
-            role = UserRole.owner.value    
+            role = UserRole.owner.value
         if(iscontributor is not None):
-            role = iscontributor.role.value            
+            role = iscontributor.role.value
 
-        if(role == UserRole.owner.value):   
+        if(role == UserRole.owner.value):
             deletecompfolder(composition.id)
             db.session.delete(composition)
             db.session.commit()
@@ -141,11 +141,11 @@ def deletecomposition(uuid):
 @login_required
 @cross_origin()
 def updatecompprivacy():
-   # TODO: From API perspective, if the composition is Open To Contribution 
+   # TODO: From API perspective, if the composition is Open To Contribution
    # it should not be possible to set privacy level to 3 (private)
    # according to UI interaction
    # TODO: control the level of privacy is between 1 and 3
-   return updatecompfield('privacy')    
+   return updatecompfield('privacy')
 
 @comp.route('/updatecomptitle', methods=['PATCH'])
 @login_required
@@ -156,7 +156,7 @@ def updatecomptitle():
 @comp.route('/updatecomptocontrib', methods=['PATCH'])
 @login_required
 @cross_origin()
-def updatecomptocontrib():  
+def updatecomptocontrib():
     # TODO: control the value is boolean
     return updatecompfield('opentocontrib')
 
@@ -165,16 +165,16 @@ def updatecomptocontrib():
 @cross_origin()
 def updatecompcollection():
     # TODO: issue-150 other users with owner role can update collection too
-    user_auth = current_user.get_id() and int(current_user.get_id()) 
-    coll_id = request.get_json()['collection_id']   
+    user_auth = current_user.get_id() and int(current_user.get_id())
+    coll_id = request.get_json()['collection_id']
     collection = Collection.query.filter_by(uuid=coll_id).first()
     if((coll_id == '' or coll_id == None) or(collection is not None and collection.user.id == user_auth)):
         return updatecompfield('collection_id')
     else:
-        return jsonify({"error":"user not authorized or collection not found"})  
+        return jsonify({"error":"user not authorized or collection not found"})
 
 def updatecompfield(field):
-    comp_uuid = request.get_json()['uuid']   
+    comp_uuid = request.get_json()['uuid']
     composition = Composition.query.filter_by(uuid=comp_uuid).first()
     if(composition is None):
         return jsonify({"error":"composition not found"})
@@ -189,16 +189,16 @@ def updatecompfield(field):
                 fieldvalue = None
             else:
                 return jsonify({"error":"not valid collection"})
-        if(field == 'privacy'):        
+        if(field == 'privacy'):
             fieldvalue = LevelPrivacy(int(fieldvalue)).name
         user_auth = current_user.get_id() and int(current_user.get_id())
-        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()       
+        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
         role = UserRole.none.value
         if(composition.user.id == user_auth):
-            role = UserRole.owner.value          
+            role = UserRole.owner.value
         if(iscontributor is not None):
-            role = iscontributor.role.value    
-        if(role == UserRole.owner.value):        
+            role = iscontributor.role.value
+        if(role == UserRole.owner.value):
             setattr(composition, field, fieldvalue)
             db.session.commit()
             return jsonify({"ok":True, "result": field + " updated successfully"})
