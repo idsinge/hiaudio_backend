@@ -9,6 +9,8 @@ from flask_login import (
     current_user
 )
 
+from admin import HiAdmin
+
 import api.auth
 import api.composition
 import api.track
@@ -46,7 +48,7 @@ migrate = Migrate(app, db)
 # Flask-Login helper to retrieve a user from our db
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(user_id)
+    return db.session.get(User, user_id)
 
 db.init_app(app)
 
@@ -61,6 +63,10 @@ def page(filename):
         return send_from_directory(os.path.join(config.BASEDIR, "public"), filename)
 
     abort(404, description="Resource not found")
+
+
+HiAdmin(app, db)
+
 
 # FOR HTTPS
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ from flask_cors import cross_origin
 
 user = Blueprint('user', __name__)
 
-def custom_error(message, status_code): 
+def custom_error(message, status_code):
     return make_response(jsonify(message), status_code)
 
 @user.route('/profile')
@@ -18,40 +18,42 @@ def profile():
     else:
         return jsonify({"ok":False})
 
-@user.route('/users')
-@cross_origin()
-def users():
-    users = User.query.all()
-    jusers = jsonify(users=[ user.to_dict( rules=('-id','-compositions', '-userinfo') ) for user in users])
-    return jusers
 
-@user.route('/user/<string:uid>')
-def userbyuid(uid):
-    user = User.query.filter_by(uid=uid).first()    
-    if(user is not None):
-        juser = jsonify(user.to_dict( rules=('-path', '-id', '-userinfo') ))
-        return juser
-    else:
-        return jsonify({"error":"Not Found"})
+# # unused for now, need access control
+# @user.route('/users')
+# @cross_origin()
+# def users():
+#     users = User.query.all()
+#     jusers = jsonify(users=[ user.to_dict( rules=('-id','-compositions', '-userinfo', '-collections') ) for user in users])
+#     return jusers
+
+# @user.route('/user/<string:uid>')
+# def userbyuid(uid):
+#     user = User.query.filter_by(uid=uid).first()
+#     if(user is not None):
+#         juser = jsonify(user.to_dict( rules=('-id', '-userinfo', '-compositions.collection', '-collections.compositions') ))
+#         return juser
+#     else:
+#         return jsonify({"error":"Not Found"})
 
 @user.route('/deleteuser/<string:uid>', methods=['DELETE'])
 @cross_origin()
 @login_required
 def deleteuser(uid):
-    if current_user.is_authenticated: 
+    if current_user.is_authenticated:
         user_auth = current_user.get_id()
-        user = User.query.get_or_404(user_auth)    
-        if(user.uid == uid): 
-            # TODO: in the future (when implmented) delete also all collections 
+        user = User.query.get_or_404(user_auth)
+        if(user.uid == uid):
+            # TODO: in the future (when implmented) delete also all collections
             ## NOTE: If it was contributor at other compositions
-            ## the data files will remain 
+            ## the data files will remain
             compositions = Composition.query.filter_by(user_id=user_auth).all()
-            if(len(compositions)):           
-                for comp in compositions:                                    
-                    deletecompfolder(comp.id)                 
+            if(len(compositions)):
+                for comp in compositions:
+                    deletecompfolder(comp.id)
             db.session.delete(user)
-            db.session.commit()         
-                      
+            db.session.commit()
+
             return jsonify({"ok":True, "result":"user deleted successfully"})
         else:
             return jsonify({"error":"not allowed"})
@@ -70,14 +72,14 @@ def checkuser(info):
         user = User.query.filter_by(uid=info).first()
         if(user is not None):
             userid = user.uid
-            result = jsonify({"ok":True, "user_uid":userid})       
+            result = jsonify({"ok":True, "user_uid":userid})
     elif (re.search(r'@gmail.', info)):
         user = UserInfo.query.filter_by(google_email=info).first()
         if(user is not None):
-            result = jsonify({"ok":True, "user_uid":user.google_uid})        
+            result = jsonify({"ok":True, "user_uid":user.google_uid})
     else:
         user = UserInfo.query.filter_by(name=info).first()
-        if user:         
+        if user:
             userid = user.google_uid
             result = jsonify({"ok":True, "user_uid":user.google_uid})
 
@@ -87,5 +89,5 @@ def checkuser(info):
         ownerid = current_user.get_id() and int(current_user.get_id())
         if(userid == ownerid):
             result = custom_error({"error":"Same User"}, 403)
-    
+
     return result
