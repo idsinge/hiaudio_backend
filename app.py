@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, redirect, jsonify, send_from_directory
+from flask import Flask, request, redirect, jsonify, send_from_directory, abort
 from flask_migrate import Migrate
 from flask_cors import CORS
 from orm import db, User
@@ -60,7 +60,7 @@ def page(filename):
     if request.method == 'GET':
         return send_from_directory(os.path.join(config.BASEDIR, "public"), filename)
 
-    return jsonify(request.data)
+    abort(404, description="Resource not found")
 
 # FOR HTTPS
 if __name__ == "__main__":
