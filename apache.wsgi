@@ -1,9 +1,10 @@
-APP_ROOT = "/home/ubuntu/musicplatform_mgmt"
+import sys, os
+from dotenv import load_dotenv
 
-import sys
+APP_ROOT = os.path.abspath(os.path.dirname(__file__))
+
 sys.path.insert(0, APP_ROOT)
 
-from dotenv import load_dotenv
-load_dotenv(APP_ROOT + "/.env")
+load_dotenv(os.path.join(APP_ROOT, ".env"))
 
 from app import app as application
