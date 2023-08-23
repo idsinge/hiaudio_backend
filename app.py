@@ -21,7 +21,8 @@ import api.collection
 import config
 
 DB_FILE = config.DB_FILE if hasattr(config, 'DB_FILE') else None
-app = Flask(__name__)
+app = Flask(__name__, static_folder=os.path.join(config.BASEDIR, "public", "static"))
+
 app.register_blueprint(api.auth.auth)
 app.register_blueprint(api.user.user)
 app.register_blueprint(api.composition.comp)
