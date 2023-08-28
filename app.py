@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, redirect, jsonify, send_from_directory
+from flask import Flask, request, redirect, jsonify, send_from_directory, abort
 from flask_migrate import Migrate
 from flask_cors import CORS
 from orm import db, User
@@ -8,6 +8,8 @@ from flask_login import (
     LoginManager,
     current_user
 )
+
+from admin import HiAdmin
 
 import api.auth
 import api.composition
@@ -19,7 +21,8 @@ import api.collection
 import config
 
 DB_FILE = config.DB_FILE if hasattr(config, 'DB_FILE') else None
-app = Flask(__name__)
+app = Flask(__name__, static_folder=os.path.join(config.BASEDIR, "public", "static"))
+
 app.register_blueprint(api.auth.auth)
 app.register_blueprint(api.user.user)
 app.register_blueprint(api.composition.comp)
@@ -46,27 +49,25 @@ migrate = Migrate(app, db)
 # Flask-Login helper to retrieve a user from our db
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(user_id)
+    return db.session.get(User, user_id)
 
 db.init_app(app)
 
 @app.route('/')
 def index():
-    if current_user.is_authenticated:
-        # TODO: Find a different way to redirect to home page with auth
-        # It could be implemented at /compositions  API level by returning
-        # a param in the response
-        return redirect(request.base_url+"public/index.html?auth=true")
-    else:
-        return redirect(request.base_url+"public/index.html")
+    return page("index.html")
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):
-    filename = filename or 'public/index.html'
+    filename = filename or 'index.html'
     if request.method == 'GET':
-        return send_from_directory('.', filename)
+        return send_from_directory(os.path.join(config.BASEDIR, "public"), filename)
 
-    return jsonify(request.data)
+    abort(404, description="Resource not found")
+
+
+HiAdmin(app, db)
+
 
 # FOR HTTPS
 if __name__ == "__main__":

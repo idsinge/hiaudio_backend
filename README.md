@@ -82,6 +82,18 @@ git clone https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp.git
 
 Then rename the folder `beatbytebot_webapp` to `webapp`
 
+Note: in dev it might be useful to temporarly ignore the contents of the public directory, this can be done with
+
+```
+# ignore public/ contents for git diff, grep, status, etc.
+git ls-files -z public/ | xargs -0 git update-index --skip-worktree
+
+# track the contents of public/ again (when commiting changes to it for example)
+git ls-files -z public/ | xargs -0 git update-index --no-skip-worktree
+```
+
+
+
 ### More info:
 1- https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally
 

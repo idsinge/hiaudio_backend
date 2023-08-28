@@ -1,6 +1,7 @@
 Flask
 Flask-Cors
 Flask-SQLAlchemy
+Flask-Admin
 SQLAlchemy
 SQLAlchemy-serializer
 oauthlib

@@ -16,13 +16,14 @@ class LevelPrivacy(enum.Enum):
     public = 1
     onlyreg = 2
     private = 3
-   
+
 db = SQLAlchemy()
 
 class User(db.Model, UserMixin, SerializerMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     uid = db.Column(db.String(100))
+    is_admin = db.Column(db.Boolean(), default=False)
     compositions = db.relationship('Composition', backref='user', cascade="all, delete-orphan")
     collections = db.relationship('Collection', backref='user', cascade="all, delete-orphan")
     userinfo = db.relationship('UserInfo', back_populates='user', cascade="all, delete-orphan")
@@ -42,7 +43,7 @@ class UserInfo(db.Model, SerializerMixin):
     google_uid = db.Column(db.String(100))
     google_name = db.Column(db.String(100))
     google_email = db.Column(db.String(100))
-    google_profile_pic = db.Column(db.String(100))   
+    google_profile_pic = db.Column(db.String(100))
 
     def __repr__(self):
         return f'<UserInfo "{self.google_uid}">'
@@ -55,11 +56,11 @@ class Collection(db.Model, SerializerMixin):
     uuid = db.Column(db.String(22), nullable=False, unique=True, default=shortuuid.uuid())
     privacy = db.Column(Enum(LevelPrivacy), nullable=False, default=LevelPrivacy.public.value)
     title = db.Column(db.String(100))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))   
-    
-    parent_id = db.Column(db.Integer, db.ForeignKey('collection.id', ondelete='CASCADE'), nullable=True)    
-    compositions = db.relationship('Composition', backref='collection', cascade="all, delete-orphan")    
-    
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
+
+    parent_id = db.Column(db.Integer, db.ForeignKey('collection.id', ondelete='CASCADE'), nullable=True)
+    compositions = db.relationship('Composition', backref='collection', cascade="all, delete-orphan")
+
     def __repr__(self):
         return f'<Collection "{self.title}">'
 
