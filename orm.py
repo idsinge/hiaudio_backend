@@ -79,6 +79,8 @@ class Composition(db.Model, SerializerMixin):
     contributors = db.relationship('Contributor', backref='composition', cascade="all, delete-orphan")
     opentocontrib = db.Column(db.Boolean, nullable=False, server_default='0')
 
+    latency = db.Column(db.Integer, nullable=False, default=0)
+
     def __repr__(self):
         return f'<Composition "{self.title}">'
 
@@ -93,6 +95,7 @@ class Track(db.Model, SerializerMixin):
     path = db.Column(db.String(1024))
     user_id = db.Column(db.Integer)
     composition_id = db.Column(db.Integer, db.ForeignKey('composition.id', ondelete='CASCADE'))
+    latency = db.Column(db.Integer, nullable=False, default=0)
 
     def __repr__(self):
         return f'<Track "{self.title}">'

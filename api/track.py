@@ -80,6 +80,7 @@ def deletetrack(uuid):
 def fileupload():
     user_auth = current_user.get_id() and int(current_user.get_id())
     comp_uuid = request.form['composition_id']
+    latency = request.form.get('latency', 0)    
     composition = Composition.query.filter_by(uuid=comp_uuid).first()
     role = UserRole.none.value
     istheowner = composition.user.id == user_auth
@@ -104,7 +105,7 @@ def fileupload():
 
             thefile.save( fullpath )
             ## TODO: check uuid is not duplicated
-            newtrack = Track(title=filename, path=trackpath, composition=composition, user_id=user_auth, uuid=shortuuid.uuid())
+            newtrack = Track(title=filename, path=trackpath, composition=composition, user_id=user_auth, uuid=shortuuid.uuid(), latency=latency)
             db.session.add(newtrack)
             db.session.commit()
             data=newtrack.to_dict( rules=('-path',) )

@@ -160,6 +160,16 @@ def updatecomptocontrib():
     # TODO: control the value is boolean
     return updatecompfield('opentocontrib')
 
+@comp.route('/updatecomplatency', methods=['PATCH'])
+@login_required
+@cross_origin()
+def updatecomplatency():    
+    latency = request.get_json()['latency']
+    if isinstance(latency, int) and 0 <= latency <= config.MAX_LATENCY:
+        return updatecompfield('latency')
+    else:
+        return jsonify({"error":"latency value not valid"})
+
 @comp.route('/updatecompcollection', methods=['PATCH'])
 @login_required
 @cross_origin()

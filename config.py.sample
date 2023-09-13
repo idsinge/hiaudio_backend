@@ -3,6 +3,7 @@ import os
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 DATA_BASEDIR = os.path.join(BASEDIR, "../data/")
+MAX_LATENCY = 900
 
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'm4a'}
 
