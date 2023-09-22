@@ -1,4 +1,5 @@
 import os
+import time
 from flask import Blueprint, request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 from orm import db, UserRole, Track, Composition, Contributor, LevelPrivacy
@@ -14,7 +15,7 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in config.ALLOWED_EXTENSIONS
 
 def deletefromdb(trackinfo):
-    trackpath = f"compositions/{trackinfo.composition_id}/{trackinfo.title}"
+    trackpath = f"{trackinfo.path}"
     fullpath = os.path.join(config.DATA_BASEDIR, trackpath )
     if os.path.exists(fullpath):
         os.remove(fullpath)
@@ -97,7 +98,8 @@ def fileupload():
 
         if thefile and allowed_file(thefile.filename):
             filename = secure_filename(thefile.filename)
-            trackpath = f"compositions/{composition.id}/{filename}"
+            timestamp_prefix = str(int(time.time())) + "_"
+            trackpath = f"compositions/{composition.id}/{timestamp_prefix + filename}"
             fullpath = os.path.join(config.DATA_BASEDIR, trackpath )
 
             os.makedirs(os.path.dirname(fullpath), exist_ok=True);
