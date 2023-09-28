@@ -3,7 +3,7 @@ import os
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 DATA_BASEDIR = os.path.join(BASEDIR, "../data/")
-
+MAX_RECENT_COMPOSITIONS = 5
 ALLOWED_EXTENSIONS = {'wav', 'mp3', 'ogg', 'm4a'}
 
 

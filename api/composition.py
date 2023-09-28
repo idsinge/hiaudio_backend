@@ -33,6 +33,27 @@ def compositions():
     return jcompositions
 
 
+@comp.route('/recentcompositions')
+@cross_origin()
+def recentcompositions():
+    
+    allcompositions = Composition.query.filter_by(privacy=LevelPrivacy.public.value)
+    compositions = allcompositions.order_by(Composition.id.desc()).limit(config.MAX_RECENT_COMPOSITIONS)
+    jcompositions = jsonify(compositions=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in compositions])
+    return jcompositions
+
+@comp.route('/mycompositions')
+@login_required
+@cross_origin()
+def mycompositions():
+    if current_user.is_authenticated:
+        user_auth = current_user.get_id() and int(current_user.get_id())
+        allmycompositions = Composition.query.filter_by(user_id=user_auth)
+        jcompositions = jsonify(compositions=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in allmycompositions])
+        return jcompositions
+    else:        
+        return jsonify({"error":"not authenticated"})
+
 # if privacy= 2 (onlyreg) or 3 (private), and not logged => not accesible
 # if privacy=3 (private) and not either owner/contributor => not accesible
 
