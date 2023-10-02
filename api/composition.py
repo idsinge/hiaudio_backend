@@ -49,7 +49,29 @@ def mycompositions():
     if current_user.is_authenticated:
         user_auth = current_user.get_id() and int(current_user.get_id())
         allmycompositions = Composition.query.filter_by(user_id=user_auth)
-        jcompositions = jsonify(compositions=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in allmycompositions])
+        collaborations = get_my_collaborations(user_auth)
+        merged_comps = list(allmycompositions) + collaborations
+        jcompositions = jsonify(compositions=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in merged_comps])
+        return jcompositions
+    else:        
+        return jsonify({"error":"not authenticated"})
+
+def get_my_collaborations(user_auth):
+        compositions = []    
+        iscontributor = Contributor.query.filter_by(user_id=user_auth)        
+        for collab in iscontributor:
+            comp = Composition.query.get(collab.composition_id)
+            compositions.append(comp)
+        return  compositions
+
+@comp.route('/mycollaborations')
+@login_required
+@cross_origin()
+def mycollaborations():
+    if current_user.is_authenticated:
+        user_auth = current_user.get_id() and int(current_user.get_id())
+        compositions = get_my_collaborations(user_auth)
+        jcompositions = jsonify(mycollaborations=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in compositions])
         return jcompositions
     else:        
         return jsonify({"error":"not authenticated"})
