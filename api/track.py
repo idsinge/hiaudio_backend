@@ -3,7 +3,8 @@ import time
 from flask import Blueprint, request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 from orm import db, UserRole, Track, Composition, Contributor, LevelPrivacy
-from flask_login import (current_user, login_required)
+from flask_jwt_extended import current_user, jwt_required
+from api.auth import is_user_logged_in
 from flask_cors import cross_origin
 import shortuuid
 import config
@@ -30,7 +31,8 @@ def trackfile(uuid):
     if(track is None):
         return jsonify({"error":"track not found"})
     else:
-        user_auth = current_user.get_id() and int(current_user.get_id())
+        user = is_user_logged_in()
+        user_auth = user.id if not user is None else None
         composition = Composition.query.get(track.composition_id)
         privacy = composition.privacy
         if((privacy.value == LevelPrivacy.public.value) or ((privacy.value == LevelPrivacy.onlyreg.value) and (user_auth is not None))):
@@ -51,7 +53,7 @@ def trackfile(uuid):
                 return jsonify({"error":"user not authorized"})
 
 @track.route('/deletetrack/<string:uuid>', methods=['DELETE'])
-@login_required
+@jwt_required()
 @cross_origin()
 def deletetrack(uuid):
     track = Track.query.filter_by(uuid=uuid).first()
@@ -59,7 +61,7 @@ def deletetrack(uuid):
     if(track is None):
         return jsonify({"error":"track not found"})
     else:
-        user_auth = current_user.get_id() and int(current_user.get_id())
+        user_auth = current_user.id
         role = UserRole.none.value
         composition = Composition.query.get_or_404(track.composition_id)
         iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
@@ -77,9 +79,9 @@ def deletetrack(uuid):
 
 @track.route('/fileUpload', methods=['POST'])
 @cross_origin()
-@login_required
+@jwt_required()
 def fileupload():
-    user_auth = current_user.get_id() and int(current_user.get_id())
+    user_auth = current_user.id
     comp_uuid = request.form['composition_id']
     composition = Composition.query.filter_by(uuid=comp_uuid).first()
     role = UserRole.none.value

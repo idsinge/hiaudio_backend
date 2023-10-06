@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
-from flask_login import (current_user, login_required)
+from flask_jwt_extended import current_user, jwt_required
+from api.auth import is_user_logged_in
 from flask_cors import cross_origin
 from sqlalchemy import and_, or_
 from orm import db, User, Collection, LevelPrivacy
@@ -12,7 +13,8 @@ coll = Blueprint('coll', __name__)
 @coll.route('/collection/<string:uuid>')
 @cross_origin()
 def collection(uuid):
-    user_auth = current_user.get_id() and int(current_user.get_id())
+    user = is_user_logged_in()
+    user_auth = user.id if user else None
     collection = Collection.query.filter_by(uuid=uuid).first()
     if(collection is None):
         return jsonify({"error":"collection not found"})
@@ -30,7 +32,8 @@ def collection(uuid):
 @coll.route('/collectionsbyuser/<string:uid>')
 @cross_origin()
 def collectionsbyuser(uid):
-    user_auth = current_user.get_id() and int(current_user.get_id())
+    user = is_user_logged_in()
+    user_auth = user.id if user else None
     if(user_auth is None):
         # if it's not registered user show only public
         user = User.query.filter_by(uid=uid).first()
@@ -41,7 +44,7 @@ def collectionsbyuser(uid):
         else:
             return jsonify({"error":"user uid not found"})
     else:
-        _user = User.query.get(current_user.get_id())
+        _user = User.query.get(current_user.id)
 
         if(_user.uid == uid):
             # if it's the user itself show private too
@@ -79,58 +82,52 @@ def get_composition_hierarchy(composition):
     }
 
 @coll.route('/mycollectionsastree', methods=['GET'])
-@login_required
+@jwt_required()
 @cross_origin()
 def mycollectionsastree():
-    if current_user.is_authenticated:
-        root_collections = Collection.query.filter_by(user_id=current_user.get_id(), parent_id=None).all()
-        collections_json = [get_collection_hierarchy(collection) for collection in root_collections]
-        return jsonify(collections_json)
-    else:
-        return jsonify({"error":"not authenticated"})
+    root_collections = Collection.query.filter_by(user_id=current_user.id, parent_id=None).all()
+    collections_json = [get_collection_hierarchy(collection) for collection in root_collections]
+    return jsonify(collections_json)
+
 
 @coll.route('/mycollections')
-@login_required
+@jwt_required()
 @cross_origin()
 def mycollections():
-    if current_user.is_authenticated:
-        all_collections = Collection.query.filter_by(user_id=current_user.get_id()).all()
-        jcollections = jsonify(all_collections=[ collection.to_dict( rules=('-id','-compositions',) ) for collection in all_collections])
-        return jcollections
-    else:
-        return jsonify({"error":"not authenticated"})
+    all_collections = Collection.query.filter_by(user_id=current_user.id).all()
+    jcollections = jsonify(all_collections=[ collection.to_dict( rules=('-id','-compositions',) ) for collection in all_collections])
+    return jcollections
+
 
 @coll.route('/newcollection', methods=['POST'])
-@login_required
+@jwt_required()
 @cross_origin()
 def newcollection():
-    if current_user.is_authenticated:
-        user_auth = current_user.get_id() and int(current_user.get_id())
-        title = request.get_json()["title"]
-        privacy = request.get_json()["privacy_level"]
-        parent_uuid = request.get_json()["parent_uuid"]
-        if(privacy and (LevelPrivacy.public.value <= int(privacy) <= LevelPrivacy.private.value)):
-            user = User.query.get(current_user.get_id())
-            parent_id=None
-            if(parent_uuid):
-                parent=Collection.query.filter_by(uuid=parent_uuid).first()
-                if(parent and parent.user_id == user_auth):
-                    parent_id=parent.id
-                else:
-                    return jsonify({"error":"wrong parent uuid or not authorized"})
-            ## TODO: check uuid is not duplicated
-            coll_uuid=shortuuid.uuid()
-            collection = Collection(title=title, user=user, privacy=LevelPrivacy(int(privacy)).name, uuid=coll_uuid, parent_id=parent_id)
-            db.session.add(collection)
-            db.session.commit()
-            return jsonify({"ok":True, "uuid":coll_uuid})
-        else:
-            return jsonify({"error":"privacy value not valid"})
+    user_auth = current_user.id
+    title = request.get_json()["title"]
+    privacy = request.get_json()["privacy_level"]
+    parent_uuid = request.get_json()["parent_uuid"]
+    if(privacy and (LevelPrivacy.public.value <= int(privacy) <= LevelPrivacy.private.value)):
+        user = User.query.get(current_user.id)
+        parent_id=None
+        if(parent_uuid):
+            parent=Collection.query.filter_by(uuid=parent_uuid).first()
+            if(parent and parent.user_id == user_auth):
+                parent_id=parent.id
+            else:
+                return jsonify({"error":"wrong parent uuid or not authorized"})
+        ## TODO: check uuid is not duplicated
+        coll_uuid=shortuuid.uuid()
+        collection = Collection(title=title, user=user, privacy=LevelPrivacy(int(privacy)).name, uuid=coll_uuid, parent_id=parent_id)
+        db.session.add(collection)
+        db.session.commit()
+        return jsonify({"ok":True, "uuid":coll_uuid})
     else:
-        return jsonify({"error":"not authenticated"})
+        return jsonify({"error":"privacy value not valid"})
+
 
 @coll.route('/updatecolltitle', methods=['PATCH'])
-@login_required
+@jwt_required()
 @cross_origin()
 def updatecolltitle():
     title = request.get_json()["title"]
@@ -140,7 +137,7 @@ def updatecolltitle():
         return jsonify({"error":"wrong title value"})
 
 @coll.route('/updatecollprivacy', methods=['PATCH'])
-@login_required
+@jwt_required()
 @cross_origin()
 def updatecollprivacy():
     privacy = request.get_json()["privacy"]
@@ -167,66 +164,64 @@ def countstepsup(current_parent, limit):
     return steps
 
 @coll.route('/updatecollparent', methods=['PATCH'])
-@login_required
+@jwt_required()
 @cross_origin()
 def updatecollparent():
-    if current_user.is_authenticated:
-        user_auth = current_user.get_id() and int(current_user.get_id())
-        parent_uuid = request.get_json()["parent_uuid"]
-        parent_collection = Collection.query.filter_by(uuid=parent_uuid).first()
-        coll_uuid = request.get_json()["uuid"]
-        current_collection = Collection.query.filter_by(uuid=coll_uuid).first()
-        if(current_collection and (current_collection.user.id == user_auth)):
-            if(parent_collection is None):
-                # make root collection
-                # Check it's not already NULL
-                if(current_collection.parent_id):
-                    setattr(current_collection, "parent_id", None)
-                    db.session.commit()
-                    return jsonify({"ok":True, "result": "parent updated successfully as root"})
-                else:
-                    return jsonify({"ok":True, "result": "already root"})
+    user_auth = current_user.id
+    parent_uuid = request.get_json()["parent_uuid"]
+    parent_collection = Collection.query.filter_by(uuid=parent_uuid).first()
+    coll_uuid = request.get_json()["uuid"]
+    current_collection = Collection.query.filter_by(uuid=coll_uuid).first()
+    if(current_collection and (current_collection.user.id == user_auth)):
+        if(parent_collection is None):
+            # make root collection
+            # Check it's not already NULL
+            if(current_collection.parent_id):
+                setattr(current_collection, "parent_id", None)
+                db.session.commit()
+                return jsonify({"ok":True, "result": "parent updated successfully as root"})
             else:
+                return jsonify({"ok":True, "result": "already root"})
+        else:
 
-                if(parent_collection.id !=current_collection.id):
+            if(parent_collection.id !=current_collection.id):
 
-                        is_parent = Collection.query.filter_by(parent_id=current_collection.id).all()
+                    is_parent = Collection.query.filter_by(parent_id=current_collection.id).all()
 
-                        if(len(is_parent) > 0):
+                    if(len(is_parent) > 0):
 
-                            steps = countstepsup(current_collection, None)
-                            new_steps = countstepsup(parent_collection, steps)
+                        steps = countstepsup(current_collection, None)
+                        new_steps = countstepsup(parent_collection, steps)
 
-                            if(new_steps >= steps):
-                                try:
-                                    for child in is_parent:
-                                        child.parent_id = current_collection.parent_id
-                                    setattr(current_collection, "parent_id", parent_collection.id)
-                                    db.session.commit()
-                                    return jsonify({"ok":True, "result": "parent moved down successfully and children new parent"})
-                                except Exception as e:
-                                    db.session.rollback()
-                                    return jsonify({"error":"error updating parent in children"})
-                            else:
-
+                        if(new_steps >= steps):
+                            try:
+                                for child in is_parent:
+                                    child.parent_id = current_collection.parent_id
                                 setattr(current_collection, "parent_id", parent_collection.id)
                                 db.session.commit()
-                                return jsonify({"ok":True, "result": "parent moved up successfully"})
+                                return jsonify({"ok":True, "result": "parent moved down successfully and children new parent"})
+                            except Exception as e:
+                                db.session.rollback()
+                                return jsonify({"error":"error updating parent in children"})
                         else:
+
                             setattr(current_collection, "parent_id", parent_collection.id)
                             db.session.commit()
-                            return jsonify({"ok":True, "result": "parent updated successfully"})
-                else:
-                    return jsonify({"error":"cannot update collection parent to itself"})
-        else:
-            return jsonify({"error":"wrong collection or user"})
-
+                            return jsonify({"ok":True, "result": "parent moved up successfully"})
+                    else:
+                        setattr(current_collection, "parent_id", parent_collection.id)
+                        db.session.commit()
+                        return jsonify({"ok":True, "result": "parent updated successfully"})
+            else:
+                return jsonify({"error":"cannot update collection parent to itself"})
     else:
-        return jsonify({"error":"user not authorized"})
+        return jsonify({"error":"wrong collection or user"})
+
+
 
 def updatecollfield(field, fieldvalue):
-    if current_user.is_authenticated:
-        user_auth = current_user.get_id() and int(current_user.get_id())
+    if is_user_logged_in():
+        user_auth = current_user.id
         coll_uuid = request.get_json()["uuid"]
         collection = Collection.query.filter_by(uuid=coll_uuid).first()
         if(collection is None):
@@ -243,10 +238,10 @@ def updatecollfield(field, fieldvalue):
 
 
 @coll.route('/deletecollection/<string:uuid>', methods=['DELETE'])
-@login_required
+@jwt_required()
 @cross_origin()
 def deletecollection(uuid):
-    user_auth = current_user.get_id() and int(current_user.get_id())
+    user_auth = current_user.id
     collection = Collection.query.filter_by(uuid=uuid).first()
     if(collection is None):
         return jsonify({"error":"collection not found"})

@@ -4,10 +4,7 @@ from flask_migrate import Migrate
 from flask_cors import CORS
 from orm import db, User
 
-from flask_login import (
-    LoginManager,
-    current_user
-)
+from flask_jwt_extended import JWTManager
 
 from admin import HiAdmin
 
@@ -39,19 +36,21 @@ app.config['SQLALCHEMY_DATABASE_URI'] = config.DB_CNX
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
-# User session management setup
-# https://flask-login.readthedocs.io/en/latest
-login_manager = LoginManager()
-login_manager.init_app(app)
+
+app.config['JWT_SECRET_KEY'] = os.environ.get("JWT_SECRET_KEY") or os.urandom(24)
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 30*24*3600  # 30 days
+app.config['JWT_TOKEN_LOCATION'] = ['headers', 'cookies']
+app.config['JWT_COOKIE_CSRF_PROTECT'] = False  # not sure about this, needs some tests
+jwt = JWTManager(app)
+jwt.user_lookup_loader(api.auth.user_loader_callback)
 
 migrate = Migrate(app, db)
 
-# Flask-Login helper to retrieve a user from our db
-@login_manager.user_loader
-def load_user(user_id):
-    return db.session.get(User, user_id)
-
 db.init_app(app)
+
+
+
+
 
 @app.route('/')
 def index():

@@ -2,7 +2,7 @@
 from flask_admin import Admin, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
 from sqlalchemy import inspect
-from flask_login import current_user
+from api.auth import is_user_logged_in
 
 from flask import url_for, redirect
 
@@ -11,8 +11,8 @@ from orm import *
 
 
 def restrict_to_admins():
-    user = current_user
-    return user is not None and user.is_authenticated and user.is_admin
+    user = is_user_logged_in()
+    return user is not None and user.is_admin
 
 
 class HiModelView(ModelView):

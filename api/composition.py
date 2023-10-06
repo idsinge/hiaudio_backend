@@ -2,7 +2,8 @@ import os
 import shutil
 from flask import Blueprint, request, jsonify
 from orm import db, User, UserRole, LevelPrivacy, Composition, Contributor, Collection
-from flask_login import (current_user, login_required)
+from flask_jwt_extended import current_user, jwt_required
+from api.auth import is_user_logged_in
 from flask_cors import cross_origin
 import shortuuid
 import config
@@ -12,7 +13,8 @@ comp = Blueprint('comp', __name__)
 @comp.route('/compositions')
 @cross_origin()
 def compositions():
-    user_auth = current_user.get_id() and int(current_user.get_id())
+    user = is_user_logged_in()
+    user_auth = user.id if user else None
     allcompositions = Composition.query.all()
     compositions = []
     for comp in allcompositions:
@@ -36,45 +38,39 @@ def compositions():
 @comp.route('/recentcompositions')
 @cross_origin()
 def recentcompositions():
-    
     allcompositions = Composition.query.filter_by(privacy=LevelPrivacy.public.value)
     compositions = allcompositions.order_by(Composition.id.desc()).limit(config.MAX_RECENT_COMPOSITIONS)
     jcompositions = jsonify(compositions=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in compositions])
     return jcompositions
 
 @comp.route('/mycompositions')
-@login_required
+@jwt_required()
 @cross_origin()
 def mycompositions():
-    if current_user.is_authenticated:
-        user_auth = current_user.get_id() and int(current_user.get_id())
-        allmycompositions = Composition.query.filter_by(user_id=user_auth)
-        collaborations = get_my_collaborations(user_auth)
-        merged_comps = list(allmycompositions) + collaborations
-        jcompositions = jsonify(compositions=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in merged_comps])
-        return jcompositions
-    else:        
-        return jsonify({"error":"not authenticated"})
+    user_auth = current_user.id
+    allmycompositions = Composition.query.filter_by(user_id=user_auth)
+    collaborations = get_my_collaborations(user_auth)
+    merged_comps = list(allmycompositions) + collaborations
+    jcompositions = jsonify(compositions=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in merged_comps])
+    return jcompositions
 
 def get_my_collaborations(user_auth):
-        compositions = []    
-        iscontributor = Contributor.query.filter_by(user_id=user_auth)        
+        compositions = []
+        iscontributor = Contributor.query.filter_by(user_id=user_auth)
         for collab in iscontributor:
             comp = Composition.query.get(collab.composition_id)
             compositions.append(comp)
         return  compositions
 
 @comp.route('/mycollaborations')
-@login_required
+@jwt_required()
 @cross_origin()
 def mycollaborations():
-    if current_user.is_authenticated:
-        user_auth = current_user.get_id() and int(current_user.get_id())
-        compositions = get_my_collaborations(user_auth)
-        jcompositions = jsonify(mycollaborations=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in compositions])
-        return jcompositions
-    else:        
-        return jsonify({"error":"not authenticated"})
+    user_auth = current_user.id
+    compositions = get_my_collaborations(user_auth)
+    jcompositions = jsonify(mycollaborations=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in compositions])
+    return jcompositions
+
 
 # if privacy= 2 (onlyreg) or 3 (private), and not logged => not accesible
 # if privacy=3 (private) and not either owner/contributor => not accesible
@@ -82,7 +78,8 @@ def mycollaborations():
 @comp.route('/composition/<string:uuid>')
 @cross_origin()
 def composition(uuid):
-    user_auth = current_user.get_id() and int(current_user.get_id())
+    user = is_user_logged_in()
+    user_auth = user.id if user else None
     composition = Composition.query.filter_by(uuid=uuid).first()
     if(composition is None):
         return jsonify({"error":"composition not found"})
@@ -118,36 +115,34 @@ def composition(uuid):
                 return jcomposition
 
 @comp.route('/newcomposition', methods=['POST'])
-@login_required
+@jwt_required()
 @cross_origin()
 def newcomposition():
-    if current_user.is_authenticated:
-        user_auth = current_user.get_id() and int(current_user.get_id())
-        title = request.get_json()["title"]
-        privacy = request.get_json()["privacy_level"]
-        collection=None
-        try:
-            parent_uuid = request.get_json()["parent_uuid"]
-        except KeyError:
-            parent_uuid = None
-        if(parent_uuid):
-                parent=Collection.query.filter_by(uuid=parent_uuid).first()
-                if(parent and parent.user_id == user_auth):
-                    collection=parent
-                else:
-                    return jsonify({"error":"wrong parent uuid"})
-        if(privacy and (privacy is not None) and (LevelPrivacy.public.value <= int(privacy) <= LevelPrivacy.private.value)):
-            user = User.query.get(current_user.get_id())
-            ## TODO: check uuid is not duplicated
-            composition = Composition(title=title, user=user, privacy=LevelPrivacy(int(privacy)).name, uuid=shortuuid.uuid(), collection=collection)
-            db.session.add(composition)
-            db.session.commit()
-            return jsonify(composition=composition.to_dict( rules=('-path','-collection') ))
-        else:
-            return jsonify({"error":"privacy value not valid"})
 
+    user_auth = current_user.id
+    title = request.get_json()["title"]
+    privacy = request.get_json()["privacy_level"]
+    collection=None
+    try:
+        parent_uuid = request.get_json()["parent_uuid"]
+    except KeyError:
+        parent_uuid = None
+    if(parent_uuid):
+            parent=Collection.query.filter_by(uuid=parent_uuid).first()
+            if(parent and parent.user_id == user_auth):
+                collection=parent
+            else:
+                return jsonify({"error":"wrong parent uuid"})
+    if(privacy and (privacy is not None) and (LevelPrivacy.public.value <= int(privacy) <= LevelPrivacy.private.value)):
+        user = User.query.get(current_user.id)
+        ## TODO: check uuid is not duplicated
+        composition = Composition(title=title, user=user, privacy=LevelPrivacy(int(privacy)).name, uuid=shortuuid.uuid(), collection=collection)
+        db.session.add(composition)
+        db.session.commit()
+        return jsonify(composition=composition.to_dict( rules=('-path','-collection') ))
     else:
-        return jsonify({"error":"not authenticated"})
+        return jsonify({"error":"privacy value not valid"})
+
 
 def deletecompfolder(compid):
     compositionpath = f"compositions/{compid}/"
@@ -156,10 +151,10 @@ def deletecompfolder(compid):
         shutil.rmtree(fullpath)
 
 @comp.route('/deletecomposition/<string:uuid>', methods=['DELETE'])
-@login_required
+@jwt_required()
 @cross_origin()
 def deletecomposition(uuid):
-    user_auth = current_user.get_id() and int(current_user.get_id())
+    user_auth = current_user.id
     composition = Composition.query.filter_by(uuid=uuid).first()
     if(composition is None):
         return jsonify({"error":"composition not found"})
@@ -181,7 +176,7 @@ def deletecomposition(uuid):
             return jsonify({"error":"user is not authorized"})
 
 @comp.route('/updatecompprivacy', methods=['PATCH'])
-@login_required
+@jwt_required()
 @cross_origin()
 def updatecompprivacy():
    # TODO: From API perspective, if the composition is Open To Contribution
@@ -191,24 +186,24 @@ def updatecompprivacy():
    return updatecompfield('privacy')
 
 @comp.route('/updatecomptitle', methods=['PATCH'])
-@login_required
+@jwt_required()
 @cross_origin()
 def updatecomptitle():
     return updatecompfield('title')
 
 @comp.route('/updatecomptocontrib', methods=['PATCH'])
-@login_required
+@jwt_required()
 @cross_origin()
 def updatecomptocontrib():
     # TODO: control the value is boolean
     return updatecompfield('opentocontrib')
 
 @comp.route('/updatecompcollection', methods=['PATCH'])
-@login_required
+@jwt_required()
 @cross_origin()
 def updatecompcollection():
     # TODO: issue-150 other users with owner role can update collection too
-    user_auth = current_user.get_id() and int(current_user.get_id())
+    user_auth = current_user.id
     coll_id = request.get_json()['collection_id']
     collection = Collection.query.filter_by(uuid=coll_id).first()
     if((coll_id == '' or coll_id == None) or(collection is not None and collection.user.id == user_auth)):
@@ -234,7 +229,7 @@ def updatecompfield(field):
                 return jsonify({"error":"not valid collection"})
         if(field == 'privacy'):
             fieldvalue = LevelPrivacy(int(fieldvalue)).name
-        user_auth = current_user.get_id() and int(current_user.get_id())
+        user_auth = current_user.id
         iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
         role = UserRole.none.value
         if(composition.user.id == user_auth):
