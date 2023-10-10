@@ -1,17 +1,18 @@
 import re
 from flask import Blueprint, request, jsonify
 from orm import db, User, UserRole, Composition, Contributor, UserInfo
-from flask_login import (current_user, login_required)
+from flask_jwt_extended import current_user, jwt_required
+from api.auth import is_user_logged_in
 from flask_cors import cross_origin
 
 contrib = Blueprint('contrib', __name__)
 
 @contrib.route('/addcontributorbyemail', methods=['POST'])
 @cross_origin()
-@login_required
+@jwt_required()
 def addcontributorbyemail():
-  
-    user_auth = current_user.get_id() and int(current_user.get_id())
+
+    user_auth = current_user.id
     comp_uuid = request.get_json()['composition_id']
     composition = Composition.query.filter_by(uuid=comp_uuid).first()
     if(composition is None):
@@ -21,18 +22,18 @@ def addcontributorbyemail():
         # if the person who tries to add the contributor is the owner
         # TODO: [issue 89] check if the role is 1 (UserRole.owner.value)
         # control that permission is not changed to creator of the composition
-        if composition.user.id == user_auth:    
+        if composition.user.id == user_auth:
             email = request.get_json()["email"]
-            # check is gmail address   
-            match = re.search(r'@gmail.', email)            
+            # check is gmail address
+            match = re.search(r'@gmail.', email)
             role = request.get_json()['role']
-            # check the email is in DB  
+            # check the email is in DB
             user2 = UserInfo.query.filter_by(google_email=email).first()
-        
+
             # TODO: if user is not in DB we could send an invite email to join
-        
+
             # if Owner tries to add himself throws error
-            if((user2 is not None) and (user1.google_email != email) and (match is not None) and (UserRole.owner.value <= role <= UserRole.guest.value)):            
+            if((user2 is not None) and (user1.google_email != email) and (match is not None) and (UserRole.owner.value <= role <= UserRole.guest.value)):
                 return addcontributortodb(user2.id, user2.google_uid, composition, role)
             else:
                 return jsonify({"error":"not valid contributor"})
@@ -42,10 +43,10 @@ def addcontributorbyemail():
 
 @contrib.route('/addcontributorbyid', methods=['POST'])
 @cross_origin()
-@login_required
+@jwt_required()
 def addcontributorbyid():
-  
-    user_auth = current_user.get_id() and int(current_user.get_id())
+
+    user_auth = current_user.id
     comp_uuid = request.get_json()['composition_id']
     composition = Composition.query.filter_by(uuid=comp_uuid).first()
     if(composition is None):
@@ -54,14 +55,14 @@ def addcontributorbyid():
         # if the person who tries to add the contributor is the owner
         # TODO:[issue 89] check if the role is 1 (UserRole.owner.value)
         # control that permission is not changed to creator of the composition
-        if composition.user.id == user_auth:    
+        if composition.user.id == user_auth:
             useruid = request.get_json()["user_uid"]
-                    
+
             role = request.get_json()['role']
-            # check the ID is in DB  
+            # check the ID is in DB
             user2 = User.query.filter_by(uid=useruid).first()
             # if Owner tries to add himself throws error
-            if((user2 is not None) and (user_auth != user2.id) and (UserRole.owner.value <=role <= UserRole.guest.value)):        
+            if((user2 is not None) and (user_auth != user2.id) and (UserRole.owner.value <=role <= UserRole.guest.value)):
                 return addcontributortodb(user2.id, useruid, composition, role)
             else:
                 return jsonify({"error":"not valid contributor"})
@@ -70,41 +71,41 @@ def addcontributorbyid():
 
 def addcontributortodb(user2id, user2uid, composition, role):
     querycontributor = Contributor.query.filter_by(user_id=user2id, composition_id=composition.id)
-    iscontributor = querycontributor.first()                    
+    iscontributor = querycontributor.first()
     # if is already contributor => UPDATE role
     # TODO: check current role is not the same to avoid running db statement
     if(iscontributor is not None):
         querycontributor.update({"role":UserRole(role).name})
         db.session.commit()
         return jsonify({"ok":True, "result":"role updated successfully", "contribid":iscontributor.id})
-    else:    
-        contributor = Contributor(role=UserRole(role).name, user_id=user2id, user_uid=user2uid, composition=composition)          
+    else:
+        contributor = Contributor(role=UserRole(role).name, user_id=user2id, user_uid=user2uid, composition=composition)
         db.session.add(contributor)
-        db.session.commit()         
+        db.session.commit()
         return jsonify({"ok":True, "result":"role added successfully", "contribid":contributor.id})
 
 @contrib.route('/deletecontributor', methods=['DELETE'])
-@login_required
+@jwt_required()
 @cross_origin()
 def deletecontributor():
-    user_auth = current_user.get_id() and int(current_user.get_id())       
+    user_auth = current_user.id
     contrib_uuid = request.get_json()['contrib_uuid']
     comp_uuid = request.get_json()['comp_uuid']
     if(contrib_uuid and comp_uuid):
         composition = Composition.query.filter_by(uuid=comp_uuid).first()
         if(composition):
-            contributor = Contributor.query.filter_by(user_uid=contrib_uuid, composition_id=composition.id).first()    
-            if(contributor is not None):              
-                    
+            contributor = Contributor.query.filter_by(user_uid=contrib_uuid, composition_id=composition.id).first()
+            if(contributor is not None):
+
                 # the action is done by the creator of the composition
-                if(composition.user_id == user_auth):            
+                if(composition.user_id == user_auth):
                     db.session.delete(contributor)
                     db.session.commit()
                     return jsonify({"ok":True, "result":"deleted contributor " + contrib_uuid + " from composition " + comp_uuid})
                 # the action is done by an authorized role of the composition
                 else:
                     queryauthorized = Contributor.query.filter_by(user_id=user_auth, composition_id=composition.id)
-                    isauthorized = queryauthorized.first()               
+                    isauthorized = queryauthorized.first()
                     if (isauthorized is not None):
                         role = isauthorized.role.value
                         # check the user is not the owner but it's himself, example:
@@ -122,5 +123,4 @@ def deletecontributor():
         else:
             return jsonify({"error":"composition not found"})
     else:
-        return jsonify({"error":"wrong params"})                  
-            
+        return jsonify({"error":"wrong params"})

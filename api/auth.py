@@ -4,11 +4,18 @@ from random_username.generate import generate_username
 from orm import db, User, UserInfo
 from flask import Blueprint, request, redirect, url_for
 import requests
-from flask_login import (
-    login_user,
-    logout_user,
-    login_required
+
+
+from flask_jwt_extended import (
+    jwt_required, create_access_token, unset_jwt_cookies,
+    set_access_cookies, verify_jwt_in_request, get_current_user
 )
+from flask_jwt_extended.config import config as jwtconfig
+from flask_jwt_extended.exceptions import JWTExtendedException
+from jwt.exceptions import PyJWTError
+
+
+
 # Configuration
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None)
@@ -21,6 +28,30 @@ GOOGLE_DISCOVERY_URL = (
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 auth = Blueprint('auth', __name__)
+
+
+def user_loader_callback(_jwt_header, jwt_data):
+    uid = jwt_data["sub"]
+    user = User.query.filter_by(uid=uid).first()
+    return user
+
+
+def is_user_logged_in():
+    try:
+        verify_jwt_in_request()
+        return get_current_user()
+    except (JWTExtendedException, PyJWTError) as e:
+        pass
+    return None
+
+
+def get_user_token():
+    if is_user_logged_in():
+        return request.cookies.get(jwtconfig.access_cookie_name, None)
+    else:
+        return None
+
+
 
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
@@ -83,14 +114,14 @@ def callback():
         result="User email not available or not verified by Google.", 400
 
     # TODO: check the random username is not already there in DB (must be unique)
-    rdmusername = generate_username() 
+    rdmusername = generate_username()
 
     # TODO: generate a random user profile picture
     default_picture ="https://raw.githubusercontent.com/gilpanal/beatbytebot_webapp/master/src/img/agp.png"
 
     user = User.query.filter_by(uid=unique_id).first()
-    
-    if user is not None:        
+
+    if user is not None:
         userinfo = UserInfo.query.filter_by(google_uid=unique_id)
         userinfo.update({"google_name":users_name,"google_profile_pic":picture,"google_email":users_email})
         db.session.commit()
@@ -104,15 +135,18 @@ def callback():
         db.session.add(userinfo)
         db.session.commit()
 
-    # Begin user session by logging the user in
-    login_user(user)
 
-    # Send user back to homepage
-    # TODO: check result before forwarding to homepage
-    return redirect(url_for("index"))
+    # create token, write it in the response, and redirect to home
+    access_token = create_access_token(identity=user.uid)
+    response = redirect(url_for("index"))
+    set_access_cookies(response, access_token)
+
+    return response
+
 
 @auth.route("/logout")
-@login_required
+@jwt_required()
 def logout():
-    logout_user()
-    return redirect(url_for("index"))
+    response = redirect(url_for("index"))
+    unset_jwt_cookies(response)
+    return response

@@ -1,5 +1,4 @@
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin
 from sqlalchemy_serializer import SerializerMixin
 import enum
 from sqlalchemy import Enum
@@ -19,7 +18,7 @@ class LevelPrivacy(enum.Enum):
 
 db = SQLAlchemy()
 
-class User(db.Model, UserMixin, SerializerMixin):
+class User(db.Model, SerializerMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     uid = db.Column(db.String(100))

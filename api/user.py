@@ -1,7 +1,8 @@
 import re
 from flask import  Blueprint, jsonify, make_response
 from orm import  db, User, UserInfo, Composition
-from flask_login import (current_user, login_required)
+from flask_jwt_extended import current_user, jwt_required
+from api.auth import is_user_logged_in, get_user_token
 from api.composition import deletecompfolder
 from flask_cors import cross_origin
 
@@ -12,36 +13,29 @@ def custom_error(message, status_code):
 
 @user.route('/profile')
 def profile():
-    if current_user.is_authenticated:
-        userinfo = UserInfo.query.get(current_user.get_id())
-        return jsonify({"ok":True, "name":userinfo.name, "email":userinfo.google_email, "profile_pic":userinfo.profile_pic, "user_uid":current_user.uid})
+    if is_user_logged_in():
+        userinfo = UserInfo.query.get(current_user.id)
+        ret = {
+            "ok":True,
+            "name":userinfo.name,
+            "email":userinfo.google_email,
+            "profile_pic":userinfo.profile_pic,
+            "user_uid":current_user.uid
+        }
+        token = get_user_token()
+        if token:
+            ret['token'] = token
+        return jsonify(ret)
     else:
         return jsonify({"ok":False})
 
 
-# # unused for now, need access control
-# @user.route('/users')
-# @cross_origin()
-# def users():
-#     users = User.query.all()
-#     jusers = jsonify(users=[ user.to_dict( rules=('-id','-compositions', '-userinfo', '-collections') ) for user in users])
-#     return jusers
-
-# @user.route('/user/<string:uid>')
-# def userbyuid(uid):
-#     user = User.query.filter_by(uid=uid).first()
-#     if(user is not None):
-#         juser = jsonify(user.to_dict( rules=('-id', '-userinfo', '-compositions.collection', '-collections.compositions') ))
-#         return juser
-#     else:
-#         return jsonify({"error":"Not Found"})
-
 @user.route('/deleteuser/<string:uid>', methods=['DELETE'])
 @cross_origin()
-@login_required
+@jwt_required()
 def deleteuser(uid):
-    if current_user.is_authenticated:
-        user_auth = current_user.get_id()
+    if is_user_logged_in():
+        user_auth = current_user.id
         user = User.query.get_or_404(user_auth)
         if(user.uid == uid):
             # TODO: in the future (when implmented) delete also all collections
@@ -64,7 +58,7 @@ def deleteuser(uid):
 # param "info" can be either an email address, a user id or a name
 @user.route('/checkuser/<string:info>')
 @cross_origin()
-@login_required
+@jwt_required()
 def checkuser(info):
     result = None
     userid = None
@@ -86,7 +80,7 @@ def checkuser(info):
     if result is None:
         result = custom_error({"error":"User Not Found"}, 404)
     else:
-        ownerid = current_user.get_id() and int(current_user.get_id())
+        ownerid = current_user.id
         if(userid == ownerid):
             result = custom_error({"error":"Same User"}, 403)
 

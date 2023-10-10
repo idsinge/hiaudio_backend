@@ -12,3 +12,4 @@ python-dotenv
 Flask-Migrate
 random-username
 shortuuid
+flask_jwt_extended
