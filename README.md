@@ -23,10 +23,12 @@ pip install -r requirements.txt
 
 # create .env file with the following content
 # Google Values: https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Google-OAuth-Setup
-# SECRET_KEY is independent and can be self-elected 
+# SECRET_KEY is independent and can be self-elected
+# JWT_SECRET_KEY: https://flask-jwt-extended.readthedocs.io/en/stable/options.html#JWT_SECRET_KEY 
 GOOGLE_CLIENT_ID=*****
 GOOGLE_CLIENT_SECRET=*****
 SECRET_KEY=*****
+JWT_SECRET_KEY=*****
 
 
 # For Mac, for Linux see (4) below
