@@ -121,6 +121,7 @@ def newcomposition():
 
     user_auth = current_user.id
     title = request.get_json()["title"]
+    description = request.get_json()["description"]
     privacy = request.get_json()["privacy_level"]
     collection=None
     try:
@@ -136,7 +137,7 @@ def newcomposition():
     if(privacy and (privacy is not None) and (LevelPrivacy.public.value <= int(privacy) <= LevelPrivacy.private.value)):
         user = User.query.get(current_user.id)
         ## TODO: check uuid is not duplicated
-        composition = Composition(title=title, user=user, privacy=LevelPrivacy(int(privacy)).name, uuid=shortuuid.uuid(), collection=collection)
+        composition = Composition(title=title, description=description, user=user, privacy=LevelPrivacy(int(privacy)).name, uuid=shortuuid.uuid(), collection=collection)
         db.session.add(composition)
         db.session.commit()
         return jsonify(composition=composition.to_dict( rules=('-path','-collection') ))
@@ -190,6 +191,12 @@ def updatecompprivacy():
 @cross_origin()
 def updatecomptitle():
     return updatecompfield('title')
+
+@comp.route('/updatecompdescription', methods=['PATCH'])
+@jwt_required()
+@cross_origin()
+def updatecompdescription():
+    return updatecompfield('description')
 
 @comp.route('/updatecomptocontrib', methods=['PATCH'])
 @jwt_required()

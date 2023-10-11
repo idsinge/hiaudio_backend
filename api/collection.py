@@ -67,6 +67,7 @@ def get_collection_hierarchy(collection):
         'uuid': collection.uuid,
         'privacy': collection.privacy.value,
         'title': collection.title,
+        'description': collection.description,
         'compositions': [get_composition_hierarchy(composition) for composition in collection.compositions],
         'collections': [get_collection_hierarchy(sub_collection) for sub_collection in subcollections]
     }
@@ -76,6 +77,7 @@ def get_composition_hierarchy(composition):
         'uuid': composition.uuid,
         'privacy': composition.privacy.value,
         'title': composition.title,
+        'description': composition.description,
         #'tracks': [track.title for track in composition.tracks],
         #'contributors': [contributor.name for contributor in composition.contributors],
         'opentocontrib': composition.opentocontrib,
@@ -105,6 +107,7 @@ def mycollections():
 def newcollection():
     user_auth = current_user.id
     title = request.get_json()["title"]
+    description = request.get_json()["description"]
     privacy = request.get_json()["privacy_level"]
     parent_uuid = request.get_json()["parent_uuid"]
     if(privacy and (LevelPrivacy.public.value <= int(privacy) <= LevelPrivacy.private.value)):
@@ -118,7 +121,7 @@ def newcollection():
                 return jsonify({"error":"wrong parent uuid or not authorized"})
         ## TODO: check uuid is not duplicated
         coll_uuid=shortuuid.uuid()
-        collection = Collection(title=title, user=user, privacy=LevelPrivacy(int(privacy)).name, uuid=coll_uuid, parent_id=parent_id)
+        collection = Collection(title=title, description=description, user=user, privacy=LevelPrivacy(int(privacy)).name, uuid=coll_uuid, parent_id=parent_id)
         db.session.add(collection)
         db.session.commit()
         return jsonify({"ok":True, "uuid":coll_uuid})
@@ -135,6 +138,14 @@ def updatecolltitle():
         return updatecollfield("title", title)
     else:
         return jsonify({"error":"wrong title value"})
+
+@coll.route('/updatecolldescription', methods=['PATCH'])
+@jwt_required()
+@cross_origin()
+def updatecolldescription():
+    description = request.get_json()["description"]    
+    return updatecollfield("description", description)  
+    
 
 @coll.route('/updatecollprivacy', methods=['PATCH'])
 @jwt_required()
