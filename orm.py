@@ -55,6 +55,7 @@ class Collection(db.Model, SerializerMixin):
     uuid = db.Column(db.String(22), nullable=False, unique=True, default=shortuuid.uuid())
     privacy = db.Column(Enum(LevelPrivacy), nullable=False, default=LevelPrivacy.public.value)
     title = db.Column(db.String(100))
+    description = db.Column(db.Text)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
 
     parent_id = db.Column(db.Integer, db.ForeignKey('collection.id', ondelete='CASCADE'), nullable=True)
@@ -71,6 +72,7 @@ class Composition(db.Model, SerializerMixin):
     uuid = db.Column(db.String(22), nullable=False, unique=True, default=shortuuid.uuid())
     privacy = db.Column(Enum(LevelPrivacy), nullable=False, default=LevelPrivacy.public.value)
     title = db.Column(db.String(100))
+    description = db.Column(db.Text)
     tracks = db.relationship('Track', backref='composition', cascade="all, delete-orphan")
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))

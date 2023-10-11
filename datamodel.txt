@@ -34,6 +34,7 @@ Collection:
 - uuid
 - privacy
 - title
+- description
 - user_id
 - parent_id
 - compositions
@@ -43,6 +44,7 @@ Composition:
  - uuid
  - user_id
  - title
+ - description
  - collection_id
  - privacy (1=Public, 2=Only Reg, 3=Private)
  - opentocontrib
