@@ -93,6 +93,7 @@ class Track(db.Model, SerializerMixin):
     title = db.Column(db.String(100))
     path = db.Column(db.String(1024))
     user_id = db.Column(db.Integer)
+    user_uid = db.Column(db.String(22))
     composition_id = db.Column(db.Integer, db.ForeignKey('composition.id', ondelete='CASCADE'))
 
     def __repr__(self):
