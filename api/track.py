@@ -2,7 +2,7 @@ import os
 import time
 from flask import Blueprint, request, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
-from orm import db, UserRole, Track, Composition, Contributor, LevelPrivacy
+from orm import db, User, UserRole, Track, Composition, Contributor, LevelPrivacy
 from flask_jwt_extended import current_user, jwt_required
 from api.auth import is_user_logged_in
 from flask_cors import cross_origin
@@ -103,19 +103,19 @@ def fileupload():
             timestamp_prefix = str(int(time.time())) + "_"
             trackpath = f"compositions/{composition.id}/{timestamp_prefix + filename}"
             fullpath = os.path.join(config.DATA_BASEDIR, trackpath )
+            user_uid = User.query.get(user_auth).uid
 
             os.makedirs(os.path.dirname(fullpath), exist_ok=True);
 
             thefile.save( fullpath )
             ## TODO: check uuid is not duplicated
-            newtrack = Track(title=filename, path=trackpath, composition=composition, user_id=user_auth, uuid=shortuuid.uuid())
+            newtrack = Track(title=filename, path=trackpath, composition=composition, user_id=user_auth, user_uid=user_uid, uuid=shortuuid.uuid())
             db.session.add(newtrack)
             db.session.commit()
             data=newtrack.to_dict( rules=('-path',) )
             respinfo ={"message":{
-                "audio":{"compositionid":comp_uuid, "title":filename, "path":trackpath, "file_unique_id":data['uuid'], "user_id":user_auth}},
-                "date":"123456789",
-                "message_id":"messageid"}
+                "audio":{"composition_id":comp_uuid, "title":filename, "path":trackpath, "file_unique_id":data['uuid'], "user_id":user_auth, "user_uid":user_uid}},
+                "date":timestamp_prefix}
             return jsonify({"ok":True, "result":respinfo})
         else:
             return jsonify({"error":"type not allowed"})

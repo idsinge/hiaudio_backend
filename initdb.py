@@ -46,8 +46,8 @@ with app.app_context():
     db.session.add(composition1)
     db.session.commit()
 
-    track1 = Track(title="Acoustic", path=f"compositions/{composition1.id}/acoustic_1-mastered.mp3", composition=composition1, user_id=user1.id, uuid=shortuuid.uuid())
-    track2 = Track(title="Methronome", path=f"compositions/{composition1.id}/methronome_110.mp3", composition=composition1, user_id=user1.id, uuid=shortuuid.uuid())
+    track1 = Track(title="Acoustic", path=f"compositions/{composition1.id}/acoustic_1-mastered.mp3", composition=composition1, user_id=user1.id, user_uid=user1.uid, uuid=shortuuid.uuid())
+    track2 = Track(title="Methronome", path=f"compositions/{composition1.id}/methronome_110.mp3", composition=composition1, user_id=user1.id, user_uid=user1.uid, uuid=shortuuid.uuid())
 
     db.session.add_all({track1, track2})
     db.session.commit()
