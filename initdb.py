@@ -14,10 +14,10 @@ with app.app_context():
     db.drop_all()
     db.create_all()
 
-    user1 = User(uid="123456789")
+    user1 = User(uid="123456789", terms_accepted=True)
     db.session.add(user1)
 
-    user2 = User(uid="987654321")
+    user2 = User(uid="987654321", terms_accepted=True)
     db.session.add(user2)
 
     db.session.commit()

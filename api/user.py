@@ -20,7 +20,8 @@ def profile():
             "name":userinfo.name,
             "email":userinfo.google_email,
             "profile_pic":userinfo.profile_pic,
-            "user_uid":current_user.uid
+            "user_uid":current_user.uid,
+            "terms_accepted":current_user.terms_accepted
         }
         token = get_user_token()
         if token:
@@ -29,6 +30,26 @@ def profile():
     else:
         return jsonify({"ok":False})
 
+@user.route('/acceptterms', methods=['PUT'])
+def acceptterms():
+    if is_user_logged_in():
+        user = User.query.get(current_user.id)
+        setattr(user, 'terms_accepted', True)
+        db.session.commit()           
+        return jsonify({"ok":True})
+    else:
+        return jsonify({"ok":False})
+
+@user.route('/rejectterms', methods=['PUT'])
+def rejectterms():
+    if is_user_logged_in():
+        user = User.query.get(current_user.id)
+        setattr(user, 'terms_accepted', False)
+        db.session.delete(user)        
+        db.session.commit()           
+        return jsonify({"ok":True})
+    else:
+        return jsonify({"ok":False})
 
 @user.route('/deleteuser/<string:uid>', methods=['DELETE'])
 @cross_origin()

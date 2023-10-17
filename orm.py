@@ -23,6 +23,7 @@ class User(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     uid = db.Column(db.String(100))
     is_admin = db.Column(db.Boolean(), default=False)
+    terms_accepted = db.Column(db.Boolean(), default=False)
     compositions = db.relationship('Composition', backref='user', cascade="all, delete-orphan")
     collections = db.relationship('Collection', backref='user', cascade="all, delete-orphan")
     userinfo = db.relationship('UserInfo', back_populates='user', cascade="all, delete-orphan")

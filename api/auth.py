@@ -73,7 +73,6 @@ def login():
 
 @auth.route("/login/callback")
 def callback():
-    result="ok", 200
     # Get authorization code Google sent back to you
     code = request.args.get("code")
     # Find out what URL to hit to get tokens that allow you to ask for
@@ -110,8 +109,8 @@ def callback():
         users_email = userinfo_response.json()["email"]
         picture = userinfo_response.json()["picture"]
         users_name = userinfo_response.json()["given_name"]
-    else:
-        result="User email not available or not verified by Google.", 400
+    #else:
+        # "User email not available or not verified by Google.", 400
 
     # TODO: check the random username is not already there in DB (must be unique)
     rdmusername = generate_username()
