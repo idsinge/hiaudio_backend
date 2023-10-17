@@ -18,6 +18,8 @@
 User:
  - id  
  - uid
+ - is_admin
+ - terms_accepted
 
 UserInfo:
  - id
