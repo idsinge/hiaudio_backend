@@ -126,7 +126,7 @@ def callback():
         db.session.commit()
     else:
         # Doesn't exist? Add it to the database.
-        user = User(uid=unique_id, terms_accepted=True)
+        user = User(uid=unique_id)
         # Create a user info entry in your db with the information provided by Google
         userinfo = UserInfo(user=user, google_uid=unique_id, google_name=users_name, google_profile_pic=picture, google_email=users_email, name=rdmusername[0], profile_pic=default_picture)
         db.session.add(user)
