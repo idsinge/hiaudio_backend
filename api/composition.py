@@ -109,7 +109,7 @@ def composition(uuid):
                     coll = Collection.query.get(data['collection_id'])
                     data['collection_id'] = coll.uuid
                 data['owner'] = owner
-                data['role'] = role                
+                data['role'] = role
                 data['user_id'] = User.query.get(composition.user_id).uid
                 if(user is not None):
                     data['viewer_id'] = user.uid
@@ -123,13 +123,10 @@ def newcomposition():
 
     user_auth = current_user.id
     title = request.get_json()["title"]
-    description = request.get_json()["description"]
+    description = request.get_json().get("description", None)
     privacy = request.get_json()["privacy_level"]
+    parent_uuid = request.get_json().get("parent_uuid", None)
     collection=None
-    try:
-        parent_uuid = request.get_json()["parent_uuid"]
-    except KeyError:
-        parent_uuid = None
     if(parent_uuid):
             parent=Collection.query.filter_by(uuid=parent_uuid).first()
             if(parent and parent.user_id == user_auth):
@@ -142,9 +139,9 @@ def newcomposition():
         composition = Composition(title=title, description=description, user=user, privacy=LevelPrivacy(int(privacy)).name, uuid=shortuuid.uuid(), collection=collection)
         db.session.add(composition)
         db.session.commit()
-        return jsonify(composition=composition.to_dict( rules=('-path','-collection') ))
+        return jsonify(composition=composition.to_dict( rules=('-path','-collection') ), ok=True)
     else:
-        return jsonify({"error":"privacy value not valid"})
+        return jsonify({"error":"privacy value not valid", "ok": False})
 
 
 def deletecompfolder(compid):

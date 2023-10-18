@@ -118,6 +118,6 @@ def fileupload():
                 "date":timestamp_prefix}
             return jsonify({"ok":True, "result":respinfo})
         else:
-            return jsonify({"error":"type not allowed"})
+            return jsonify({"ok":False, "error":"type not allowed"})
     else:
-        return jsonify({"error":"not valid user"})
+        return jsonify({"ok":False, "error":"not valid user"})

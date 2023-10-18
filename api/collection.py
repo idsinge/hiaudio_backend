@@ -106,10 +106,11 @@ def mycollections():
 @cross_origin()
 def newcollection():
     user_auth = current_user.id
-    title = request.get_json()["title"]
-    description = request.get_json()["description"]
-    privacy = request.get_json()["privacy_level"]
-    parent_uuid = request.get_json()["parent_uuid"]
+    rjson = request.get_json()
+    title = rjson.get("title", None)
+    description = rjson.get("description", None)
+    privacy = rjson.get("privacy_level", None)
+    parent_uuid = rjson.get("parent_uuid", None)
     if(privacy and (LevelPrivacy.public.value <= int(privacy) <= LevelPrivacy.private.value)):
         user = User.query.get(current_user.id)
         parent_id=None
@@ -126,7 +127,7 @@ def newcollection():
         db.session.commit()
         return jsonify({"ok":True, "uuid":coll_uuid})
     else:
-        return jsonify({"error":"privacy value not valid"})
+        return jsonify({"ok":False, "error":"privacy value not valid"})
 
 
 @coll.route('/updatecolltitle', methods=['PATCH'])
@@ -143,9 +144,9 @@ def updatecolltitle():
 @jwt_required()
 @cross_origin()
 def updatecolldescription():
-    description = request.get_json()["description"]    
-    return updatecollfield("description", description)  
-    
+    description = request.get_json()["description"]
+    return updatecollfield("description", description)
+
 
 @coll.route('/updatecollprivacy', methods=['PATCH'])
 @jwt_required()
