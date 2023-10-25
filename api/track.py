@@ -1,6 +1,6 @@
 import os
 import time
-from flask import Blueprint, request, jsonify, send_from_directory
+from flask import Blueprint, request, jsonify, send_from_directory, current_app
 from werkzeug.utils import secure_filename
 from orm import db, User, UserRole, Track, Composition, Contributor, LevelPrivacy
 from flask_jwt_extended import current_user, jwt_required
@@ -121,3 +121,8 @@ def fileupload():
             return jsonify({"ok":False, "error":"type not allowed"})
     else:
         return jsonify({"ok":False, "error":"not valid user"})
+
+
+@track.errorhandler(413)
+def track_too_large_error(e):
+    return jsonify({"ok":False, "error":f"request too large (limit is {current_app.config['MAX_CONTENT_LENGTH']} bytes)"}), 200

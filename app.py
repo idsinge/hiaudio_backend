@@ -27,8 +27,8 @@ app.register_blueprint(api.track.track)
 app.register_blueprint(api.contributor.contrib)
 app.register_blueprint(api.collection.coll)
 
-# allow uploads up to 50MB
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1000 * 1000
+# allow uploads up to 50MB by default
+app.config['MAX_CONTENT_LENGTH'] = config.UPLOAD_MAX_SIZE if hasattr(config, 'UPLOAD_MAX_SIZE') else 50 * 1000 * 1000
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
@@ -63,6 +63,7 @@ def page(filename):
         return send_from_directory(os.path.join(config.BASEDIR, "public"), filename)
 
     abort(404, description="Resource not found")
+
 
 
 HiAdmin(app, db)
