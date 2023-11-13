@@ -56,6 +56,26 @@ db.init_app(app)
 def index():
     return page("index.html")
 
+
+
+from flask_mail import Mail, Message
+
+app.config['MAIL_SERVER'] = 'ssl0.ovh.net'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = 'admin@hiaudio.fr'
+app.config['MAIL_PASSWORD'] = os.environ.get("OVH_EMAIL_PASSWD")
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+mail = Mail(app)
+
+@app.route('/email')
+def email():
+    msg = Message(subject='Hello from the other side!', sender=('HiAudio', 'admin@hiaudio.fr'), recipients=['aurelien.david@telecom-paris.fr', 'aureliendavid.pro@gmail.com'])
+    msg.body = "Hey Paul, sending you this email from my Flask app, lmk if it works"
+    mail.send(msg)
+    return "Message sent!"
+
+
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):
     filename = filename or 'index.html'
