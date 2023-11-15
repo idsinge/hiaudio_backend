@@ -3,6 +3,7 @@ from sqlalchemy_serializer import SerializerMixin
 import enum
 from sqlalchemy import Enum
 import shortuuid
+from datetime import datetime
 
 class UserRole(enum.Enum):
     none = 0
@@ -113,3 +114,11 @@ class Contributor(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f'<Contributor "{self.user_id}">'
+
+class VerificationCode(db.Model):
+    
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    code = db.Column(db.String(6), nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    attempts = db.Column(db.Integer, default=0, nullable=False)

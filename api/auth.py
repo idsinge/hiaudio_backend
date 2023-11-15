@@ -1,10 +1,12 @@
 import os, json
+import re
+import random
 from oauthlib.oauth2 import WebApplicationClient
 from random_username.generate import generate_username
-from orm import db, User, UserInfo
-from flask import Blueprint, request, redirect, url_for
+from orm import db, User, UserInfo, VerificationCode
+from flask import Blueprint, jsonify, request, redirect, url_for
 import requests
-
+from datetime import datetime
 
 from flask_jwt_extended import (
     jwt_required, create_access_token, unset_jwt_cookies,
@@ -56,8 +58,8 @@ def get_user_token():
 def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
 
-@auth.route("/login")
-def login():
+@auth.route("/googlelogin")
+def googlelogin():
     # Find out what URL to hit for Google login
     google_provider_cfg = get_google_provider_cfg()
     authorization_endpoint = google_provider_cfg["authorization_endpoint"]
@@ -71,7 +73,7 @@ def login():
     )
     return redirect(request_uri)
 
-@auth.route("/login/callback")
+@auth.route("/googlelogin/callback")
 def callback():
     # Get authorization code Google sent back to you
     code = request.args.get("code")
@@ -149,3 +151,75 @@ def logout():
     response = redirect(url_for("index"))
     unset_jwt_cookies(response)
     return response
+
+@auth.route('/generatelogincode/<string:email>', methods=['PUT'])
+def generatelogincode(email):
+    
+    if is_user_logged_in():        
+        return jsonify({"ok":False, "error":"user already logged in"})
+    else:       
+        code = None
+        # https://stackoverflow.com/a/67631865         
+        valid_email_regex = '^(\w|\.|\_|\-)+[@](\w|\_|\-|\.)+[.]\w{2,3}$'
+        if not re.search(valid_email_regex, email):
+            return jsonify({"ok":False, "error":"wrong email format"})
+                
+        existing_email = VerificationCode.query.filter_by(email=email).first()
+        
+        if existing_email:            
+            if existing_email.attempts >= 5:
+                return jsonify({"ok":False, "error":"You reached the maximum of attempts, please try with a different email account"})
+            else:
+                existing_email.attempts += 1
+                existing_email.date = datetime.utcnow()
+                code = ''.join(str(random.randint(0, 9)) for _ in range(6))
+                existing_email.code = code
+                db.session.commit()            
+        
+        else:            
+            code = ''.join(str(random.randint(0, 9)) for _ in range(6))            
+            new_code = VerificationCode(email=email, code=code)
+            db.session.add(new_code)
+            db.session.commit()       
+
+        # TODO: send email
+
+        # if email was successfully sent then return response
+        return jsonify({"ok":True, "code":code})
+
+
+@auth.route('/logincodevalidation', methods=['POST'])
+def logincodevalidation():
+    if is_user_logged_in():
+        return jsonify({"ok":False, "error":"user already logged in"})
+    else:
+        rjson = request.get_json()
+        email = rjson.get("email", None)
+        code = rjson.get("code", None)
+      
+        if email is not None and code is not None:
+            # https://stackoverflow.com/a/67631865         
+            valid_email_regex = '^(\w|\.|\_|\-)+[@](\w|\_|\-|\.)+[.]\w{2,3}$'
+            if not re.search(valid_email_regex, email):
+                return jsonify({"ok":False, "error":"wrong email format"})
+            print("Type of variable before conversion : ", type(code))  
+            code_str = str(code)
+            if code_str.isdigit() and len(code_str) == 6:
+                existing_email = VerificationCode.query.filter_by(email=email).first()
+                if existing_email: 
+                    if existing_email.code == str(code):
+                        # TODO: check expiration date
+                        # if yes then create or update table of users
+                        # remove entry from validation table
+                        db.session.delete(existing_email)
+                        db.session.commit()
+                        return jsonify({"ok":True})
+                    else:
+                        return jsonify({"ok":False, "error":"wrong code"})
+                else:
+                    return jsonify({"ok":False, "error":"email not found"})
+            else:
+                return jsonify({"ok":False, "error":"wrong code format"})
+        else:
+            return jsonify({"ok":False, "error":"no email or code"})    
+       

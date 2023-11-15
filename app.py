@@ -1,8 +1,8 @@
 import os
-from flask import Flask, request, redirect, jsonify, send_from_directory, abort
+from flask import Flask, request, send_from_directory, abort
 from flask_migrate import Migrate
 from flask_cors import CORS
-from orm import db, User
+from orm import db
 
 from flask_jwt_extended import JWTManager
 
