@@ -210,7 +210,6 @@ def logincodevalidation():
                     if existing_email.code == str(code):
                         # TODO: check expiration date
                         # if yes then create or update table of users
-                        # remove entry from validation table
                         db.session.delete(existing_email)
                         db.session.commit()
                         return jsonify({"ok":True})

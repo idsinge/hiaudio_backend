@@ -3,6 +3,7 @@ from flask import Flask, request, send_from_directory, abort
 from flask_migrate import Migrate
 from flask_cors import CORS
 from orm import db
+from flask_mail import Mail, Message
 
 from flask_jwt_extended import JWTManager
 
@@ -49,6 +50,19 @@ migrate = Migrate(app, db)
 db.init_app(app)
 
 
+app.config['MAIL_SERVER'] = 'ssl0.ovh.net'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = 'admin@hiaudio.fr'
+app.config['MAIL_PASSWORD'] = os.environ.get("OVH_EMAIL_PASSWD")
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+mail = Mail(app)
+
+def sendemail(recipient, code):
+    msg = Message(subject='Hello from the other side!', sender=('HiAudio', 'admin@hiaudio.fr'), recipients=[recipient])
+    msg.body = "Please, use the following validation code to login: " + code
+    mail.send(msg)
+    return True
 
 
 
