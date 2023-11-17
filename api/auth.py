@@ -7,6 +7,9 @@ from orm import db, User, UserInfo, VerificationCode
 from flask import Blueprint, jsonify, request, redirect, url_for
 import requests
 from datetime import datetime
+import shortuuid
+
+from utils import Utils
 
 from flask_jwt_extended import (
     jwt_required, create_access_token, unset_jwt_cookies,
@@ -107,36 +110,45 @@ def callback():
     # The user authenticated with Google, authorized your
     # app, and now you've verified their email through Google!
     if userinfo_response.json().get("email_verified"):
-        unique_id = userinfo_response.json()["sub"]
         users_email = userinfo_response.json()["email"]
-        picture = userinfo_response.json()["picture"]
-        users_name = userinfo_response.json()["given_name"]
     #else:
         # "User email not available or not verified by Google.", 400
+    
+    # TODO: check to delete from verification_code table 
+    user = createnewuserindb(users_email)
 
-    # TODO: check the random username is not already there in DB (must be unique)
-    rdmusername = generate_username()
+    return setaccessforuser(user)
 
-    # TODO: generate a random user profile picture
-    default_picture ="https://raw.githubusercontent.com/gilpanal/beatbytebot_webapp/master/src/img/agp.png"
+def createnewuserindb(users_email):
+    
+    user =  None 
+    
+    user_by_email = UserInfo.query.filter_by(google_email=users_email).first()
 
-    user = User.query.filter_by(uid=unique_id).first()
-
-    if user is not None:
-        userinfo = UserInfo.query.filter_by(google_uid=unique_id)
-        userinfo.update({"google_name":users_name,"google_profile_pic":picture,"google_email":users_email})
-        db.session.commit()
+    if user_by_email is not None:
+        user = User.query.get(user_by_email.user_id)    
     else:
         # Doesn't exist? Add it to the database.
+        # TODO: check the random user uuid is not already in the DB 
+        unique_id = shortuuid.uuid()
+
+        # TODO: check the random username is not already in the DB 
+        rdmusername = generate_username()
+
+        # TODO: generate a random user profile picture
+        default_picture ="https://raw.githubusercontent.com/gilpanal/beatbytebot_webapp/master/src/img/agp.png"
         user = User(uid=unique_id)
         # Create a user info entry in your db with the information provided by Google
-        userinfo = UserInfo(user=user, google_uid=unique_id, google_name=users_name, google_profile_pic=picture, google_email=users_email, name=rdmusername[0], profile_pic=default_picture)
+        userinfo = UserInfo(user=user, google_uid=unique_id, google_name=rdmusername, google_profile_pic=default_picture, google_email=users_email, name=rdmusername[0], profile_pic=default_picture)
         db.session.add(user)
         db.session.commit()
         db.session.add(userinfo)
         db.session.commit()
+    
+    return user
 
-
+def setaccessforuser(user):
+    
     # create token, write it in the response, and redirect to home
     access_token = create_access_token(identity=user.uid)
     response = redirect(url_for("index"))
@@ -174,18 +186,24 @@ def generatelogincode(email):
                 existing_email.date = datetime.utcnow()
                 code = ''.join(str(random.randint(0, 9)) for _ in range(6))
                 existing_email.code = code
-                db.session.commit()            
-        
+                db.session.commit()
         else:            
             code = ''.join(str(random.randint(0, 9)) for _ in range(6))            
             new_code = VerificationCode(email=email, code=code)
             db.session.add(new_code)
             db.session.commit()       
 
-        # TODO: send email
-
-        # if email was successfully sent then return response
-        return jsonify({"ok":True, "code":code})
+        utils = Utils()
+        result = utils.sendemail(email, code)
+        
+        if result:            
+            return jsonify({"ok":True, "result":"Code successfully sent"})
+        else:
+            user_email = VerificationCode.query.filter_by(email=email).first()
+            # if the email was not sent then remove the entry from DB
+            db.session.delete(user_email)
+            db.session.commit() 
+            return jsonify({"ok":False, "error":"Sorry, there was a problem sending the email"})      
 
 
 @auth.route('/logincodevalidation', methods=['POST'])
@@ -202,17 +220,16 @@ def logincodevalidation():
             valid_email_regex = '^(\w|\.|\_|\-)+[@](\w|\_|\-|\.)+[.]\w{2,3}$'
             if not re.search(valid_email_regex, email):
                 return jsonify({"ok":False, "error":"wrong email format"})
-            print("Type of variable before conversion : ", type(code))  
             code_str = str(code)
             if code_str.isdigit() and len(code_str) == 6:
                 existing_email = VerificationCode.query.filter_by(email=email).first()
                 if existing_email: 
                     if existing_email.code == str(code):
                         # TODO: check expiration date
-                        # if yes then create or update table of users
+                        user = createnewuserindb(email)
                         db.session.delete(existing_email)
                         db.session.commit()
-                        return jsonify({"ok":True})
+                        return setaccessforuser(user)
                     else:
                         return jsonify({"ok":False, "error":"wrong code"})
                 else:

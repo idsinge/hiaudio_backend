@@ -15,18 +15,21 @@ def custom_error(message, status_code):
 def profile():
     if is_user_logged_in():
         userinfo = UserInfo.query.get(current_user.id)
-        ret = {
-            "ok":True,
-            "name":userinfo.name,
-            "email":userinfo.google_email,
-            "profile_pic":userinfo.profile_pic,
-            "user_uid":current_user.uid,
-            "terms_accepted":current_user.terms_accepted
-        }
-        token = get_user_token()
-        if token:
-            ret['token'] = token
-        return jsonify(ret)
+        if(userinfo is not None):            
+            ret = {
+                "ok":True,
+                "name":userinfo.name,
+                "email":userinfo.google_email,
+                "profile_pic":userinfo.profile_pic,
+                "user_uid":current_user.uid,
+                "terms_accepted":current_user.terms_accepted
+            }
+            token = get_user_token()
+            if token:
+                ret['token'] = token
+            return jsonify(ret)
+        else:
+            return jsonify({"ok":False})
     else:
         return jsonify({"ok":False})
 

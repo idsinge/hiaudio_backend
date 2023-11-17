@@ -24,11 +24,13 @@ pip install -r requirements.txt
 # create .env file with the following content
 # Google Values: https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Google-OAuth-Setup
 # SECRET_KEY is independent and can be self-elected
-# JWT_SECRET_KEY: https://flask-jwt-extended.readthedocs.io/en/stable/options.html#JWT_SECRET_KEY 
+# JWT_SECRET_KEY: https://flask-jwt-extended.readthedocs.io/en/stable/options.html#JWT_SECRET_KEY
+# OVH_EMAIL_PASSWD: https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/HOSTING/OVH-(domain) 
 GOOGLE_CLIENT_ID=*****
 GOOGLE_CLIENT_SECRET=*****
 SECRET_KEY=*****
 JWT_SECRET_KEY=*****
+OVH_EMAIL_PASSWD=*****
 
 
 # For Mac, for Linux see (4) below
@@ -61,6 +63,12 @@ MYSQL_HOST="localhost"
 MYSQL_USER="ubuntu"
 MYSQL_PASS="hiaudio"
 MYSQL_DB="hiaudio"
+
+# In config.py for Mail settings go to Email provider: 
+# https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/HOSTING/OVH-(domain) 
+MAIL_SERVER = ""
+MAIL_PORT = 0
+MAIL_USERNAME = ""
 
 # To initialize SQLite run:
 python initdb.py
