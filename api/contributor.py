@@ -2,7 +2,6 @@ import re
 from flask import Blueprint, request, jsonify
 from orm import db, User, UserRole, Composition, Contributor, UserInfo
 from flask_jwt_extended import current_user, jwt_required
-from api.auth import is_user_logged_in
 from flask_cors import cross_origin
 
 contrib = Blueprint('contrib', __name__)

@@ -86,26 +86,29 @@ def deleteuser(uid):
 def checkuser(info):
     result = None
     userid = None
-    if (info.isnumeric()):
+    
+    valid_email_regex = '^(\w|\.|\_|\-)+[@](\w|\_|\-|\.)+[.]\w{2,3}$'
+
+    if not re.search(valid_email_regex, info):        
         user = User.query.filter_by(uid=info).first()
         if(user is not None):
             userid = user.uid
             result = jsonify({"ok":True, "user_uid":userid})
-    elif (re.search(r'@gmail.', info)):
-        user = UserInfo.query.filter_by(user_email=info).first()
+        else:
+            user = UserInfo.query.filter_by(name=info).first()
+            if user:
+                userid = user.user_uid
+                result = jsonify({"ok":True, "user_uid":user.user_uid})
+    else:        
+        user = UserInfo.query.filter_by(user_email=info).first()        
         if(user is not None):
-            result = jsonify({"ok":True, "user_uid":user.user_uid})
-    else:
-        user = UserInfo.query.filter_by(name=info).first()
-        if user:
-            userid = user.user_uid
-            result = jsonify({"ok":True, "user_uid":user.user_uid})
+            result = jsonify({"ok":True, "user_uid":user.user_uid}) 
 
     if result is None:
-        result = custom_error({"error":"User Not Found"}, 404)
+        result = custom_error({"ok":False, "error":"User Not Found"}, 404)
     else:
-        ownerid = current_user.id
+        ownerid = current_user.uid
         if(userid == ownerid):
-            result = custom_error({"error":"Same User"}, 403)
+            result = custom_error({"ok":False, "error":"Same User"}, 403)
 
     return result
