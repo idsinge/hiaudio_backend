@@ -22,10 +22,10 @@ with app.app_context():
 
     db.session.commit()
 
-    userinfo1 = UserInfo(user=user1, google_uid="123456789", google_name="Google User 1", google_profile_pic="https://lh3.googleusercontent.com/a/AEdFTp5F-T3LomGACzwOvVRbctIfx84OMUoNqZpLjq_-fg=s96-c", google_email="gilpanal+2@gmail.com", name="Super Admin", profile_pic="https://raw.githubusercontent.com/gilpanal/beatbytebot_webapp/master/src/img/agp.png")
+    userinfo1 = UserInfo(user=user1, user_uid="123456789", user_email="gilpanal+2@gmail.com", name="Super Admin", profile_pic="https://raw.githubusercontent.com/gilpanal/beatbytebot_webapp/master/src/img/agp.png")
     db.session.add(userinfo1)
 
-    userinfo2 = UserInfo(user=user2, google_uid="987654321", google_name="Google User 2", google_profile_pic="https://lh3.googleusercontent.com/a/AGNmyxbgM4HGdV5vo3K20I8UtDU1gQqorx94Vn_0n3-5=s96-c", google_email="fandroide+2@gmail.com", name="Guest", profile_pic="https://raw.githubusercontent.com/gilpanal/beatbytebot_webapp/master/src/img/agp.png")
+    userinfo2 = UserInfo(user=user2, user_uid="987654321", user_email="fandroide+2@gmail.com", name="Guest", profile_pic="https://raw.githubusercontent.com/gilpanal/beatbytebot_webapp/master/src/img/agp.png")
     db.session.add(userinfo2)
 
     db.session.commit()

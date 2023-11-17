@@ -27,10 +27,8 @@ UserInfo:
  - user_id (duplicated) 
  - name
  - profile_pic
- - google_uid
- - google_name
- - google_email
- - google_profile_pic
+ - user_uid 
+ - user_email
 
 Collection:
 - id
