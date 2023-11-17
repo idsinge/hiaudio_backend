@@ -1,12 +1,14 @@
 import os
-from flask import Flask, request, redirect, jsonify, send_from_directory, abort
+from flask import Flask, request, send_from_directory, abort
 from flask_migrate import Migrate
 from flask_cors import CORS
-from orm import db, User
+from orm import db
+from flask_mail import Mail
 
 from flask_jwt_extended import JWTManager
 
 from admin import HiAdmin
+from utils import Utils
 
 import api.auth
 import api.composition
@@ -49,7 +51,13 @@ migrate = Migrate(app, db)
 db.init_app(app)
 
 
-
+app.config['MAIL_SERVER'] = config.MAIL_SERVER
+app.config['MAIL_PORT'] = config.MAIL_PORT
+app.config['MAIL_USERNAME'] = config.MAIL_USERNAME
+app.config['MAIL_PASSWORD'] = os.environ.get("OVH_EMAIL_PASSWD")
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+mail = Mail(app)
 
 
 @app.route('/')
@@ -67,7 +75,7 @@ def page(filename):
 
 
 HiAdmin(app, db)
-
+Utils(app, mail)
 
 # FOR HTTPS
 if __name__ == "__main__":
