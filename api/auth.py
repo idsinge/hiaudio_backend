@@ -119,6 +119,22 @@ def callback():
 
     return setaccessforuser(user)
 
+def generate_unique_uuid():
+    
+    while True:
+        uuid = shortuuid.uuid()        
+        if not User.query.filter_by(uid=uuid).first():
+            return uuid
+
+
+def generate_unique_username():
+   
+    while True:
+        uname = generate_username()
+        uname = uname[0]       
+        if not UserInfo.query.filter_by(name=uname).first():
+            return uname
+
 def createnewuserindb(users_email):
     
     user =  None 
@@ -129,17 +145,14 @@ def createnewuserindb(users_email):
         user = User.query.get(user_by_email.user_id)    
     else:
         # Doesn't exist? Add it to the database.
-        # TODO: check the random user uuid is not already in the DB 
-        unique_id = shortuuid.uuid()
-
-        # TODO: check the random username is not already in the DB 
-        rdmusername = generate_username()
+        unique_id = generate_unique_uuid()
+        rdmusername = generate_unique_username()
 
         # TODO: generate a random user profile picture
         default_picture ="https://raw.githubusercontent.com/gilpanal/beatbytebot_webapp/master/src/img/agp.png"
         user = User(uid=unique_id)
         # Create a user info entry in your db with the information provided by Google
-        userinfo = UserInfo(user=user, google_uid=unique_id, google_name=rdmusername, google_profile_pic=default_picture, google_email=users_email, name=rdmusername[0], profile_pic=default_picture)
+        userinfo = UserInfo(user=user, google_uid=unique_id, google_name=rdmusername, google_profile_pic=default_picture, google_email=users_email, name=rdmusername, profile_pic=default_picture)
         db.session.add(user)
         db.session.commit()
         db.session.add(userinfo)
