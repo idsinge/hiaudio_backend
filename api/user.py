@@ -19,7 +19,7 @@ def profile():
             ret = {
                 "ok":True,
                 "name":userinfo.name,
-                "email":userinfo.google_email,
+                "email":userinfo.user_email,
                 "profile_pic":userinfo.profile_pic,
                 "user_uid":current_user.uid,
                 "terms_accepted":current_user.terms_accepted
@@ -92,14 +92,14 @@ def checkuser(info):
             userid = user.uid
             result = jsonify({"ok":True, "user_uid":userid})
     elif (re.search(r'@gmail.', info)):
-        user = UserInfo.query.filter_by(google_email=info).first()
+        user = UserInfo.query.filter_by(user_email=info).first()
         if(user is not None):
-            result = jsonify({"ok":True, "user_uid":user.google_uid})
+            result = jsonify({"ok":True, "user_uid":user.user_uid})
     else:
         user = UserInfo.query.filter_by(name=info).first()
         if user:
-            userid = user.google_uid
-            result = jsonify({"ok":True, "user_uid":user.google_uid})
+            userid = user.user_uid
+            result = jsonify({"ok":True, "user_uid":user.user_uid})
 
     if result is None:
         result = custom_error({"error":"User Not Found"}, 404)

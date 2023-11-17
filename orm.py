@@ -39,15 +39,13 @@ class UserInfo(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     user = db.relationship('User', back_populates='userinfo')
-    name = db.Column(db.String(100))
+    name = db.Column(db.String(100), unique=True, nullable=False)
     profile_pic = db.Column(db.String(100))
-    google_uid = db.Column(db.String(100))
-    google_name = db.Column(db.String(100))
-    google_email = db.Column(db.String(100))
-    google_profile_pic = db.Column(db.String(100))
+    user_uid = db.Column(db.String(100), unique=True, nullable=False)   
+    user_email = db.Column(db.String(120), unique=True, nullable=False)    
 
     def __repr__(self):
-        return f'<UserInfo "{self.google_uid}">'
+        return f'<UserInfo "{self.user_uid}">'
 
 class Collection(db.Model, SerializerMixin):
 

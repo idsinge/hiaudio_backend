@@ -139,7 +139,7 @@ def createnewuserindb(users_email):
     
     user =  None 
     
-    user_by_email = UserInfo.query.filter_by(google_email=users_email).first()
+    user_by_email = UserInfo.query.filter_by(user_email=users_email).first()
 
     if user_by_email is not None:
         user = User.query.get(user_by_email.user_id)    
@@ -152,7 +152,7 @@ def createnewuserindb(users_email):
         default_picture ="https://raw.githubusercontent.com/gilpanal/beatbytebot_webapp/master/src/img/agp.png"
         user = User(uid=unique_id)
         # Create a user info entry in your db with the information provided by Google
-        userinfo = UserInfo(user=user, google_uid=unique_id, google_name=rdmusername, google_profile_pic=default_picture, google_email=users_email, name=rdmusername, profile_pic=default_picture)
+        userinfo = UserInfo(user=user, user_uid=unique_id, user_email=users_email, name=rdmusername, profile_pic=default_picture)
         db.session.add(user)
         db.session.commit()
         db.session.add(userinfo)

@@ -28,13 +28,13 @@ def addcontributorbyemail():
             match = re.search(r'@gmail.', email)
             role = request.get_json()['role']
             # check the email is in DB
-            user2 = UserInfo.query.filter_by(google_email=email).first()
+            user2 = UserInfo.query.filter_by(user_email=email).first()
 
             # TODO: if user is not in DB we could send an invite email to join
 
             # if Owner tries to add himself throws error
-            if((user2 is not None) and (user1.google_email != email) and (match is not None) and (UserRole.owner.value <= role <= UserRole.guest.value)):
-                return addcontributortodb(user2.id, user2.google_uid, composition, role)
+            if((user2 is not None) and (user1.user_email != email) and (match is not None) and (UserRole.owner.value <= role <= UserRole.guest.value)):
+                return addcontributortodb(user2.id, user2.user_uid, composition, role)
             else:
                 return jsonify({"error":"not valid contributor"})
         else:
