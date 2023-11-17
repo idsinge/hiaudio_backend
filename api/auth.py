@@ -229,7 +229,8 @@ def logincodevalidation():
                         user = createnewuserindb(email)
                         db.session.delete(existing_email)
                         db.session.commit()
-                        return setaccessforuser(user)
+                        access_token = create_access_token(identity=user.uid)
+                        return jsonify({"ok":True, "access_token_cookie":access_token})
                     else:
                         return jsonify({"ok":False, "error":"wrong code"})
                 else:
