@@ -1,5 +1,5 @@
 import os, json
-import re
+from email_validator import validate_email, EmailNotValidError
 import random
 from oauthlib.oauth2 import WebApplicationClient
 from random_username.generate import generate_username
@@ -55,7 +55,6 @@ def get_user_token():
         return request.cookies.get(jwtconfig.access_cookie_name, None)
     else:
         return None
-
 
 
 def get_google_provider_cfg():
@@ -184,10 +183,12 @@ def generatelogincode(email):
         return jsonify({"ok":False, "error":"user already logged in"})
     else:       
         code = None
-        # https://stackoverflow.com/a/67631865         
-        valid_email_regex = '^(\w|\.|\_|\-)+[@](\w|\_|\-|\.)+[.]\w{2,3}$'
-        if not re.search(valid_email_regex, email):
-            return jsonify({"ok":False, "error":"wrong email format"})
+                
+        try:
+            emailinfo = validate_email(email, check_deliverability=False)
+            email = emailinfo.normalized
+        except EmailNotValidError as e:            
+            return jsonify({"ok":False, "error":str(e)})          
                 
         existing_email = VerificationCode.query.filter_by(email=email).first()
         
@@ -228,11 +229,13 @@ def logincodevalidation():
         email = rjson.get("email", None)
         code = rjson.get("code", None)
       
-        if email is not None and code is not None:
-            # https://stackoverflow.com/a/67631865         
-            valid_email_regex = '^(\w|\.|\_|\-)+[@](\w|\_|\-|\.)+[.]\w{2,3}$'
-            if not re.search(valid_email_regex, email):
-                return jsonify({"ok":False, "error":"wrong email format"})
+        if email is not None and code is not None:            
+            
+            try:
+                emailinfo = validate_email(email, check_deliverability=False)
+                email = emailinfo.normalized
+            except EmailNotValidError as e:            
+                return jsonify({"ok":False, "error":str(e)})     
             code_str = str(code)
             if code_str.isdigit() and len(code_str) == 6:
                 existing_email = VerificationCode.query.filter_by(email=email).first()

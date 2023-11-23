@@ -14,3 +14,4 @@ random-username
 shortuuid
 flask_jwt_extended
 Flask-Mail
+email-validator
