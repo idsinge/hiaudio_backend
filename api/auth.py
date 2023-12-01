@@ -3,7 +3,7 @@ from email_validator import validate_email, EmailNotValidError
 import random
 from oauthlib.oauth2 import WebApplicationClient
 from random_username.generate import generate_username
-from orm import db, User, UserInfo, VerificationCode
+from orm import db, User, UserInfo, VerificationCode, InvitationEmail
 from flask import Blueprint, jsonify, request, redirect, url_for
 import requests
 from datetime import datetime
@@ -113,9 +113,7 @@ def callback():
     #else:
         # "User email not available or not verified by Google.", 400
     
-    # TODO: check to delete from verification_code table 
     user = createnewuserindb(users_email)
-
     return setaccessforuser(user)
 
 def generate_unique_uuid():
@@ -161,6 +159,15 @@ def createnewuserindb(users_email):
 
 def setaccessforuser(user):
     
+    userinfo = UserInfo.query.get(user.id)
+    verification_pending = VerificationCode.query.filter_by(email=userinfo.user_email).first()
+    if verification_pending:
+        db.session.delete(verification_pending)
+        db.session.commit()
+    invitation_pending = InvitationEmail.query.filter_by(email=userinfo.user_email).first()
+    if invitation_pending:
+        db.session.delete(invitation_pending)
+        db.session.commit()
     # create token, write it in the response, and redirect to home
     access_token = create_access_token(identity=user.uid)
     response = redirect(url_for("index"))
@@ -208,7 +215,7 @@ def generatelogincode(email):
             db.session.commit()       
 
         utils = Utils()
-        result = utils.sendemail(email, code)
+        result = utils.sendeverificationcode(email, code)
         
         if result:            
             return jsonify({"ok":True, "result":"Code successfully sent"})
@@ -246,6 +253,10 @@ def logincodevalidation():
                         db.session.delete(existing_email)
                         db.session.commit()
                         access_token = create_access_token(identity=user.uid)
+                        invitation_pending = InvitationEmail.query.filter_by(email=email).first()
+                        if invitation_pending:
+                            db.session.delete(invitation_pending)
+                            db.session.commit()
                         return jsonify({"ok":True, "access_token_cookie":access_token})
                     else:
                         return jsonify({"ok":False, "error":"wrong code"})

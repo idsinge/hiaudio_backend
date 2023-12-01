@@ -15,6 +15,7 @@
           - <contributor userid>
 
 - verificationcode
+- invitationemail
 
 User:
  - id  
@@ -73,3 +74,10 @@ VerificationCode:
  - code 
  - date 
  - attempts
+
+InvitationEmail:
+ - email 
+ - date 
+ - attempts
+ - invited_by
+ - refusal_code 
