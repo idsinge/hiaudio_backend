@@ -120,3 +120,12 @@ class VerificationCode(db.Model):
     code = db.Column(db.String(6), nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     attempts = db.Column(db.Integer, default=0, nullable=False)
+
+class InvitationEmail(db.Model):
+    
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    refusal_code = db.Column(db.String(100), nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    attempts = db.Column(db.Integer, default=0, nullable=False)
+    invited_by = db.Column(db.Integer)

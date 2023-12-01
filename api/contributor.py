@@ -1,8 +1,12 @@
 import re
 from flask import Blueprint, request, jsonify
-from orm import db, User, UserRole, Composition, Contributor, UserInfo
+from email_validator import validate_email, EmailNotValidError
+from orm import db, User, UserRole, Composition, Contributor, UserInfo, InvitationEmail
 from flask_jwt_extended import current_user, jwt_required
 from flask_cors import cross_origin
+from utils import Utils
+import api.auth
+import shortuuid
 
 contrib = Blueprint('contrib', __name__)
 
@@ -12,27 +16,47 @@ contrib = Blueprint('contrib', __name__)
 def addcontributorbyemail():
 
     user_auth = current_user.id
-    comp_uuid = request.get_json()['composition_id']
-    composition = Composition.query.filter_by(uuid=comp_uuid).first()
-    if(composition is None):
-        return jsonify({"error":"composition not found"})
+    rjson = request.get_json()
+    comp_uuid = rjson.get("composition_id", None)   
+    email = rjson.get("email", None)
+    role = rjson.get("role", None)
+    if(comp_uuid is None) or (email is None) or (not role) or  (role is None) or (int(role) < UserRole.owner.value) or (int(role) > UserRole.guest.value):
+        return jsonify({"error":"error in parameters"})
     else:
+        composition = Composition.query.filter_by(uuid=comp_uuid).first()
+        if(composition is None):
+            return jsonify({"error":"composition not found"})
+        
         user1 = UserInfo.query.get(user_auth)
         # if the person who tries to add the contributor is the owner
         # TODO: [issue 89] check if the role is 1 (UserRole.owner.value)
         # control that permission is not changed to creator of the composition
-        if composition.user.id == user_auth:
-            email = request.get_json()["email"]
-            # check is gmail address
-            match = re.search(r'@gmail.', email)
-            role = request.get_json()['role']
-            # check the email is in DB
-            user2 = UserInfo.query.filter_by(user_email=email).first()
+        if composition.user.id == user_auth:            
+            
+            if email is not None:                
+                try:
+                    emailinfo = validate_email(email, check_deliverability=False)
+                    email = emailinfo.normalized
+                except EmailNotValidError as e:            
+                    return jsonify({"ok":False, "error":str(e)})  
+            
+            # if Owner tries to add himself throws error            
+            if(user1.user_email != email):
+                user2 = UserInfo.query.filter_by(user_email=email).first()
 
-            # TODO: if user is not in DB we could send an invite email to join
+                if(user2 is None):                
+                    utils = Utils()                    
+                    result = utils.sendinvitationemail(email, request.host)                    
+                    if(result):
+                        code = shortuuid.uuid()
+                        new_invitation = InvitationEmail(email=email, refusal_code=code, invited_by=user_auth)
+                        db.session.add(new_invitation)
+                        db.session.commit()  
+                        newuser = api.auth.createnewuserindb(email)
+                        user2 = user2 = UserInfo.query.get(newuser.id)
+                    else:
+                        return jsonify({"error":"problem sending email"})
 
-            # if Owner tries to add himself throws error
-            if((user2 is not None) and (user1.user_email != email) and (match is not None) and (UserRole.owner.value <= role <= UserRole.guest.value)):
                 return addcontributortodb(user2.id, user2.user_uid, composition, role)
             else:
                 return jsonify({"error":"not valid contributor"})
