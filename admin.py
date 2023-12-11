@@ -64,3 +64,5 @@ class HiAdmin():
         admin.add_view(HiModelView(Composition, db.session))
         admin.add_view(HiModelView(Track, db.session, endpoint="_track"))
         admin.add_view(HiModelView(Contributor, db.session))
+        admin.add_view(HiModelView(VerificationCode, db.session))
+        admin.add_view(HiModelView(InvitationEmail, db.session))
