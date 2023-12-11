@@ -1,6 +1,6 @@
 import re
-from flask import  Blueprint, jsonify, make_response
-from orm import  db, User, UserInfo, Composition
+from flask import  Blueprint, jsonify, make_response, request
+from orm import  db, User, UserInfo, Composition, InvitationEmail
 from flask_jwt_extended import current_user, jwt_required
 from api.auth import is_user_logged_in, get_user_token
 from api.composition import deletecompfolder
@@ -112,3 +112,22 @@ def checkuser(info):
             result = custom_error({"ok":False, "error":"Same User"}, 403)
 
     return result
+
+@user.route('/refuseinvitation', methods=['POST'])
+def refuseinvitation():
+ 
+    rjson = request.get_json()
+    email = rjson.get("email", None)
+    code = rjson.get("refusal_code", None)
+    if (email is None) or (not code) or (code is None):
+        return jsonify({"ok":False, "error":"error in parameters"})        
+    invitation = InvitationEmail.query.filter_by(email=email, refusal_code=code).first()
+    if invitation is not None:
+        userinfo = UserInfo.query.filter_by(user_email=email).first()
+        user = User.query.get(userinfo.user_id)
+        db.session.delete(invitation)
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({"ok":True, "result":"user deleted successfully"})
+    else:    
+        return jsonify({"ok":False, "error":"wrong email or code"})
