@@ -26,11 +26,22 @@ class Utils(metaclass=UtilsSingletonMeta):
             print(f"Failed to send email. Error: {e}")
             return False
     
-    def sendinvitationemail(self, recipient, host):
+    def sendinvitationemail(self, recipient, host, refusal_code):
         try:
             with self._app.app_context():
                 msg = Message(subject='Invitation to Hi-Audio', sender=('HiAudio', 'admin@hiaudio.fr'), recipients=[recipient])
-                msg.body = "You have been invited to Hi-Audio Online Platform. Please register on the following link: https://"+host
+                html_content = f"""
+                <html>
+                    <head></head>
+                    <body>
+                        <p>Hi,</p>
+                        <p>You have been invited to Hi-Audio Online Platform. Please register on the following link: https://{host}.<br>
+                        .</p>
+                        <p>If you think this email was sent by mistake you can reject it by visiting: https://{host}/refusal.html and filling the form with your email plus the following refusal code: {refusal_code}</p>
+                    </body>
+                </html>
+                """
+                msg.html = html_content
                 self._mail.send(msg)
                 return True
         except Exception as e:
