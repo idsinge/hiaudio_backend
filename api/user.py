@@ -1,4 +1,5 @@
 import re
+from email_validator import validate_email, EmailNotValidError
 from flask import  Blueprint, jsonify, make_response, request
 from orm import  db, User, UserInfo, Composition, InvitationEmail
 from flask_jwt_extended import current_user, jwt_required
@@ -85,11 +86,14 @@ def deleteuser(uid):
 @jwt_required()
 def checkuser(info):
     result = None
-    userid = None
-    
-    valid_email_regex = '^(\w|\.|\_|\-)+[@](\w|\_|\-|\.)+[.]\w{2,3}$'
-
-    if not re.search(valid_email_regex, info):        
+    userid = None    
+    try:
+        emailinfo = validate_email(info, check_deliverability=False)
+        email = emailinfo.normalized
+        user = UserInfo.query.filter_by(user_email=email).first()        
+        if(user is not None):
+            result = jsonify({"ok":True, "user_uid":user.user_uid}) 
+    except EmailNotValidError as e:        
         user = User.query.filter_by(uid=info).first()
         if(user is not None):
             userid = user.uid
@@ -98,11 +102,7 @@ def checkuser(info):
             user = UserInfo.query.filter_by(name=info).first()
             if user:
                 userid = user.user_uid
-                result = jsonify({"ok":True, "user_uid":user.user_uid})
-    else:        
-        user = UserInfo.query.filter_by(user_email=info).first()        
-        if(user is not None):
-            result = jsonify({"ok":True, "user_uid":user.user_uid}) 
+                result = jsonify({"ok":True, "user_uid":user.user_uid})           
 
     if result is None:
         result = custom_error({"ok":False, "error":"User Not Found"}, 404)
