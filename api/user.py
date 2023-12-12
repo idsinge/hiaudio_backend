@@ -92,6 +92,7 @@ def checkuser(info):
         email = emailinfo.normalized
         user = UserInfo.query.filter_by(user_email=email).first()        
         if(user is not None):
+            userid = user.user_uid
             result = jsonify({"ok":True, "user_uid":user.user_uid}) 
     except EmailNotValidError as e:        
         user = User.query.filter_by(uid=info).first()
