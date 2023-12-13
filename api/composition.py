@@ -1,7 +1,7 @@
 import os
 import shutil
 from flask import Blueprint, request, jsonify
-from orm import db, User, UserRole, LevelPrivacy, Composition, Contributor, Collection
+from orm import db, User, UserRole, LevelPrivacy, Composition, Contributor, Collection, UserInfo
 from flask_jwt_extended import current_user, jwt_required
 from api.auth import is_user_logged_in
 from flask_cors import cross_origin
@@ -71,6 +71,14 @@ def mycollaborations():
     jcompositions = jsonify(mycollaborations=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in compositions])
     return jcompositions
 
+def setcontributorsemails(listofcontrib):
+    newlist = listofcontrib
+    index = 0
+    for contrib in newlist:
+        contrib_usrinf = UserInfo.query.filter_by(user_uid=contrib['user_uid']).first()
+        newlist[index]['email'] = contrib_usrinf.user_email
+        index += 1   
+    return newlist
 
 # if privacy= 2 (onlyreg) or 3 (private), and not logged => not accesible
 # if privacy=3 (private) and not either owner/contributor => not accesible
@@ -105,6 +113,8 @@ def composition(uuid):
                 return jsonify({"error":"composition not accesible"})
             else:
                 data = composition.to_dict( rules=('-path','-collection', '-id') )
+                if data['contributors'] and (role == UserRole.owner.value):                    
+                    data['contributors'] = setcontributorsemails(data['contributors'])                    
                 if(data['collection_id']):
                     coll = Collection.query.get(data['collection_id'])
                     data['collection_id'] = coll.uuid
