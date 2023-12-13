@@ -105,7 +105,7 @@ def addcontributortodb(user2id, user2uid, composition, role):
         contributor = Contributor(role=UserRole(role).name, user_id=user2id, user_uid=user2uid, composition=composition)
         db.session.add(contributor)
         db.session.commit()
-        return jsonify({"ok":True, "result":"role added successfully", "contribid":contributor.id})
+        return jsonify({"ok":True, "result":"role added successfully", "contribid":contributor.id, "uuid":user2uid})
 
 @contrib.route('/deletecontributor', methods=['DELETE'])
 @jwt_required()
