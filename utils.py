@@ -36,7 +36,7 @@ class Utils(metaclass=UtilsSingletonMeta):
                     <body>
                         <p>Hi,</p>
                         <p>You have been invited to Hi-Audio Online Platform. Please register on the following link: https://{host}.<br>
-                        .</p>
+                        </p>
                         <p>If you think this email was sent by mistake you can reject it by visiting: https://{host}/refusal.html and filling the form with your email plus the following refusal code: {refusal_code}</p>
                     </body>
                 </html>
