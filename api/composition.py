@@ -10,6 +10,28 @@ import config
 
 comp = Blueprint('comp', __name__)
 
+def getcompositionusername(user_id):
+    return UserInfo.query.get(user_id).name
+
+def getnameparentcollection(collection_id):
+    if collection_id is not None:
+        coll = Collection.query.get(collection_id)        
+        return coll.title
+    else:
+        return collection_id
+
+def getcompjsonwithuserandcollection(compositions):
+    composition_dicts = [
+        {      
+            **composition.to_dict(rules=('-c', '-collection')),
+            'parent_collection': getnameparentcollection(composition.collection_id),
+            'username': getcompositionusername(composition.user_id)
+        }
+        for composition in compositions
+    ]    
+    result_dict = {'compositions': composition_dicts}
+    return  jsonify(result_dict)
+
 @comp.route('/compositions')
 @cross_origin()
 def compositions():
@@ -31,7 +53,7 @@ def compositions():
                     if(iscontributor is not None):
                         compositions.append(comp)
 
-    jcompositions = jsonify(compositions=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in compositions])
+    jcompositions = getcompjsonwithuserandcollection(compositions)
     return jcompositions
 
 
@@ -40,7 +62,7 @@ def compositions():
 def recentcompositions():
     allcompositions = Composition.query.filter_by(privacy=LevelPrivacy.public.value)
     compositions = allcompositions.order_by(Composition.id.desc()).limit(config.MAX_RECENT_COMPOSITIONS)
-    jcompositions = jsonify(compositions=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in compositions])
+    jcompositions = getcompjsonwithuserandcollection(compositions)
     return jcompositions
 
 @comp.route('/mycompositions')
@@ -51,7 +73,7 @@ def mycompositions():
     allmycompositions = Composition.query.filter_by(user_id=user_auth)
     collaborations = get_my_collaborations(user_auth)
     merged_comps = list(allmycompositions) + collaborations
-    jcompositions = jsonify(compositions=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in merged_comps])
+    jcompositions = getcompjsonwithuserandcollection(merged_comps) 
     return jcompositions
 
 def get_my_collaborations(user_auth):
