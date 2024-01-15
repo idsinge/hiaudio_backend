@@ -79,6 +79,33 @@ def deleteuser(uid):
     else:
         return jsonify({"error":"not authenticated"})
 
+@user.route('/updateusername', methods=['PATCH'])
+@jwt_required()
+@cross_origin()
+def updateusername():
+    if is_user_logged_in():
+        user_auth = current_user.id        
+        rjson = request.get_json()
+        newusername = rjson.get("user_name", None)        
+        if ((newusername is not None) and bool(newusername and not newusername.isspace())):
+            newusername = newusername.strip()
+            userinfo = UserInfo.query.get(user_auth)
+            if(userinfo.name != newusername):                
+                isthere = UserInfo.query.filter_by(name=newusername).first()
+                if(isthere is None):
+                    setattr(userinfo, 'name', newusername)               
+                    db.session.commit()
+                    return jsonify({"ok":True, "result": "username updated successfully"})
+                else:
+                    return jsonify({"ok":False, "error": "username already exists"})
+            else:
+                return jsonify({"ok":True, "result": "same username"})
+        else:
+            return jsonify({"ok":False, "error":"username not valid"})    
+        
+    else:
+        return jsonify({"ok":False,"error":"not authenticated"})
+
 # TODO: this API method could change in the future to allow filtering users in the app search bar when adding a new contributor
 # param "info" can be either an email address, a user id or a name
 @user.route('/checkuser/<string:info>')
