@@ -23,22 +23,20 @@ def deletefromdb(trackinfo):
     db.session.delete(trackinfo)
     db.session.commit()
 
-@track.route('/trackfile/<string:uuid>')
-@cross_origin()
-def trackfile(uuid):
 
+def checktrackpermissions(uuid):
     track = Track.query.filter_by(uuid=uuid).first()
     if(track is None):
-        return jsonify({"error":"track not found"})
+        return False, jsonify({"error":"track not found"})
     else:
         user = is_user_logged_in()
         user_auth = user.id if not user is None else None
         composition = Composition.query.get(track.composition_id)
         privacy = composition.privacy
         if((privacy.value == LevelPrivacy.public.value) or ((privacy.value == LevelPrivacy.onlyreg.value) and (user_auth is not None))):
-            return send_from_directory( config.DATA_BASEDIR, track.path )
+            return True, track
         elif ((privacy.value == LevelPrivacy.onlyreg.value) and (user_auth is None)):
-            return jsonify({"error":"user not authorized"})
+            return False, jsonify({"error":"user not authorized"})
         else:
             role = UserRole.none.value
             if(composition.user_id == user_auth):
@@ -48,10 +46,66 @@ def trackfile(uuid):
                 if(iscontributor is not None):
                     role = iscontributor.role.value
             if(UserRole.owner.value <= role <= UserRole.guest.value):
-                return send_from_directory( config.DATA_BASEDIR, track.path )
+                return True,  track
             else:
-                return jsonify({"error":"user not authorized"})
+                return False, jsonify({"error":"user not authorized"})
 
+@track.route('/trackfile/<string:uuid>')
+@cross_origin()
+def trackfile(uuid):
+
+    isok, result = checktrackpermissions(uuid)
+
+    if(isok):
+        return send_from_directory( config.DATA_BASEDIR, result.path )
+    else:
+        return result
+
+@track.route('/getinfotrack/<string:uuid>')
+@cross_origin()
+def getinfotrack(uuid):
+
+    isok, result = checktrackpermissions(uuid)
+
+    if(isok):
+        ret = {"title": result.title }
+        return jsonify(ret)
+    else:
+        return result
+
+@track.route('/updatetrackinfo', methods=['PATCH'])
+@jwt_required()
+@cross_origin()
+# TODO: currently only works for the field "title" but the code needs to be adapted to any field/annotation
+# title is set at Track table but for annotations they will be set in a different table
+def updatetrackinfo():
+    rjson = request.get_json()
+    trackuid = rjson.get("trackid", None)
+    tracktitle = rjson.get("title", None)    
+    if(trackuid is None):
+        return jsonify({"ok":False, "error":"track uuid is mandatory"})
+    elif(tracktitle is None):
+        return jsonify({"ok":False, "error":"tracktitle is mandatory"})
+    else:
+        track = Track.query.filter_by(uuid=trackuid).first()
+        if(track is not None):
+            composition = Composition.query.get(track.composition_id)
+            user_auth = current_user.id
+            iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
+            role = UserRole.none.value            
+            if((composition.user.id == user_auth) or (track.user_id == user_auth)):                
+                role = UserRole.owner.value                
+            if((iscontributor is not None) and (role is not UserRole.owner.value)):
+                role = iscontributor.role.value
+            if((role == UserRole.owner.value) or (role == UserRole.admin.value)):
+                setattr(track, "title", tracktitle)
+                db.session.commit()
+                return jsonify({"ok":True, "result": "track info updated successfully"})
+            else:
+                return jsonify({"ok":False, "error":"not possible to update track title with role " + str(role)})
+        else:
+            return jsonify({"ok":False, "error":"track not found"})
+    
 @track.route('/deletetrack/<string:uuid>', methods=['DELETE'])
 @jwt_required()
 @cross_origin()
