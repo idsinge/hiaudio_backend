@@ -1,36 +1,14 @@
-import os
-import shutil
 from flask import Blueprint, request, jsonify
-from orm import db, User, UserRole, LevelPrivacy, Composition, Contributor, Collection, UserInfo
+from orm import db, User, UserRole, LevelPrivacy, Composition, Contributor, Collection
 from flask_jwt_extended import current_user, jwt_required
 from api.auth import is_user_logged_in
 from flask_cors import cross_origin
 import shortuuid
 import config
 
+from .composition_helper import checkcompshouldberetrieved, getcompjsonwithuserandcollection, getcollaborationsbyuseridwithrole, getfilteredcompostionsbyrole, setcontributorsemails, deletecompfolder, updatecompfield, ERROR_404
+
 comp = Blueprint('comp', __name__)
-
-def getcompositionusername(user_id):
-    return UserInfo.query.get(user_id).name
-
-def getnameparentcollection(collection_id):
-    if collection_id is not None:
-        coll = Collection.query.get(collection_id)        
-        return coll.title
-    else:
-        return collection_id
-
-def getcompjsonwithuserandcollection(compositions):
-    composition_dicts = [
-        {      
-            **composition.to_dict(rules=('-c', '-collection')),
-            'parent_collection': getnameparentcollection(composition.collection_id),
-            'username': getcompositionusername(composition.user_id)
-        }
-        for composition in compositions
-    ]    
-    result_dict = {'compositions': composition_dicts}
-    return  jsonify(result_dict)
 
 @comp.route('/compositions')
 @cross_origin()
@@ -40,18 +18,8 @@ def compositions():
     allcompositions = Composition.query.all()
     compositions = []
     for comp in allcompositions:
-        if ((user_auth is None) and (comp.privacy.value == LevelPrivacy.public.value)):
+        if checkcompshouldberetrieved(comp, user_auth):
             compositions.append(comp)
-        else:
-            if((comp.privacy.value != LevelPrivacy.private.value ) and (user_auth is not None)):
-                compositions.append(comp)
-            else:
-                if(comp.user.id == user_auth):
-                    compositions.append(comp)
-                else:
-                    iscontributor = Contributor.query.filter_by(composition_id=comp.id, user_id=user_auth).first()
-                    if(iscontributor is not None):
-                        compositions.append(comp)
 
     jcompositions = getcompjsonwithuserandcollection(compositions)
     return jcompositions
@@ -71,36 +39,26 @@ def recentcompositions():
 def mycompositions():
     user_auth = current_user.id
     allmycompositions = Composition.query.filter_by(user_id=user_auth)
-    collaborations = get_my_collaborations(user_auth)
+    collaborations = getcollaborationsbyuseridwithrole(user_auth,user_auth)    
     merged_comps = list(allmycompositions) + collaborations
     jcompositions = getcompjsonwithuserandcollection(merged_comps) 
     return jcompositions
 
-def get_my_collaborations(user_auth):
-        compositions = []
-        iscontributor = Contributor.query.filter_by(user_id=user_auth)
-        for collab in iscontributor:
-            comp = Composition.query.get(collab.composition_id)
-            compositions.append(comp)
-        return  compositions
-
-@comp.route('/mycollaborations')
-@jwt_required()
+@comp.route('/compositionsbyuserid/<string:uuid>')
 @cross_origin()
-def mycollaborations():
-    user_auth = current_user.id
-    compositions = get_my_collaborations(user_auth)
-    jcompositions = jsonify(mycollaborations=[ composition.to_dict( rules=('-tracks','-collection') ) for composition in compositions])
-    return jcompositions
-
-def setcontributorsemails(listofcontrib):
-    newlist = listofcontrib
-    index = 0
-    for contrib in newlist:
-        contrib_usrinf = UserInfo.query.filter_by(user_uid=contrib['user_uid']).first()
-        newlist[index]['email'] = contrib_usrinf.user_email
-        index += 1   
-    return newlist
+def compositionsbyuserid(uuid):
+    currentuser = is_user_logged_in()
+    user_auth = currentuser.id if currentuser else None   
+    usertoget = User.query.filter_by(uid=uuid).first()
+    if(usertoget is not None):                
+        allcompositions = Composition.query.filter_by(user_id=usertoget.id)
+        filteredcompositions = getfilteredcompostionsbyrole(allcompositions, user_auth)
+        collaborations = getcollaborationsbyuseridwithrole(usertoget.id, user_auth)           
+        merged_comps = list(filteredcompositions) + collaborations
+        jcompositions = getcompjsonwithuserandcollection(merged_comps)
+        return jcompositions        
+    else:
+        return jsonify({"ok":False, "error":"user id not found"})
 
 # if privacy= 2 (onlyreg) or 3 (private), and not logged => not accesible
 # if privacy=3 (private) and not either owner/contributor => not accesible
@@ -112,7 +70,7 @@ def composition(uuid):
     user_auth = user.id if user else None
     composition = Composition.query.filter_by(uuid=uuid).first()
     if(composition is None):
-        return jsonify({"error":"composition not found"})
+        return jsonify({"error":ERROR_404})
     else:
         if ((user_auth is None) and ((composition.privacy.value == LevelPrivacy.onlyreg.value) or (composition.privacy.value == LevelPrivacy.private.value))):
             return jsonify({"error":"composition not accesible"})
@@ -175,13 +133,6 @@ def newcomposition():
     else:
         return jsonify({"error":"privacy value not valid", "ok": False})
 
-
-def deletecompfolder(compid):
-    compositionpath = f"compositions/{compid}/"
-    fullpath = os.path.join(config.DATA_BASEDIR, compositionpath )
-    if os.path.exists(fullpath):
-        shutil.rmtree(fullpath)
-
 @comp.route('/deletecomposition/<string:uuid>', methods=['DELETE'])
 @jwt_required()
 @cross_origin()
@@ -189,7 +140,7 @@ def deletecomposition(uuid):
     user_auth = current_user.id
     composition = Composition.query.filter_by(uuid=uuid).first()
     if(composition is None):
-        return jsonify({"error":"composition not found"})
+        return jsonify({"error":ERROR_404})
     else:
         iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
 
@@ -248,35 +199,3 @@ def updatecompcollection():
         return updatecompfield('collection_id')
     else:
         return jsonify({"error":"user not authorized or collection not found"})
-
-def updatecompfield(field):
-    comp_uuid = request.get_json()['uuid']
-    composition = Composition.query.filter_by(uuid=comp_uuid).first()
-    if(composition is None):
-        return jsonify({"error":"composition not found"})
-    else:
-        ## TODO: wrap in try catch and send error, for example for invalid Privacy
-        fieldvalue = request.get_json()[field]
-        if(field == 'collection_id'):
-            collection=Collection.query.filter_by(uuid=fieldvalue).first()
-            if(collection):
-                fieldvalue = collection.id
-            elif(fieldvalue =="" or fieldvalue == None):
-                fieldvalue = None
-            else:
-                return jsonify({"error":"not valid collection"})
-        if(field == 'privacy'):
-            fieldvalue = LevelPrivacy(int(fieldvalue)).name
-        user_auth = current_user.id
-        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
-        role = UserRole.none.value
-        if(composition.user.id == user_auth):
-            role = UserRole.owner.value
-        if(iscontributor is not None):
-            role = iscontributor.role.value
-        if(role == UserRole.owner.value):
-            setattr(composition, field, fieldvalue)
-            db.session.commit()
-            return jsonify({"ok":True, "result": field + " updated successfully"})
-        else:
-            return jsonify({"error":"not possible to update composition field " + field + " with role " + str(role)})
