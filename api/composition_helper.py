@@ -7,8 +7,8 @@ import config
 
 ERROR_404 = "composition not found"
 
-def getcompositionusername(user_id):
-    return UserInfo.query.get(user_id).name
+def getcompositionuserinfo(user_id):
+    return UserInfo.query.get(user_id)
 
 def getnameparentcollection(collection_id):
     if collection_id is not None:
@@ -22,7 +22,8 @@ def getcompjsonwithuserandcollection(compositions):
         {      
             **composition.to_dict(rules=('-c', '-collection')),
             'parent_collection': getnameparentcollection(composition.collection_id),
-            'username': getcompositionusername(composition.user_id)
+            'username': getcompositionuserinfo(composition.user_id).name,
+            'owner_uuid': getcompositionuserinfo(composition.user_id).user_uid,
         }
         for composition in compositions
     ]    
