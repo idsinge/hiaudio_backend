@@ -3,12 +3,15 @@ from flask_jwt_extended import current_user, jwt_required
 from api.auth import is_user_logged_in
 from flask_cors import cross_origin
 from sqlalchemy import and_, or_
-from orm import db, User, Collection, LevelPrivacy
+from orm import db, User, Collection, LevelPrivacy, Composition
 import shortuuid
+from .composition_helper import getcompjsonwithuserandcollection, getfilteredcompostionsbyrole, checkcompshouldberetrieved
 
 
 coll = Blueprint('coll', __name__)
 
+ERROR_404 = "colelction not found"
+ERROR_403 = "colelction not accesible"
 
 @coll.route('/collection/<string:uuid>')
 @cross_origin()
@@ -17,13 +20,13 @@ def collection(uuid):
     user_auth = user.id if user else None
     collection = Collection.query.filter_by(uuid=uuid).first()
     if(collection is None):
-        return jsonify({"error":"collection not found"})
+        return jsonify({"error":ERROR_404})
     else:
         if ((user_auth is None) and ((collection.privacy.value == LevelPrivacy.onlyreg.value) or (collection.privacy.value == LevelPrivacy.private.value))):
-            return jsonify({"error":"collection not accesible"})
+            return jsonify({"error":ERROR_403})
         else:
             if((collection.privacy.value == LevelPrivacy.private.value) and (collection.user.id != user_auth)):
-                return jsonify({"error":"collection not accesible"})
+                return jsonify({"error":ERROR_403})
             else:
                 data = collection.to_dict( rules=('-id','-compositions',) )
                 jcollection = jsonify(data)
@@ -74,6 +77,7 @@ def get_collection_hierarchy(collection):
 
 def get_composition_hierarchy(composition):
     return {
+        'id': composition.id,
         'uuid': composition.uuid,
         'privacy': composition.privacy.value,
         'title': composition.title,
@@ -91,6 +95,44 @@ def mycollectionsastree():
     collections_json = [get_collection_hierarchy(collection) for collection in root_collections]
     return jsonify(collections_json)
 
+def getcompositionobjectfromdict(itemslist, user_auth):
+    okitems = []
+    for item in itemslist:
+        comp = Composition.query.get(item.get("id"))        
+        isok = checkcompshouldberetrieved(comp, user_auth)
+        if isok:
+            okitems.append(comp)
+    return okitems
+
+def extract_compositions(json_data, compositions_list, user_auth):
+    for item in json_data:            
+        if isinstance(item, dict):
+            newcomp = item.get("compositions")            
+            if newcomp:
+                composition_objects = getcompositionobjectfromdict(newcomp, user_auth)                
+                compositions_list.extend(composition_objects)           
+            collections = item["collections"]
+            if isinstance(collections, list):
+                extract_compositions(collections, compositions_list, user_auth)
+
+@coll.route('/collectionastreebyid/<string:uuid>', methods=['GET'])
+@cross_origin()
+def collectionastreebyid(uuid):
+    user = is_user_logged_in()
+    user_auth = user.id if user else None
+    collectiontoget = Collection.query.filter_by(uuid=uuid).first()    
+    if(collectiontoget is None):
+        return jsonify({"error":ERROR_404})
+    else:
+        root_collections = Collection.query.filter_by(parent_id=collectiontoget.id).all()
+        root_compositions = Composition.query.filter_by(collection_id=collectiontoget.id).all()              
+        collections_json = [get_collection_hierarchy(collection) for collection in root_collections]
+        compositions_list = []
+        extract_compositions(collections_json, compositions_list, user_auth)
+        filteredcompositions = getfilteredcompostionsbyrole(root_compositions, user_auth)
+        merged_comps = filteredcompositions + compositions_list
+        jcompositions = getcompjsonwithuserandcollection(merged_comps)
+        return jsonify(jcompositions)
 
 @coll.route('/mycollections')
 @jwt_required()
@@ -237,7 +279,7 @@ def updatecollfield(field, fieldvalue):
         coll_uuid = request.get_json()["uuid"]
         collection = Collection.query.filter_by(uuid=coll_uuid).first()
         if(collection is None):
-            return jsonify({"error":"collection not found"})
+            return jsonify({"error":ERROR_404})
         else:
             if(collection.user.id == user_auth):
                 setattr(collection, field, fieldvalue)
@@ -256,7 +298,7 @@ def deletecollection(uuid):
     user_auth = current_user.id
     collection = Collection.query.filter_by(uuid=uuid).first()
     if(collection is None):
-        return jsonify({"error":"collection not found"})
+        return jsonify({"error":ERROR_404})
     else:
         if(collection.user.id == user_auth):
             db.session.delete(collection)

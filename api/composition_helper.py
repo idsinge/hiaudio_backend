@@ -28,7 +28,7 @@ def getcompjsonwithuserandcollection(compositions):
         for composition in compositions
     ]    
     result_dict = {'compositions': composition_dicts}
-    return  jsonify(result_dict)
+    return  result_dict
 
 def getfilteredcompostionsbyrole(listofcomps, user_auth):
     compositions = []        
