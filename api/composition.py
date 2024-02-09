@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from orm import db, User, UserRole, LevelPrivacy, Composition, Contributor, Collection
+from orm import db, User, UserRole, LevelPrivacy, Composition, Contributor, Collection, UserInfo
 from flask_jwt_extended import current_user, jwt_required
 from api.auth import is_user_logged_in
 from flask_cors import cross_origin
@@ -22,7 +22,7 @@ def compositions():
             compositions.append(comp)
 
     jcompositions = getcompjsonwithuserandcollection(compositions)
-    return jcompositions
+    return jsonify(jcompositions)
 
 
 @comp.route('/recentcompositions')
@@ -31,7 +31,7 @@ def recentcompositions():
     allcompositions = Composition.query.filter_by(privacy=LevelPrivacy.public.value)
     compositions = allcompositions.order_by(Composition.id.desc()).limit(config.MAX_RECENT_COMPOSITIONS)
     jcompositions = getcompjsonwithuserandcollection(compositions)
-    return jcompositions
+    return jsonify(jcompositions)
 
 @comp.route('/mycompositions')
 @jwt_required()
@@ -42,7 +42,7 @@ def mycompositions():
     collaborations = getcollaborationsbyuseridwithrole(user_auth,user_auth)    
     merged_comps = list(allmycompositions) + collaborations
     jcompositions = getcompjsonwithuserandcollection(merged_comps) 
-    return jcompositions
+    return jsonify(jcompositions)
 
 @comp.route('/compositionsbyuserid/<string:uuid>')
 @cross_origin()
@@ -56,7 +56,8 @@ def compositionsbyuserid(uuid):
         collaborations = getcollaborationsbyuseridwithrole(usertoget.id, user_auth)           
         merged_comps = list(filteredcompositions) + collaborations
         jcompositions = getcompjsonwithuserandcollection(merged_comps)
-        return jcompositions        
+        jcompositions['username'] = UserInfo.query.get(usertoget.id).name
+        return jsonify(jcompositions)
     else:
         return jsonify({"ok":False, "error":"user id not found"})
 
