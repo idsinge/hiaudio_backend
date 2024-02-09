@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from orm import db, User, UserRole, LevelPrivacy, Composition, Contributor, Collection
+from orm import db, User, UserRole, LevelPrivacy, Composition, Contributor, Collection, UserInfo
 from flask_jwt_extended import current_user, jwt_required
 from api.auth import is_user_logged_in
 from flask_cors import cross_origin
@@ -56,6 +56,7 @@ def compositionsbyuserid(uuid):
         collaborations = getcollaborationsbyuseridwithrole(usertoget.id, user_auth)           
         merged_comps = list(filteredcompositions) + collaborations
         jcompositions = getcompjsonwithuserandcollection(merged_comps)
+        jcompositions['username'] = UserInfo.query.get(usertoget.id).name
         return jsonify(jcompositions)
     else:
         return jsonify({"ok":False, "error":"user id not found"})

@@ -15,12 +15,20 @@ def getnameparentcollection(collection_id):
         coll = Collection.query.get(collection_id)        
         return coll.title
     else:
-        return collection_id
+        return None
+
+def getuidparentcollection(collection_id):
+    if collection_id is not None:
+        coll = Collection.query.get(collection_id)        
+        return coll.uuid
+    else:
+        return None
 
 def getcompjsonwithuserandcollection(compositions):
     composition_dicts = [
         {      
             **composition.to_dict(rules=('-c', '-collection')),
+            'collection_uid': getuidparentcollection(composition.collection_id),
             'parent_collection': getnameparentcollection(composition.collection_id),
             'username': getcompositionuserinfo(composition.user_id).name,
             'owner_uuid': getcompositionuserinfo(composition.user_id).user_uid,

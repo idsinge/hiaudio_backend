@@ -3,7 +3,7 @@ from flask_jwt_extended import current_user, jwt_required
 from api.auth import is_user_logged_in
 from flask_cors import cross_origin
 from sqlalchemy import and_, or_
-from orm import db, User, Collection, LevelPrivacy, Composition
+from orm import db, User, Collection, LevelPrivacy, Composition, UserInfo
 import shortuuid
 from .composition_helper import getcompjsonwithuserandcollection, getfilteredcompostionsbyrole, checkcompshouldberetrieved
 
@@ -124,6 +124,7 @@ def collectionastreebyid(uuid):
     if(collectiontoget is None):
         return jsonify({"error":ERROR_404})
     else:
+        owner = UserInfo.query.get(collectiontoget.user_id)
         root_collections = Collection.query.filter_by(parent_id=collectiontoget.id).all()
         root_compositions = Composition.query.filter_by(collection_id=collectiontoget.id).all()              
         collections_json = [get_collection_hierarchy(collection) for collection in root_collections]
@@ -132,6 +133,9 @@ def collectionastreebyid(uuid):
         filteredcompositions = getfilteredcompostionsbyrole(root_compositions, user_auth)
         merged_comps = filteredcompositions + compositions_list
         jcompositions = getcompjsonwithuserandcollection(merged_comps)
+        jcompositions['collection_name'] = collectiontoget.title
+        jcompositions['username'] = owner.name
+        jcompositions['owneruid'] = owner.user_uid
         return jsonify(jcompositions)
 
 @coll.route('/mycollections')
