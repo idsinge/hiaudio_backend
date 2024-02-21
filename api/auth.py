@@ -257,7 +257,7 @@ def logincodevalidation():
                         if invitation_pending:
                             db.session.delete(invitation_pending)
                             db.session.commit()
-                        return jsonify({"ok":True, "access_token_cookie":access_token})
+                        return jsonify({"ok":True, "access_token_cookie":access_token+ ";max-age="+str(3600*24*30)})
                     else:
                         return jsonify({"ok":False, "error":"wrong code"})
                 else:
