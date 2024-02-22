@@ -112,34 +112,37 @@ def callback():
         users_email = userinfo_response.json()["email"]
     #else:
         # "User email not available or not verified by Google.", 400
-    
+
     user = createnewuserindb(users_email)
-    return setaccessforuser(user)
+
+    response = redirect(url_for("index"))
+
+    return setaccessforuser(user, response)
 
 def generate_unique_uuid():
-    
+
     while True:
-        uuid = shortuuid.uuid()        
+        uuid = shortuuid.uuid()
         if not User.query.filter_by(uid=uuid).first():
             return uuid
 
 
 def generate_unique_username():
-   
+
     while True:
         uname = generate_username()
-        uname = uname[0]       
+        uname = uname[0]
         if not UserInfo.query.filter_by(name=uname).first():
             return uname
 
 def createnewuserindb(users_email):
-    
-    user =  None 
-    
+
+    user =  None
+
     user_by_email = UserInfo.query.filter_by(user_email=users_email).first()
 
     if user_by_email is not None:
-        user = User.query.get(user_by_email.user_id)    
+        user = User.query.get(user_by_email.user_id)
     else:
         # Doesn't exist? Add it to the database.
         unique_id = generate_unique_uuid()
@@ -154,11 +157,11 @@ def createnewuserindb(users_email):
         db.session.commit()
         db.session.add(userinfo)
         db.session.commit()
-    
+
     return user
 
-def setaccessforuser(user):
-    
+def setaccessforuser(user, response):
+
     userinfo = UserInfo.query.get(user.id)
     verification_pending = VerificationCode.query.filter_by(email=userinfo.user_email).first()
     if verification_pending:
@@ -170,7 +173,6 @@ def setaccessforuser(user):
         db.session.commit()
     # create token, write it in the response, and redirect to home
     access_token = create_access_token(identity=user.uid)
-    response = redirect(url_for("index"))
     set_access_cookies(response, access_token)
 
     return response
@@ -185,21 +187,21 @@ def logout():
 
 @auth.route('/generatelogincode/<string:email>', methods=['PUT'])
 def generatelogincode(email):
-    
-    if is_user_logged_in():        
+
+    if is_user_logged_in():
         return jsonify({"ok":False, "error":"user already logged in"})
-    else:       
+    else:
         code = None
-                
+
         try:
             emailinfo = validate_email(email, check_deliverability=False)
             email = emailinfo.normalized
-        except EmailNotValidError as e:            
-            return jsonify({"ok":False, "error":str(e)})          
-                
+        except EmailNotValidError as e:
+            return jsonify({"ok":False, "error":str(e)})
+
         existing_email = VerificationCode.query.filter_by(email=email).first()
-        
-        if existing_email:            
+
+        if existing_email:
             if existing_email.attempts >= 5:
                 return jsonify({"ok":False, "error":"You reached the maximum of attempts, please try with a different email account"})
             else:
@@ -208,23 +210,23 @@ def generatelogincode(email):
                 code = ''.join(str(random.randint(0, 9)) for _ in range(6))
                 existing_email.code = code
                 db.session.commit()
-        else:            
-            code = ''.join(str(random.randint(0, 9)) for _ in range(6))            
+        else:
+            code = ''.join(str(random.randint(0, 9)) for _ in range(6))
             new_code = VerificationCode(email=email, code=code)
             db.session.add(new_code)
-            db.session.commit()       
+            db.session.commit()
 
         utils = Utils()
         result = utils.sendeverificationcode(email, code)
-        
-        if result:            
+
+        if result:
             return jsonify({"ok":True, "result":"Code successfully sent"})
         else:
             user_email = VerificationCode.query.filter_by(email=email).first()
             # if the email was not sent then remove the entry from DB
             db.session.delete(user_email)
-            db.session.commit() 
-            return jsonify({"ok":False, "error":"Sorry, there was a problem sending the email"})      
+            db.session.commit()
+            return jsonify({"ok":False, "error":"Sorry, there was a problem sending the email"})
 
 
 @auth.route('/logincodevalidation', methods=['POST'])
@@ -235,29 +237,26 @@ def logincodevalidation():
         rjson = request.get_json()
         email = rjson.get("email", None)
         code = rjson.get("code", None)
-      
-        if email is not None and code is not None:            
-            
+
+        if email is not None and code is not None:
+
             try:
                 emailinfo = validate_email(email, check_deliverability=False)
                 email = emailinfo.normalized
-            except EmailNotValidError as e:            
-                return jsonify({"ok":False, "error":str(e)})     
+            except EmailNotValidError as e:
+                return jsonify({"ok":False, "error":str(e)})
             code_str = str(code)
             if code_str.isdigit() and len(code_str) == 6:
                 existing_email = VerificationCode.query.filter_by(email=email).first()
-                if existing_email: 
+                if existing_email:
                     if existing_email.code == str(code):
                         # TODO: check expiration date
                         user = createnewuserindb(email)
-                        db.session.delete(existing_email)
-                        db.session.commit()
-                        access_token = create_access_token(identity=user.uid)
-                        invitation_pending = InvitationEmail.query.filter_by(email=email).first()
-                        if invitation_pending:
-                            db.session.delete(invitation_pending)
-                            db.session.commit()
-                        return jsonify({"ok":True, "access_token_cookie":access_token+ ";max-age="+str(3600*24*30)})
+
+                        response = jsonify({"ok":True})
+
+                        return setaccessforuser(user, response)
+
                     else:
                         return jsonify({"ok":False, "error":"wrong code"})
                 else:
@@ -265,5 +264,4 @@ def logincodevalidation():
             else:
                 return jsonify({"ok":False, "error":"wrong code format"})
         else:
-            return jsonify({"ok":False, "error":"no email or code"})    
-       
+            return jsonify({"ok":False, "error":"no email or code"})
