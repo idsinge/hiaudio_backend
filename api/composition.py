@@ -94,6 +94,7 @@ def composition(uuid):
                 return jsonify({"error":"composition not accesible"})
             else:
                 data = composition.to_dict( rules=('-path','-collection', '-id') )
+                data['username'] = UserInfo.query.get(composition.user_id).name
                 if data['contributors'] and (role == UserRole.owner.value):                    
                     data['contributors'] = setcontributorsemails(data['contributors'])                    
                 if(data['collection_id']):
