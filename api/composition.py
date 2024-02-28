@@ -99,6 +99,7 @@ def composition(uuid):
                     data['contributors'] = setcontributorsemails(data['contributors'])                    
                 if(data['collection_id']):
                     coll = Collection.query.get(data['collection_id'])
+                    data['parent_collection'] = coll.title
                     data['collection_id'] = coll.uuid
                 data['owner'] = owner
                 data['role'] = role
