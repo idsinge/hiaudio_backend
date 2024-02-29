@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, send_from_directory, abort
+from flask import Flask, request, send_from_directory, abort, redirect, url_for
 from flask_migrate import Migrate
 from flask_cors import CORS
 from orm import db
@@ -61,15 +61,24 @@ app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 mail = Mail(app)
 
+DEFAULT_PAGE = 'index.html'
 
 @app.route('/')
 def index():
-    return page("index.html")
+    return page(DEFAULT_PAGE)
+
+@app.route('/user_page/<string:uid>')
+def user_page(uid):    
+    return redirect(url_for('page', filename=DEFAULT_PAGE, userid=uid))
+
+@app.route('/collection_page/<string:uid>')
+def collection(uid):
+    return redirect(url_for('page', filename=DEFAULT_PAGE, collectionid=uid))
 
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):
-    filename = filename or 'index.html'
-    if request.method == 'GET':
+    filename = filename or DEFAULT_PAGE
+    if request.method == 'GET':   
         return send_from_directory(os.path.join(config.BASEDIR, "public"), filename)
 
     abort(404, description="Resource not found")
