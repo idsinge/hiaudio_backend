@@ -8,15 +8,8 @@ cd musicplatform_mgmt
 # create python virtualenv
 python3 -m venv venv
 
-# or (aurelien)
-virtualenv -p python3 venv
-
 # activate virtualenv
 . venv/bin/activate
-
-# or (aurelien)
-source venv/bin/activate
-
 
 # install requirements
 pip install -r requirements.txt
@@ -102,6 +95,13 @@ git ls-files -z public/ | xargs -0 git update-index --skip-worktree
 git ls-files -z public/ | xargs -0 git update-index --no-skip-worktree
 ```
 
+## COMPRESSION MODULE
+
+```bash
+pip install pydub
+
+python compress_thread.py
+```
 
 
 ### More info:
