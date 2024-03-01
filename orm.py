@@ -92,6 +92,8 @@ class Track(db.Model, SerializerMixin):
     uuid = db.Column(db.String(22), nullable=False, unique=True, default=shortuuid.uuid())
     title = db.Column(db.String(100))
     path = db.Column(db.String(1024))
+    compress_path = db.Column(db.String(1024))
+    needs_compress = db.Column(db.Boolean())
     user_id = db.Column(db.Integer)
     user_uid = db.Column(db.String(22))
     composition_id = db.Column(db.Integer, db.ForeignKey('composition.id', ondelete='CASCADE'))

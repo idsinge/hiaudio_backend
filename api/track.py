@@ -11,15 +11,21 @@ import config
 
 track = Blueprint('track', __name__)
 
+ERROR_404 = "track not found"
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in config.ALLOWED_EXTENSIONS
 
 def deletefromdb(trackinfo):
     trackpath = f"{trackinfo.path}"
-    fullpath = os.path.join(config.DATA_BASEDIR, trackpath )
+    compresspath = f"{trackinfo.compress_path}"
+    fullpath = os.path.join(config.DATA_BASEDIR, trackpath )    
+    compressfullpath = os.path.join(config.DATA_BASEDIR, compresspath )
     if os.path.exists(fullpath):
-        os.remove(fullpath)
+        os.remove(fullpath)   
+    if os.path.exists(compressfullpath):
+        os.remove(compressfullpath)
     db.session.delete(trackinfo)
     db.session.commit()
 
@@ -27,7 +33,7 @@ def deletefromdb(trackinfo):
 def checktrackpermissions(uuid):
     track = Track.query.filter_by(uuid=uuid).first()
     if(track is None):
-        return False, jsonify({"error":"track not found"})
+        return False, jsonify({"error":ERROR_404})
     else:
         user = is_user_logged_in()
         user_auth = user.id if not user is None else None
@@ -57,7 +63,10 @@ def trackfile(uuid):
     isok, result = checktrackpermissions(uuid)
 
     if(isok):
-        return send_from_directory( config.DATA_BASEDIR, result.path )
+        path_is = result.path
+        if config.COMPRESSION_MODULE_ACTIVE and result.compress_path:
+            path_is = result.compress_path        
+        return send_from_directory( config.DATA_BASEDIR, path_is )
     else:
         return result
 
@@ -104,7 +113,7 @@ def updatetrackinfo():
             else:
                 return jsonify({"ok":False, "error":"not possible to update track title with role " + str(role)})
         else:
-            return jsonify({"ok":False, "error":"track not found"})
+            return jsonify({"ok":False, "error":ERROR_404})
     
 @track.route('/deletetrack/<string:uuid>', methods=['DELETE'])
 @jwt_required()
@@ -113,7 +122,7 @@ def deletetrack(uuid):
     track = Track.query.filter_by(uuid=uuid).first()
 
     if(track is None):
-        return jsonify({"error":"track not found"})
+        return jsonify({"error":ERROR_404})
     else:
         user_auth = current_user.id
         role = UserRole.none.value
@@ -130,6 +139,40 @@ def deletetrack(uuid):
             return jsonify({"ok":True, "result":track.id, "role":role })
         else:
             return jsonify({"error":"not permission to delete"})
+
+def handleuploadtrack(thefile, composition, user_auth):    
+    filename = secure_filename(thefile.filename)
+    timestamp_prefix = str(int(time.time())) + "_"
+    trackpath = f"compositions/{composition.id}/{timestamp_prefix + filename}"
+    fullpath = os.path.join(config.DATA_BASEDIR, trackpath )
+    user_uid = User.query.get(user_auth).uid
+
+    os.makedirs(os.path.dirname(fullpath), exist_ok=True)
+
+    thefile.save( fullpath )
+    ## TODO: check uuid is not duplicated    
+    needs_compress = filename.lower().endswith(('.wav', '.flac'))
+    newtrack = Track(title=filename, 
+                     path=trackpath, 
+                     composition=composition, 
+                     user_id=user_auth, 
+                     user_uid=user_uid, 
+                     uuid=shortuuid.uuid(),
+                     needs_compress=needs_compress)
+    
+    db.session.add(newtrack)
+    db.session.commit()
+    data=newtrack.to_dict( rules=('-path',) )
+    respinfo ={"message":{
+        "audio":{"composition_id":composition.uuid, 
+                 "title":filename, 
+                 "path":trackpath, 
+                 "file_unique_id":data['uuid'], 
+                 "user_id":user_auth, 
+                 "user_uid":user_uid
+                 }},
+        "date":timestamp_prefix}
+    return respinfo
 
 @track.route('/fileUpload', methods=['POST'])
 @cross_origin()
@@ -151,25 +194,8 @@ def fileupload():
 
         thefile = request.files['audio']
 
-
         if thefile and allowed_file(thefile.filename):
-            filename = secure_filename(thefile.filename)
-            timestamp_prefix = str(int(time.time())) + "_"
-            trackpath = f"compositions/{composition.id}/{timestamp_prefix + filename}"
-            fullpath = os.path.join(config.DATA_BASEDIR, trackpath )
-            user_uid = User.query.get(user_auth).uid
-
-            os.makedirs(os.path.dirname(fullpath), exist_ok=True);
-
-            thefile.save( fullpath )
-            ## TODO: check uuid is not duplicated
-            newtrack = Track(title=filename, path=trackpath, composition=composition, user_id=user_auth, user_uid=user_uid, uuid=shortuuid.uuid())
-            db.session.add(newtrack)
-            db.session.commit()
-            data=newtrack.to_dict( rules=('-path',) )
-            respinfo ={"message":{
-                "audio":{"composition_id":comp_uuid, "title":filename, "path":trackpath, "file_unique_id":data['uuid'], "user_id":user_auth, "user_uid":user_uid}},
-                "date":timestamp_prefix}
+            respinfo = handleuploadtrack(thefile, composition, user_auth)
             return jsonify({"ok":True, "result":respinfo})
         else:
             return jsonify({"ok":False, "error":"type not allowed"})
