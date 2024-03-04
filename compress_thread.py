@@ -16,18 +16,20 @@ import config
 #@event.listen(Track, 'after_insert', after_insert_listener)
 
 def processfile(item):
-    track = db.session.get(Track, item.id)    
+    track = db.session.get(Track, item.id)
+    needs_compress = item.needs_compress
     if item.needs_compress is None:                                  
         needs_compress = item.path.lower().endswith(('.wav', '.flac'))
         setattr(track, "needs_compress", bool(needs_compress))
         db.session.commit()
-    fullpath = os.path.join(config.DATA_BASEDIR, track.path )
-    compress_path = os.path.splitext(track.path)[0]+".mp3"
-    compressfullpath = os.path.join(config.DATA_BASEDIR, compress_path )
-    audio = AudioSegment.from_file(fullpath)                           
-    audio.export(compressfullpath, format="mp3")
-    setattr(track, "compress_path", compress_path)
-    db.session.commit()
+    if needs_compress:
+        fullpath = os.path.join(config.DATA_BASEDIR, track.path )
+        compress_path = os.path.splitext(track.path)[0]+".mp3"
+        compressfullpath = os.path.join(config.DATA_BASEDIR, compress_path )
+        audio = AudioSegment.from_file(fullpath)                           
+        audio.export(compressfullpath, format="mp3")
+        setattr(track, "compress_path", compress_path)
+        db.session.commit()
 
 def producer(queue, tracks):    
     for i in tracks:
