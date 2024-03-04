@@ -61,6 +61,8 @@ Track:
  - user_id
  - user_uid
  - path
+ - compress_path
+ - needs_compress
 
 Contributor:
  - id
@@ -70,12 +72,14 @@ Contributor:
  - role (0=None, 1=Owner, 2=Admin, 3=Member, 4=Guest)
 
 VerificationCode:
+ - id
  - email
  - code 
  - date 
  - attempts
 
 InvitationEmail:
+ - id
  - email 
  - date 
  - attempts
