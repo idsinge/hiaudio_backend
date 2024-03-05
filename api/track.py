@@ -59,12 +59,11 @@ def checktrackpermissions(uuid):
 @track.route('/trackfile/<string:uuid>')
 @cross_origin()
 def trackfile(uuid):
-
-    isok, result = checktrackpermissions(uuid)
-
+    optional_get_raw =  bool(request.args.get('raw', None))    
+    isok, result = checktrackpermissions(uuid)    
     if(isok):
         path_is = result.path
-        if config.COMPRESSION_MODULE_ACTIVE and result.compress_path:
+        if config.COMPRESSION_MODULE_ACTIVE and result.compress_path and (optional_get_raw is not True):
             path_is = result.compress_path        
         return send_from_directory( config.DATA_BASEDIR, path_is )
     else:

@@ -102,7 +102,7 @@ pip install pydub
 
 python compress_thread.py
 ```
-
+**NOTE**: `pytdub` needs either `sudo apt install ffmpeg` (Linux) or `brew install ffmpeg` (Mac) in order to function correctly.
 
 ### More info:
 1- https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally
