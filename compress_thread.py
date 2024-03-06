@@ -1,13 +1,34 @@
 import time
+import logging
 import datetime
 from queue import Empty, Queue
 from threading import Thread
 from app import app
 from orm import db, Track
-from sqlalchemy import event
 import os
 from pydub import AudioSegment
 import config
+import signal
+
+
+logging.basicConfig(filename='compression_logfile.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+class SignalHandler:
+    shutdown_requested = False
+
+    def __init__(self):
+        signal.signal(signal.SIGINT, self.request_shutdown)
+        signal.signal(signal.SIGTERM, self.request_shutdown)
+
+    def request_shutdown(self, *args):
+        logging.info('Request to shutdown received, stopping')
+        print('Request to shutdown received: wait for the 10 secs of time.sleep()...')
+        self.shutdown_requested = True
+
+    def can_run(self):
+        return not self.shutdown_requested
+
+signal_handler = SignalHandler()
 
 def processfile(item):
     track = db.session.get(Track, item.id)
@@ -37,18 +58,19 @@ def consumer(queue):
             except Empty:
                 continue
             else:
-                print(f'Processing item {item}', datetime.datetime.now())
-                processfile(item)                
+                logging.info(f'Processing item {item}, ' + f'{datetime.datetime.now()}' )
+                processfile(item)                  
                 queue.task_done()
                 if queue.qsize() == 0:
-                    print('Finish with the queue', datetime.datetime.now())
+                    logging.info('Finish with the queue ' + f"{datetime.datetime.now()}")
 
 
 def main():
     with app.app_context():
         tracks = Track.query.filter(((Track.needs_compress == True) | (Track.needs_compress.is_(None))) & (Track.compress_path.is_(None))).all()   
     if(len(tracks)):
-        print("we have the tracks", len(tracks))
+        #print("we have " + f"{len(tracks)}" + " tracks")
+        logging.info("we have " + f"{len(tracks)}" + " tracks")
     
     queue = Queue()
 
@@ -71,10 +93,11 @@ def main():
     # wait for all tasks on the queue to be completed
     queue.join()
 
-    while True:
+    while signal_handler.can_run():
         time.sleep(10)
         if queue.qsize() == 0:            
             main()
 
-print('Start Compression process', datetime.datetime.now())
+print('Start Compression process')
+logging.info('Start Compression process ' +  f"{datetime.datetime.now()}")
 main()
