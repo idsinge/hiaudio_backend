@@ -97,6 +97,8 @@ git ls-files -z public/ | xargs -0 git update-index --no-skip-worktree
 
 ## COMPRESSION MODULE
 
+In order to run the compression module locally, the env variable `COMPRESSION_MODULE_ACTIVE` at `config.py` needs to be set to `True` (https://www.flickr.com/photos/195993916@N03/albums/72177720313574179/). It's required to execute the follwoing commands, the first for the installation of the `pydub` package (see **NOTE**) and the other to run the thread.
+
 ```bash
 pip install pydub
 
@@ -104,12 +106,13 @@ python compress_thread.py
 ```
 **NOTE**: `pytdub` needs either `sudo apt install ffmpeg` (Linux) or `brew install ffmpeg` (Mac) in order to function correctly.
 
-### More info:
-1- https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally
+
+
+## OTHER INFOS:
+1- [Web App Repo](https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally)
 
 2- [Debuggable Frontend with Backend](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Debuggable-Frontend-with-Backend)
 
 3- Flask-Migrate: https://flask-migrate.readthedocs.io/en/latest/#example
 
-4- DB setup and installation, check:
-https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/HOSTING/Change-DB-type-to-MySQL
+4- [MySQL DB setup and installation, check](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/DB/Change-DB-type-to-MySQL)
