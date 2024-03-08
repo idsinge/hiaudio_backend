@@ -97,7 +97,7 @@ git ls-files -z public/ | xargs -0 git update-index --no-skip-worktree
 
 ## COMPRESSION MODULE
 
-In order to run the compression module locally, the env variable `COMPRESSION_MODULE_ACTIVE` at `config.py` needs to be set to `True` (https://www.flickr.com/photos/195993916@N03/albums/72177720313574179/). It's required to execute the follwoing commands, the first for the installation of the `pydub` package (see **NOTE**) and the other to run the thread.
+In order to run the compression module locally, the env variable `COMPRESSION_MODULE_ACTIVE` at `config.py` needs to be set to `True` (https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/blob/main/config.py.sample?ref_type=heads#L9). It's required to execute the follwoing commands, the first for the installation of the `pydub` package (see **NOTE**) and the other to run the thread.
 
 ```bash
 pip install pydub
