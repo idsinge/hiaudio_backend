@@ -46,9 +46,13 @@ def processfile(item):
         setattr(track, "compress_path", compress_path)
         db.session.commit()
 
-def producer(queue, tracks):    
-    for i in tracks:              
-        queue.put(i)
+def getpendingtracks(queue):    
+    with app.app_context():
+        tracks = Track.query.filter(((Track.needs_compress == True) | (Track.needs_compress.is_(None))) & (Track.compress_path.is_(None))).all()
+    if(len(tracks)):        
+        logging.info("we have " + f"{len(tracks)}" + " tracks")
+        for i in tracks:              
+            queue.put(i)
 
 def consumer(queue):
     with app.app_context():
@@ -56,7 +60,7 @@ def consumer(queue):
             try:
                 item = queue.get()
             except Empty:
-                continue
+                getpendingtracks(queue)
             else:
                 logging.info(f'Processing item {item}, ' + f'{datetime.datetime.now()}' )
                 processfile(item)                  
@@ -66,19 +70,8 @@ def consumer(queue):
 
 
 def main():
-    with app.app_context():
-        tracks = Track.query.filter(((Track.needs_compress == True) | (Track.needs_compress.is_(None))) & (Track.compress_path.is_(None))).all()   
-    if(len(tracks)):
-        #print("we have " + f"{len(tracks)}" + " tracks")
-        logging.info("we have " + f"{len(tracks)}" + " tracks")
     
     queue = Queue()
-
-    producer_thread = Thread(
-        target=producer,
-        args=(queue,tracks)
-    )
-    producer_thread.start()
     
     consumer_thread = Thread(
         target=consumer,
@@ -87,16 +80,13 @@ def main():
     )
     consumer_thread.start()
 
-    # wait for all tasks to be added to the queue
-    producer_thread.join()
-
     # wait for all tasks on the queue to be completed
     queue.join()
 
     while signal_handler.can_run():
         time.sleep(10)
         if queue.qsize() == 0:            
-            main()
+            getpendingtracks(queue)
 
 print('Start Compression process')
 logging.info('Start Compression process ' +  f"{datetime.datetime.now()}")
