@@ -22,7 +22,7 @@ class SignalHandler:
 
     def request_shutdown(self, *args):
         logging.info('Request to shutdown received, stopping')
-        print('Request to shutdown received: wait for the 10 secs of time.sleep()...')
+        print('Request to shutdown received')
         self.shutdown_requested = True
 
     def can_run(self):
@@ -58,9 +58,9 @@ def consumer(queue):
     with app.app_context():
         while True:
             try:
-                item = queue.get()
+                item = queue.get(block=True, timeout=10)
             except Empty:
-                continue
+                getpendingtracks(queue)                
             else:
                 logging.info(f'Processing item {item}, ' + f'{datetime.datetime.now()}' )
                 processfile(item)                  
@@ -84,10 +84,7 @@ def main():
     queue.join()
 
     while signal_handler.can_run():
-        time.sleep(10)
-        if queue.qsize() == 0:            
-            getpendingtracks(queue)
+        continue
 
-print('Start Compression process')
 logging.info('Start Compression process ' +  f"{datetime.datetime.now()}")
 main()
