@@ -60,7 +60,7 @@ def consumer(queue):
             try:
                 item = queue.get()
             except Empty:
-                getpendingtracks(queue)
+                continue
             else:
                 logging.info(f'Processing item {item}, ' + f'{datetime.datetime.now()}' )
                 processfile(item)                  
