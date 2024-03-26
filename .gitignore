@@ -9,3 +9,4 @@ config.py
 *.sql
 __pycache__
 compression_logfile.log
+waveformplaylist
