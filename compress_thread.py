@@ -16,7 +16,8 @@ logging.basicConfig(filename='compression_logfile.log', level=logging.INFO, form
 class SignalHandler:
     shutdown_requested = False
 
-    def __init__(self):
+    def __init__(self, queue):
+        self._queue = queue
         signal.signal(signal.SIGINT, self.request_shutdown)
         signal.signal(signal.SIGTERM, self.request_shutdown)
 
@@ -24,11 +25,11 @@ class SignalHandler:
         logging.info('Request to shutdown received, stopping')
         print('Request to shutdown received')
         self.shutdown_requested = True
+        self._queue.put(None)
 
     def can_run(self):
         return not self.shutdown_requested
 
-signal_handler = SignalHandler()
 
 def processfile(item):
     track = db.session.get(Track, item.id)
@@ -62,6 +63,8 @@ def consumer(queue):
             except Empty:
                 getpendingtracks(queue)                
             else:
+                if item is None:
+                    return
                 logging.info(f'Processing item {item}, ' + f'{datetime.datetime.now()}' )
                 processfile(item)                  
                 queue.task_done()
@@ -83,8 +86,9 @@ def main():
     # wait for all tasks on the queue to be completed
     queue.join()
 
-    while signal_handler.can_run():
-        continue
+    signal_handler = SignalHandler(queue)
+
+    consumer_thread.join()
 
 logging.info('Start Compression process ' +  f"{datetime.datetime.now()}")
 main()
