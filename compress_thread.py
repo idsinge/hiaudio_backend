@@ -1,4 +1,4 @@
-import time
+from sqlalchemy import exc
 import logging
 import datetime
 from queue import Empty, Queue
@@ -32,20 +32,28 @@ class SignalHandler:
 
 
 def processfile(item):
-    track = db.session.get(Track, item.id)
-    needs_compress = item.needs_compress
-    if item.needs_compress is None:                                  
-        needs_compress = item.path.lower().endswith(('.wav', '.flac'))
-        setattr(track, "needs_compress", bool(needs_compress))
-        db.session.commit()
-    if needs_compress:
-        fullpath = os.path.join(config.DATA_BASEDIR, track.path )
-        compress_path = os.path.splitext(track.path)[0]+".m4a"
-        compressfullpath = os.path.join(config.DATA_BASEDIR, compress_path )
-        audio = AudioSegment.from_file(fullpath)                           
-        audio.export(compressfullpath, format="ipod", bitrate="128k")
-        setattr(track, "compress_path", compress_path)
-        db.session.commit()
+    with app.app_context():
+        track = db.session.get(Track, item.id)
+        if track is not None:
+            needs_compress = track.needs_compress
+            if needs_compress is None:                                  
+                needs_compress = item.path.lower().endswith(('.wav', '.flac'))           
+                setattr(track, "needs_compress", bool(needs_compress))
+                db.session.commit()
+            if needs_compress:
+                fullpath = os.path.join(config.DATA_BASEDIR, track.path )
+                compress_path = os.path.splitext(track.path)[0]+".m4a"
+                compressfullpath = os.path.join(config.DATA_BASEDIR, compress_path )
+                audio = AudioSegment.from_file(fullpath)                           
+                audio.export(compressfullpath, format="ipod", bitrate="128k")
+                try:
+                    setattr(track, "compress_path", compress_path)
+                    db.session.commit()
+                except exc.SQLAlchemyError as e:
+                    db.session.rollback()
+                    if os.path.exists(compressfullpath):
+                        os.remove(compressfullpath)
+                    logging.info(f"{type(e)}")
 
 def getpendingtracks(queue):    
     with app.app_context():
