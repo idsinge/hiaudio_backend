@@ -22,6 +22,7 @@ User:
  - uid
  - is_admin
  - terms_accepted
+ - created_at
 
 UserInfo:
  - id
@@ -30,6 +31,7 @@ UserInfo:
  - profile_pic
  - user_uid 
  - user_email
+ - created_at
 
 Collection:
 - id
@@ -40,6 +42,7 @@ Collection:
 - user_id
 - parent_id
 - compositions
+- created_at
 
 Composition:
  - id
@@ -52,6 +55,7 @@ Composition:
  - opentocontrib
  - contributors
  - tracks
+ - created_at
 
 Track:
  - id
@@ -63,6 +67,7 @@ Track:
  - path
  - compress_path
  - needs_compress
+ - created_at
 
 Contributor:
  - id
@@ -70,6 +75,7 @@ Contributor:
  - user_uid
  - composition_id
  - role (0=None, 1=Owner, 2=Admin, 3=Member, 4=Guest)
+ - created_at
 
 VerificationCode:
  - id

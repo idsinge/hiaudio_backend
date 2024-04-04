@@ -4,6 +4,7 @@ import enum
 from sqlalchemy import Enum
 import shortuuid
 from datetime import datetime
+from sqlalchemy.sql import func
 
 class UserRole(enum.Enum):
     none = 0
@@ -28,6 +29,7 @@ class User(db.Model, SerializerMixin):
     compositions = db.relationship('Composition', backref='user', cascade="all, delete-orphan")
     collections = db.relationship('Collection', backref='user', cascade="all, delete-orphan")
     userinfo = db.relationship('UserInfo', back_populates='user', cascade="all, delete-orphan")
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):
         return f'<User "{self.uid}">'
@@ -42,7 +44,8 @@ class UserInfo(db.Model, SerializerMixin):
     name = db.Column(db.String(100), unique=True, nullable=False)
     profile_pic = db.Column(db.String(100))
     user_uid = db.Column(db.String(100), unique=True, nullable=False)   
-    user_email = db.Column(db.String(120), unique=True, nullable=False)    
+    user_email = db.Column(db.String(120), unique=True, nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):
         return f'<UserInfo "{self.user_uid}">'
@@ -57,7 +60,7 @@ class Collection(db.Model, SerializerMixin):
     title = db.Column(db.String(100))
     description = db.Column(db.Text)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
-
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('collection.id', ondelete='CASCADE'), nullable=True)
     compositions = db.relationship('Composition', backref='collection', cascade="all, delete-orphan")
 
@@ -74,7 +77,7 @@ class Composition(db.Model, SerializerMixin):
     title = db.Column(db.String(100))
     description = db.Column(db.Text)
     tracks = db.relationship('Track', backref='composition', cascade="all, delete-orphan")
-
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     collection_id = db.Column(db.Integer, db.ForeignKey('collection.id', ondelete='CASCADE'), nullable=True)
     contributors = db.relationship('Contributor', backref='composition', cascade="all, delete-orphan")
@@ -97,6 +100,7 @@ class Track(db.Model, SerializerMixin):
     user_id = db.Column(db.Integer)
     user_uid = db.Column(db.String(22))
     composition_id = db.Column(db.Integer, db.ForeignKey('composition.id', ondelete='CASCADE'))
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):
         return f'<Track "{self.title}">'
@@ -111,6 +115,7 @@ class Contributor(db.Model, SerializerMixin):
     user_uid = db.Column(db.String(100))
     composition_id = db.Column(db.Integer, db.ForeignKey('composition.id', ondelete='CASCADE'))
     role = db.Column(Enum(UserRole), nullable=False, default=UserRole.none.value)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):
         return f'<Contributor "{self.user_id}">'
