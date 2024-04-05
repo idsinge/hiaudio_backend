@@ -6,7 +6,7 @@ from orm import db, User, UserRole, Track, Composition, Contributor, LevelPrivac
 from flask_jwt_extended import current_user, jwt_required
 from api.auth import is_user_logged_in
 from flask_cors import cross_origin
-import shortuuid
+from utils import Utils
 import config
 
 track = Blueprint('track', __name__)
@@ -149,14 +149,13 @@ def handleuploadtrack(thefile, composition, user_auth):
     os.makedirs(os.path.dirname(fullpath), exist_ok=True)
 
     thefile.save( fullpath )
-    ## TODO: check uuid is not duplicated    
     needs_compress = filename.lower().endswith(('.wav', '.flac'))
     newtrack = Track(title=filename, 
                      path=trackpath, 
                      composition=composition, 
                      user_id=user_auth, 
                      user_uid=user_uid, 
-                     uuid=shortuuid.uuid(),
+                     uuid=Utils().generate_unique_uuid(Track,'uuid'),
                      needs_compress=needs_compress)
     
     db.session.add(newtrack)

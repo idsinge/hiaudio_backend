@@ -3,7 +3,7 @@ from orm import db, User, UserRole, LevelPrivacy, Composition, Contributor, Coll
 from flask_jwt_extended import current_user, jwt_required
 from api.auth import is_user_logged_in
 from flask_cors import cross_origin
-import shortuuid
+from utils import Utils
 import config
 
 from .composition_helper import checkcompshouldberetrieved, getcompjsonwithuserandcollection, getcollaborationsbyuseridwithrole, getfilteredcompostionsbyrole, setcontributorsemails, deletecompfolder, updatecompfield, ERROR_404
@@ -128,8 +128,11 @@ def newcomposition():
                 return jsonify({"error":"wrong parent uuid"})
     if(privacy and (privacy is not None) and (LevelPrivacy.public.value <= int(privacy) <= LevelPrivacy.private.value)):
         user = User.query.get(current_user.id)
-        ## TODO: check uuid is not duplicated
-        composition = Composition(title=title, description=description, user=user, privacy=LevelPrivacy(int(privacy)).name, uuid=shortuuid.uuid(), collection=collection)
+        composition = Composition(title=title,
+                                  description=description,
+                                  user=user, privacy=LevelPrivacy(int(privacy)).name,
+                                  uuid=Utils().generate_unique_uuid(Composition, 'uuid'),
+                                  collection=collection)
         db.session.add(composition)
         db.session.commit()
         return jsonify(composition=composition.to_dict( rules=('-path','-collection') ), ok=True)

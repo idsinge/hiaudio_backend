@@ -4,7 +4,7 @@ from api.auth import is_user_logged_in
 from flask_cors import cross_origin
 from sqlalchemy import and_, or_
 from orm import db, User, Collection, LevelPrivacy, Composition, UserInfo
-import shortuuid
+from utils import Utils
 from .composition_helper import getcompjsonwithuserandcollection, getfilteredcompostionsbyrole, checkcompshouldberetrieved
 
 
@@ -166,8 +166,7 @@ def newcollection():
                 parent_id=parent.id
             else:
                 return jsonify({"error":"wrong parent uuid or not authorized"})
-        ## TODO: check uuid is not duplicated
-        coll_uuid=shortuuid.uuid()
+        coll_uuid=Utils().generate_unique_uuid(Collection, 'uuid')
         collection = Collection(title=title, description=description, user=user, privacy=LevelPrivacy(int(privacy)).name, uuid=coll_uuid, parent_id=parent_id)
         db.session.add(collection)
         db.session.commit()

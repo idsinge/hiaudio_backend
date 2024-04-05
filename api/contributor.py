@@ -45,9 +45,8 @@ def addcontributorbyemail():
                 user2 = UserInfo.query.filter_by(user_email=email).first()
 
                 if(user2 is None):                
-                    utils = Utils()
                     refusal_code = shortuuid.uuid()                    
-                    result = utils.sendinvitationemail(email, request.host, refusal_code)                    
+                    result = Utils().sendinvitationemail(email, request.host, refusal_code)                    
                     if(result):                        
                         new_invitation = InvitationEmail(email=email, refusal_code=refusal_code, invited_by=user_auth)
                         db.session.add(new_invitation)
