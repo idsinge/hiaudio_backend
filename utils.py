@@ -1,4 +1,5 @@
 from flask_mail import Message
+import shortuuid
 
 class UtilsSingletonMeta(type):
     _instances = {}
@@ -47,3 +48,9 @@ class Utils(metaclass=UtilsSingletonMeta):
         except Exception as e:
             print(f"Failed to send email. Error: {e}")
             return False
+    
+    def generate_unique_uuid(self, table, fieldname):
+
+        uuid = shortuuid.uuid()
+        if not table.query.filter_by(**{fieldname: uuid}).first():
+            return uuid

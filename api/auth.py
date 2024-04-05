@@ -7,7 +7,6 @@ from orm import db, User, UserInfo, VerificationCode, InvitationEmail
 from flask import Blueprint, jsonify, request, redirect, url_for
 import requests
 from datetime import datetime
-import shortuuid
 
 from utils import Utils
 
@@ -119,12 +118,6 @@ def callback():
 
     return setaccessforuser(user, response)
 
-def generate_unique_uuid():
-
-    while True:
-        uuid = shortuuid.uuid()
-        if not User.query.filter_by(uid=uuid).first():
-            return uuid
 
 
 def generate_unique_username():
@@ -145,7 +138,7 @@ def createnewuserindb(users_email):
         user = User.query.get(user_by_email.user_id)
     else:
         # Doesn't exist? Add it to the database.
-        unique_id = generate_unique_uuid()
+        unique_id = Utils().generate_unique_uuid(User, 'uid')
         rdmusername = generate_unique_username()
 
         # TODO: generate a random user profile picture
@@ -216,8 +209,7 @@ def generatelogincode(email):
             db.session.add(new_code)
             db.session.commit()
 
-        utils = Utils()
-        result = utils.sendeverificationcode(email, code)
+        result = Utils().sendeverificationcode(email, code)
 
         if result:
             return jsonify({"ok":True, "result":"Code successfully sent"})
