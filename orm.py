@@ -77,6 +77,7 @@ class Composition(db.Model, SerializerMixin):
     title = db.Column(db.String(100))
     description = db.Column(db.Text)
     tracks = db.relationship('Track', backref='composition', cascade="all, delete-orphan")
+    annotations = db.relationship('CompAnnotation', backref='composition', cascade="all, delete-orphan")
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
     collection_id = db.Column(db.Integer, db.ForeignKey('collection.id', ondelete='CASCADE'), nullable=True)
@@ -85,6 +86,20 @@ class Composition(db.Model, SerializerMixin):
 
     def __repr__(self):
         return f'<Composition "{self.title}">'
+
+class CompAnnotation(db.Model, SerializerMixin):
+
+    serialize_rules = ('-composition', )
+
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(22), nullable=False, unique=True, default=shortuuid.uuid())
+    key = db.Column(db.String(100))
+    value = db.Column(db.String(1024))
+    composition_uid = db.Column(db.String(22), db.ForeignKey('composition.uuid', ondelete='CASCADE'))
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    def __repr__(self):
+        return f'<CompAnnotation "{self.key}">'
 
 
 class Track(db.Model, SerializerMixin):
@@ -101,9 +116,24 @@ class Track(db.Model, SerializerMixin):
     user_uid = db.Column(db.String(22))
     composition_id = db.Column(db.Integer, db.ForeignKey('composition.id', ondelete='CASCADE'))
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    annotations = db.relationship('TrackAnnotation', backref='track', cascade="all, delete-orphan")
 
     def __repr__(self):
         return f'<Track "{self.title}">'
+
+class TrackAnnotation(db.Model, SerializerMixin):
+
+    serialize_rules = ('-track', )
+
+    id = db.Column(db.Integer, primary_key=True)
+    uuid = db.Column(db.String(22), nullable=False, unique=True, default=shortuuid.uuid())
+    key = db.Column(db.String(100))
+    value = db.Column(db.String(1024))
+    track_uid = db.Column(db.String(22), db.ForeignKey('track.uuid', ondelete='CASCADE'))
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    def __repr__(self):
+        return f'<TrackAnnotation "{self.key}">'
 
 
 class Contributor(db.Model, SerializerMixin):
