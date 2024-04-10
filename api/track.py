@@ -7,6 +7,7 @@ from flask_jwt_extended import current_user, jwt_required
 from api.auth import is_user_logged_in
 from flask_cors import cross_origin
 from utils import Utils
+from api.annotation import get_track_annotations
 import config
 
 track = Blueprint('track', __name__)
@@ -74,9 +75,11 @@ def trackfile(uuid):
 def getinfotrack(uuid):
 
     isok, result = checktrackpermissions(uuid)
-
     if(isok):
-        ret = {"title": result.title }
+        # We need to get the annotations from the TrackAnnotation table
+        # and attach them to the result
+        annot = get_track_annotations(uuid)
+        ret = {"title": result.title, "annotations": annot}
         return jsonify(ret)
     else:
         return result
@@ -89,7 +92,8 @@ def getinfotrack(uuid):
 def updatetrackinfo():
     rjson = request.get_json()
     trackuid = rjson.get("trackid", None)
-    tracktitle = rjson.get("title", None)    
+    tracktitle = rjson.get("title", None)
+    # TODO trackannotations = rjson.get("annotations", None)    
     if(trackuid is None):
         return jsonify({"ok":False, "error":"track uuid is mandatory"})
     elif(tracktitle is None):
