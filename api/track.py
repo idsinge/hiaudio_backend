@@ -93,11 +93,11 @@ def updatetrackinfo():
     rjson = request.get_json()
     trackuid = rjson.get("trackid", None)
     tracktitle = rjson.get("title", None)
-    # TODO trackannotations = rjson.get("annotations", None)    
+    trackannotations = rjson.get("annotations", None)    
     if(trackuid is None):
         return jsonify({"ok":False, "error":"track uuid is mandatory"})
-    elif(tracktitle is None):
-        return jsonify({"ok":False, "error":"tracktitle is mandatory"})
+    elif(tracktitle is None and trackannotations is None):
+        return jsonify({"ok":False, "error":"tracktitle or annotations are mandatory"})
     else:
         track = Track.query.filter_by(uuid=trackuid).first()
         if(track is not None):
@@ -110,8 +110,16 @@ def updatetrackinfo():
             if((iscontributor is not None) and (role is not UserRole.owner.value)):
                 role = iscontributor.role.value
             if((role == UserRole.owner.value) or (role == UserRole.admin.value)):
-                setattr(track, "title", tracktitle)
-                db.session.commit()
+                if(tracktitle is not None):
+                    setattr(track, "title", tracktitle)
+                    db.session.commit()
+                if(trackannotations is not None):
+                    print("update annotations")
+                # TODO: split in cases
+                # update title
+                # update title and annotations
+                # update annotations
+                
                 return jsonify({"ok":True, "result": "track info updated successfully"})
             else:
                 return jsonify({"ok":False, "error":"not possible to update track title with role " + str(role)})

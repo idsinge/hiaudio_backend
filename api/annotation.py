@@ -5,31 +5,14 @@ from orm import TrackAnnotation
 
 annotat = Blueprint('annotat', __name__)
 
-@annotat.route('/addannotationstotrack', methods=['POST'])
-@cross_origin()
-@jwt_required()
-def addannotationtotrack():
-
-    user_auth = current_user.id
-    rjson = request.get_json()
-    track_uid = rjson.get("track_uid", None)   
-    annot_key = rjson.get("key", None)
-    annot_value = rjson.get("value", None)
-  
-    return jsonify({"ok":True})
-
-@annotat.route('/addannotationstocomp', methods=['POST'])
-@cross_origin()
-@jwt_required()
-def addannotationstocomp():
-
-    user_auth = current_user.id
-    rjson = request.get_json()
-    track_uid = rjson.get("track_uid", None)   
-    annot_key = rjson.get("key", None)
-    annot_value = rjson.get("value", None)
-  
-    return jsonify({"ok":True})
+# def update_annotation(track_uid, annot_key, annot_value):
+#     track_annotations = get_track_annotations(track_uid)
+#     for annotation in track_annotations:
+#         if annotation.key == annot_key:
+#             annotation.value = annot_value
+#             db.session.commit()
+#             return True
+#     return False
 
 
 def get_track_annotations(track_uid):
