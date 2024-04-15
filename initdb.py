@@ -1,5 +1,5 @@
 from app import app, DB_FILE
-from orm import db, Composition, Track, User, UserInfo, Contributor, UserRole, LevelPrivacy, Collection
+from orm import db, Composition, Track, User, UserInfo, Contributor, UserRole, LevelPrivacy, Collection, CompAnnotation, TrackAnnotation
 import os
 import shortuuid
 
@@ -43,13 +43,19 @@ with app.app_context():
     comp_uuid = shortuuid.uuid()
     composition1 = Composition(title="ADASP", description="", user=user1, privacy=LevelPrivacy.private, opentocontrib=0, uuid=comp_uuid, collection=collection1)
 
-    db.session.add(composition1)
+    compannotation1 = CompAnnotation(key="bpm", value="120", composition=composition1, uuid=shortuuid.uuid())
+
+    db.session.add_all({composition1, compannotation1})
     db.session.commit()
 
     track1 = Track(title="Acoustic", path=f"compositions/{composition1.id}/acoustic_1-mastered.mp3", composition=composition1, user_id=user1.id, user_uid=user1.uid, uuid=shortuuid.uuid())
     track2 = Track(title="Methronome", path=f"compositions/{composition1.id}/methronome_110.mp3", composition=composition1, user_id=user1.id, user_uid=user1.uid, uuid=shortuuid.uuid())
 
-    db.session.add_all({track1, track2})
+    track1annotation1 = TrackAnnotation(key="performer", value="IDS", track=track1, uuid=shortuuid.uuid())
+    track2annotation1 = TrackAnnotation(key="recorded_at", value="5th floor", track=track2, uuid=shortuuid.uuid())
+    track2annotation2 = TrackAnnotation(key="comment", value="recorded using shure", track=track2, uuid=shortuuid.uuid())
+
+    db.session.add_all({track1, track2, track1annotation1, track2annotation1, track2annotation2})
     db.session.commit()
 
     contributor1 = Contributor(role=UserRole.guest, user_id=user2.id, user_uid=user2.uid, composition=composition1)

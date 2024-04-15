@@ -7,6 +7,7 @@ from flask_jwt_extended import current_user, jwt_required
 from api.auth import is_user_logged_in
 from flask_cors import cross_origin
 from utils import Utils
+from api.annotation import get_track_annotations, update_track_annotations
 import config
 
 track = Blueprint('track', __name__)
@@ -76,7 +77,8 @@ def getinfotrack(uuid):
     isok, result = checktrackpermissions(uuid)
 
     if(isok):
-        ret = {"title": result.title }
+        annot = get_track_annotations(uuid)
+        ret = {"title": result.title, "annotations": annot}
         return jsonify(ret)
     else:
         return result
@@ -84,16 +86,15 @@ def getinfotrack(uuid):
 @track.route('/updatetrackinfo', methods=['PATCH'])
 @jwt_required()
 @cross_origin()
-# TODO: currently only works for the field "title" but the code needs to be adapted to any field/annotation
-# title is set at Track table but for annotations they will be set in a different table
 def updatetrackinfo():
     rjson = request.get_json()
     trackuid = rjson.get("trackid", None)
-    tracktitle = rjson.get("title", None)    
+    tracktitle = rjson.get("title", None)
+    trackannotations = rjson.get("annotations", None)
     if(trackuid is None):
         return jsonify({"ok":False, "error":"track uuid is mandatory"})
-    elif(tracktitle is None):
-        return jsonify({"ok":False, "error":"tracktitle is mandatory"})
+    elif(tracktitle is None and trackannotations is None):
+        return jsonify({"ok":False, "error":"track title or annotations are mandatory"})
     else:
         track = Track.query.filter_by(uuid=trackuid).first()
         if(track is not None):
@@ -106,9 +107,7 @@ def updatetrackinfo():
             if((iscontributor is not None) and (role is not UserRole.owner.value)):
                 role = iscontributor.role.value
             if((role == UserRole.owner.value) or (role == UserRole.admin.value)):
-                setattr(track, "title", tracktitle)
-                db.session.commit()
-                return jsonify({"ok":True, "result": "track info updated successfully"})
+                return handletrackinfoupdate(track, tracktitle, trackuid, trackannotations)
             else:
                 return jsonify({"ok":False, "error":"not possible to update track title with role " + str(role)})
         else:
@@ -138,6 +137,21 @@ def deletetrack(uuid):
             return jsonify({"ok":True, "result":track.id, "role":role })
         else:
             return jsonify({"error":"not permission to delete"})
+
+def handletrackinfoupdate(the_track, tracktitle, trackuid, trackannotations):
+    fields_changed = 0
+    errors = []
+    if(tracktitle is not None):
+        setattr(the_track, "title", tracktitle)
+        db.session.commit()
+        fields_changed += 1
+    if(trackannotations is not None):
+        updated, created, errors  = update_track_annotations(trackuid, trackannotations)
+        fields_changed += updated + created
+    if(fields_changed > 0):
+        return jsonify({"ok":True, "result": "track info updated successfully: " + str(fields_changed) + " fields changed", "errors":errors})
+    else:
+        return jsonify({"ok":False, "result": "No track info updated", "errors":errors})
 
 def handleuploadtrack(thefile, composition, user_auth):    
     filename = secure_filename(thefile.filename)
