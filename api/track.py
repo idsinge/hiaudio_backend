@@ -37,7 +37,7 @@ def checktrackpermissions(uuid):
         return False, jsonify({"error":ERROR_404})
     else:
         user = is_user_logged_in()
-        user_auth = user.id if not user is None else None
+        user_auth = user.id if user is not None else None
         composition = Composition.query.get(track.composition_id)
         privacy = composition.privacy
         if((privacy.value == LevelPrivacy.public.value) or ((privacy.value == LevelPrivacy.onlyreg.value) and (user_auth is not None))):
@@ -45,17 +45,7 @@ def checktrackpermissions(uuid):
         elif ((privacy.value == LevelPrivacy.onlyreg.value) and (user_auth is None)):
             return False, jsonify({"error":"user not authorized"})
         else:
-            role = UserRole.none.value
-            if(composition.user_id == user_auth):
-                role = UserRole.owner.value
-            else:
-                iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
-                if(iscontributor is not None):
-                    role = iscontributor.role.value
-            if(UserRole.owner.value <= role <= UserRole.guest.value):
-                return True,  track
-            else:
-                return False, jsonify({"error":"user not authorized"})
+            return checkcompositiontrackrole(composition, track, user_auth)
 
 @track.route('/trackfile/<string:uuid>')
 @cross_origin()
@@ -83,6 +73,37 @@ def getinfotrack(uuid):
     else:
         return result
 
+def checkcompositiontrackrole(composition, trackis, user_auth):
+    role = UserRole.none.value
+    if(composition.user_id == user_auth) or (trackis.user_id == user_auth):
+        role = UserRole.owner.value
+    else:
+        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
+        if(iscontributor is not None):
+            role = iscontributor.role.value
+    if(UserRole.owner.value <= role <= UserRole.guest.value):
+        return True,  trackis
+    else:
+        return False, jsonify({"error":"user not authorized"})
+
+def performauthactionontrack(trackuid, error404):
+    track = Track.query.filter_by(uuid=trackuid).first()
+    if(track is not None):
+        composition = Composition.query.get(track.composition_id)
+        user_auth = current_user.id
+        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
+        role = UserRole.none.value            
+        if((composition.user.id == user_auth) or (track.user_id == user_auth)):                
+            role = UserRole.owner.value                
+        if((iscontributor is not None) and (role is not UserRole.owner.value)):
+            role = iscontributor.role.value
+        if((role == UserRole.owner.value) or (role == UserRole.admin.value)):
+            return True, track
+        else:
+            return False, f"not possible to update track info with role {str(role)}"
+    else:
+        return False, error404
+
 @track.route('/updatetrackinfo', methods=['PATCH'])
 @jwt_required()
 @cross_origin()
@@ -96,22 +117,11 @@ def updatetrackinfo():
     elif(tracktitle is None and trackannotations is None):
         return jsonify({"ok":False, "error":"track title or annotations are mandatory"})
     else:
-        track = Track.query.filter_by(uuid=trackuid).first()
-        if(track is not None):
-            composition = Composition.query.get(track.composition_id)
-            user_auth = current_user.id
-            iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
-            role = UserRole.none.value            
-            if((composition.user.id == user_auth) or (track.user_id == user_auth)):                
-                role = UserRole.owner.value                
-            if((iscontributor is not None) and (role is not UserRole.owner.value)):
-                role = iscontributor.role.value
-            if((role == UserRole.owner.value) or (role == UserRole.admin.value)):
-                return handletrackinfoupdate(track, tracktitle, trackuid, trackannotations)
-            else:
-                return jsonify({"ok":False, "error":"not possible to update track title with role " + str(role)})
+        isok, result = performauthactionontrack(trackuid, ERROR_404)
+        if(isok):
+            return handletrackinfoupdate(result, tracktitle, trackuid, trackannotations)
         else:
-            return jsonify({"ok":False, "error":ERROR_404})
+            return jsonify({"ok":False, "error":result})
     
 @track.route('/deletetrack/<string:uuid>', methods=['DELETE'])
 @jwt_required()

@@ -1,18 +1,32 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import current_user, jwt_required
 from flask_cors import cross_origin
-from orm import db, TrackAnnotation
+from orm import db, TrackAnnotation, UserRole, Track, Composition, Contributor
 from utils import Utils
 
 annotat = Blueprint('annotat', __name__)
 
 RESERVED_WORDS = ["performer", "instrument", "comment", "recorded_at", "recording_date"]
 
-# TODO delete custom_added annotation
-# @track.route('/deletecustomaddedannotation/<string:uuid>', methods=['DELETE'])
-# @jwt_required()
-# @cross_origin()
-# def deletecustomaddedannotation(uuid): 
+ERROR_404 = "annotation not found"
+
+@annotat.route('/deleteannotation/<string:uuid>', methods=['DELETE'])
+@jwt_required()
+@cross_origin()
+def deleteannotation(uuid):
+    from api.track import performauthactionontrack
+    annotation = TrackAnnotation.query.filter_by(uuid=uuid).first()
+
+    if(annotation is None):
+        return jsonify({"error":ERROR_404})
+    else:
+        isok, result = performauthactionontrack(annotation.track_uid, ERROR_404)
+        if(isok):
+            db.session.delete(annotation)
+            db.session.commit()
+            return jsonify({"ok":True, "result":f"{annotation.uuid} deleted successfully"})
+        else:
+            return jsonify({"ok":False, "error":result})
 
 def remove_duplicate_uuids(annotations):
     unique_annotations = {}
