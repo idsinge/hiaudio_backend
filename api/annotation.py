@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import current_user, jwt_required
 from flask_cors import cross_origin
-from orm import db, TrackAnnotation, UserRole, Track, Composition, Contributor
+from orm import db, TrackAnnotation
 from utils import Utils
 
 annotat = Blueprint('annotat', __name__)
@@ -18,7 +18,7 @@ def deleteannotation(uuid):
     annotation = TrackAnnotation.query.filter_by(uuid=uuid).first()
 
     if(annotation is None):
-        return jsonify({"error":ERROR_404})
+        return jsonify({"ok":False, "error":ERROR_404})
     else:
         isok, result = performauthactionontrack(annotation.track_uid, ERROR_404)
         if(isok):
@@ -27,6 +27,51 @@ def deleteannotation(uuid):
             return jsonify({"ok":True, "result":f"{annotation.uuid} deleted successfully"})
         else:
             return jsonify({"ok":False, "error":result})
+
+@annotat.route('/updateannotation', methods=['PATCH'])
+@jwt_required()
+@cross_origin()
+def updateannotation():
+    rjson = request.get_json()
+    annotation_uid = rjson.get("uuid", None)
+    from api.track import performauthactionontrack
+    
+    annotation = TrackAnnotation.query.filter_by(uuid=annotation_uid).first()
+
+    if(annotation is None):
+        return jsonify({"ok":False, "error":ERROR_404})
+    else:
+        isok, result = performauthactionontrack(annotation.track_uid, ERROR_404)
+        if(isok):
+            updates, err_updt = handle_update_track_annotation(annotation.track_uid, rjson)
+            if(updates == 1):
+                return jsonify({"ok":True, "result":f"{annotation.uuid} updated successfully", "error":err_updt})
+            else:
+                return jsonify({"ok":False, "error":err_updt})
+        else:
+            return jsonify({"ok":False, "error":result})    
+
+@annotat.route('/createannotation', methods=['POST'])
+@jwt_required()
+@cross_origin()
+def createannotation():
+    rjson = request.get_json()
+    track_uid = rjson.get("track_uid", None)
+    from api.track import performauthactionontrack
+
+    if(track_uid is None):
+        return jsonify({"ok":False, "error":"Track UUID is missing"})
+    else:
+        isok, result = performauthactionontrack(track_uid, "Track Not Found")
+        if(isok):
+            creates, err_creat, new_annot = handle_new_track_annotation(track_uid, rjson)
+            if(creates == 1):
+                return jsonify({"ok":True, "result":"Annotation created successfully", "annotation":new_annot.to_dict(rules=('-id',))})
+            else:
+                return jsonify({"ok":False, "error":err_creat})
+        else:
+            return jsonify({"ok":False, "error":result})
+    
 
 def remove_duplicate_uuids(annotations):
     unique_annotations = {}
@@ -52,7 +97,7 @@ def update_track_annotations(track_uid, track_annotations):
             if(err_updt is not None):
                 errors.append(err_updt)
         else:
-            creates, err_new = handle_new_track_annotation(track_uid, annotation)
+            creates, err_new, _ = handle_new_track_annotation(track_uid, annotation)
             if(creates == 1):
                 annotations_created += 1
             else:
@@ -115,11 +160,11 @@ def handle_new_track_annotation(track_uid, annotation):
                                                     custom_added=custom_added_is)
             db.session.add(new_track_annotation)
             db.session.commit()
-            return 1, None
+            return 1, None, new_track_annotation
         else:
-            return 0, f"'{annotation_key}': key already set for track in new annotation"
+            return 0, f"'{annotation_key}': key already set for track in new annotation", None
     else:        
-        return 0, f"'{track_uid}': missing key and / or value for new annotation"
+        return 0, f"'{track_uid}': missing key and / or value for new annotation", None
 
 def get_track_annotations(track_uid):
     track_annotations = TrackAnnotation.query.filter_by(track_uid=track_uid).all()
