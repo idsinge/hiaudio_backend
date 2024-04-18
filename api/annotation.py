@@ -169,7 +169,7 @@ def handle_new_track_annotation(track_uid, annotation):
 def get_track_annotations(track_uid):
     track_annotations = TrackAnnotation.query.filter_by(track_uid=track_uid).all()
     annotations_list = [{
-            "annot_uuid": annotation.uuid,
+            "uuid": annotation.uuid,
             "key": annotation.key,
             "value": annotation.value,
             "custom_added": annotation.custom_added

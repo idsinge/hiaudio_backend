@@ -7,7 +7,7 @@ from flask_jwt_extended import current_user, jwt_required
 from api.auth import is_user_logged_in
 from flask_cors import cross_origin
 from utils import Utils
-from api.annotation import get_track_annotations, update_track_annotations
+from api.annotation import get_track_annotations, update_track_annotations, RESERVED_WORDS
 import config
 
 track = Blueprint('track', __name__)
@@ -68,7 +68,7 @@ def getinfotrack(uuid):
 
     if(isok):
         annot = get_track_annotations(uuid)
-        ret = {"title": result.title, "annotations": annot}
+        ret = {"title": result.title, "annotations": annot, "reserved_keys": RESERVED_WORDS}
         return jsonify(ret)
     else:
         return result
