@@ -1,4 +1,3 @@
-import re
 from flask import Blueprint, request, jsonify
 from email_validator import validate_email, EmailNotValidError
 from orm import db, User, UserRole, Composition, Contributor, UserInfo, InvitationEmail

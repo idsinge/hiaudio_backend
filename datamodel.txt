@@ -11,8 +11,12 @@
       - <compositionid>/
         - tracks/
           - <track filename>
+            - track_annotations/
+              - <track_annotation key>              
         - contributors
           - <contributor userid>
+         - comp_annotations/
+              - <comp_annotation key>  
 
 - verificationcode
 - invitationemail
@@ -56,6 +60,17 @@ Composition:
  - contributors
  - tracks
  - created_at
+ - comp_annotations
+
+ CompAnnotation:
+ - id
+ - uuid
+ - key
+ - value
+ - composition_uid
+ - created_at
+ - custom_added
+
 
 Track:
  - id
@@ -68,6 +83,16 @@ Track:
  - compress_path
  - needs_compress
  - created_at
+ - track_annotations
+
+ TrackAnnotation:
+ - id
+ - uuid
+ - key
+ - value
+ - track_uid
+ - created_at
+ - custom_added
 
 Contributor:
  - id
