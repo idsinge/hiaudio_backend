@@ -1,12 +1,12 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import current_user, jwt_required
+from flask_jwt_extended import jwt_required
 from flask_cors import cross_origin
 from orm import db, TrackAnnotation
 from utils import Utils
 
 annotat = Blueprint('annotat', __name__)
 
-RESERVED_WORDS = ["performer", "instrument", "comment", "recorded_at", "recording_date"]
+RESERVED_WORDS = ["title", "performer", "instrument", "comment", "recorded_at", "recording_date"]
 
 ERROR_404 = "annotation not found"
 
