@@ -1,0 +1,2 @@
+addEventListener("message",a=>{"correlation"===a.data.command&&function(a,e,t,n){let l=a.length,d=e.length,o=Array(t+1).fill(0);for(let n=0;n<=t;n++){let t=0;for(let o=n;o<l&&o-n<d;o++)t+=a[o]*e[o-n];o[n]=t/(l-n)}postMessage({correlation:o,channel:n})}(a.data.data1,a.data.data2,a.data.maxLag,a.data.channel),"findpeak"===a.data.command&&function(a,e){let t=a[0],n=0,l=0;for(let e=1;e<a.length;e++)a[e]>t&&(t=a[e],n=e),l+=a[e];postMessage({peakValue:t,peakIndex:n,mean:l/a.length,channel:e})}(a.data.array,a.data.channel)});
+//# sourceMappingURL=worker.139b5a6b.js.map
