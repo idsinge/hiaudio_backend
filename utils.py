@@ -1,4 +1,5 @@
 from flask_mail import Message
+from flask import render_template_string
 import shortuuid
 
 class UtilsSingletonMeta(type):
@@ -31,18 +32,76 @@ class Utils(metaclass=UtilsSingletonMeta):
         try:
             with self._app.app_context():
                 msg = Message(subject='Invitation to Hi-Audio', sender=('HiAudio', 'admin@hiaudio.fr'), recipients=[recipient])
-                html_content = f"""
+                html_template = """
+                <head>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            background-color: #f4f4f4;
+                            margin: 0;
+                            padding: 0;
+                            color: #333;
+                        }
+                        .container {
+                            width: 60%;
+                            margin: auto;
+                            overflow: hidden;
+                        }
+                        .header {
+                            background: #0275e3;
+                            color: #fff;
+                            padding: 10px 0;
+                            text-align: center;
+                        }
+                        .content {
+                            padding: 20px;
+                            background: #fff;
+                            margin-top: 10px;
+                            border-radius: 5px;
+                        }
+                        .footer {
+                            background: #0275e3;
+                            color: #fff;
+                            text-align: center;
+                            padding: 10px 0;
+                            margin-top: 10px;
+                            border-radius: 5px;
+                        }
+                        .footer a { color: white; }
+                        img {
+                            max-width: 100%;
+                            display: block;
+							margin-left: auto;
+							margin-right: auto;
+                        }
+                    </style>
+                </head>
                 <html>
-                    <head></head>
                     <body>
-                        <p>Hi,</p>
-                        <p>You have been invited to Hi-Audio Online Platform. Please register on the following link: https://{host}.<br>
-                        </p>
-                        <p>If you think this email was sent by mistake you can reject it by visiting: https://{host}/refusal.html and filling the form with your email plus the following refusal code: {refusal_code}</p>
+                        <div class="container">
+                            <div class="header">
+                                <h1>Welcome to Hi-Audio</h1>
+                                <cite>Where music is in hands of research</cite>
+                            </div>
+                            <div class="content">
+                                <img src="cid:image1" alt="Invitation Image">
+                                <h3>Hi,</h3>
+                                <h4>You have been invited to collaborate at Hi-Audio Online Platform.</h4>
+                                <h3><a href="https://{{host}}/login.html">Please register here</a><br></h3>
+                            </div>
+                            <div class="footer">
+                                <p>&copy; 2024 Hi-Audio</p>
+                                <p><a href="https://{{host}}/refusal.html?code={{refusal_code}}">Unregister here</a></p>
+                            </div>
+                        </div>
                     </body>
                 </html>
                 """
-                msg.html = html_content
+                msg.html = render_template_string(html_template, host=host, refusal_code=refusal_code)
+
+                with self._app.open_resource("static/tryhiaudio.jpg") as fp:
+                    msg.attach("tryhiaudio.jpg", "image/jpeg", fp.read(), headers=[('Content-ID', '<image1>')])
+                
                 self._mail.send(msg)
                 return True
         except Exception as e:
