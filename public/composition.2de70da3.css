@@ -1,0 +1,24 @@
+.fab {
+  text-align: center;
+  background-color: #007bff;
+  border: none;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  box-shadow: 0 2px 5px #0003;
+}
+
+.floatingbutton {
+  color: #fff;
+  line-height: 56px;
+  text-decoration: none;
+  display: block;
+}
+
+.fab:hover {
+  background-color: #0056b3;
+}
+/*# sourceMappingURL=composition.2de70da3.css.map */
