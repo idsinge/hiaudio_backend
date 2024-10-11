@@ -59,7 +59,7 @@
             </div>
           </div>
         </div>
-    </div>`,nr=()=>{document.getElementById("latencyslider").onchange=t=>{localStorage.setItem("latency",t.target.value),document.getElementById("latinputval").value=t.target.value,nn(t.target.value)},document.getElementById("latinputval").onchange=t=>{localStorage.setItem("latency",t.target.value),document.getElementById("latencyslider").value=t.target.value,nn(t.target.value)}},no=t=>{let e=-1!==document.location.search.indexOf("debug"),n=localStorage.getItem("latency");(0,c.default).dynamicModalDialog(`<img src='${ne}' class='img-fluid' alt='...'>
+    </div>`,nr=()=>{document.getElementById("latencyslider").onchange=t=>{localStorage.setItem("latency",t.target.value),document.getElementById("latinputval").value=t.target.value,nn(t.target.value)},document.getElementById("latinputval").onchange=t=>{localStorage.setItem("latency",t.target.value),document.getElementById("latencyslider").value=t.target.value,nn(t.target.value)}},no=t=>{let e=-1!==document.location.search.indexOf("debug"),n=localStorage.getItem("latency");(0,c.default).dynamicModalDialog(`<img src='${ne}' class='img-fluid visible-animate' alt='...' width='266' height='266'>
         <p>Place your mic as close as possible to the speakers/headphones.</p>
         <p class='alert alert-danger'><b>WARNING!</b> Be careful with the volume as a noise will be played through the speakers.</p>
         <p>${n?'<i>Current latency: <span id="current-lat-val">'+n+"</span> ms.</i>":""}</p>
@@ -91,4 +91,4 @@
                 <i class='fa-solid fa-microphone'></i> TEST MIC
               </a>
             </li>`:""})()}`,nb.init(nu),"demopage"===nu&&(document.getElementById("download-mix-btn").hidden=!1,(0,c.default).dynamicModalDialog("Be careful, the music you record or upload won't be saved, as you are not a registered user and this is only a test feature!",null,"","Close","Warning!","bg-warning",nk))}();
-//# sourceMappingURL=composition.4a20054d.js.map
+//# sourceMappingURL=composition.d201db7e.js.map
