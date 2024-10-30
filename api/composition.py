@@ -205,3 +205,14 @@ def updatecompcollection():
         return updatecompfield('collection_id')
     else:
         return jsonify({"error":"user not authorized or collection not found"})
+    
+@comp.route('/updatecompastemplate', methods=['PATCH'])
+@jwt_required()
+@cross_origin()
+def updatecompastemplate():
+    # TODO: control the value is boolean
+    user_isadmin = current_user.is_admin
+    if(user_isadmin):
+        return updatecompfield('is_template')
+    else:
+        return jsonify({"error":"user is not admin"})

@@ -123,4 +123,4 @@ def updatecompfield(field):
             db.session.commit()
             return jsonify({"ok":True, "result": field + " updated successfully"})
         else:
-            return jsonify({"error":"not possible to update composition field " + field + " with role " + str(role)})
+            return jsonify({"error":"not possible to update composition field " + field + " with " + str(UserRole(role))})

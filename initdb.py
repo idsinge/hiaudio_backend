@@ -40,8 +40,8 @@ with app.app_context():
     db.session.add(collection2)
     db.session.commit()
 
-    comp_uuid = shortuuid.uuid()
-    composition1 = Composition(title="ADASP", description="", user=user1, privacy=LevelPrivacy.private, opentocontrib=0, uuid=comp_uuid, collection=collection1)
+    comp_uuid_1 = shortuuid.uuid()
+    composition1 = Composition(title="ADASP", description="", user=user1, privacy=LevelPrivacy.private, opentocontrib=0, uuid=comp_uuid_1, collection=collection1, is_template=True)
 
     compannotation1 = CompAnnotation(key="bpm", value="120", composition=composition1, uuid=shortuuid.uuid())
 
@@ -60,4 +60,13 @@ with app.app_context():
 
     contributor1 = Contributor(role=UserRole.guest, user_id=user2.id, user_uid=user2.uid, composition=composition1)
     db.session.add(contributor1)
+    db.session.commit()
+
+    comp_uuid_2 = shortuuid.uuid()
+    composition2 = Composition(title="Clone ADASP", description="clone adasp", user=user2, privacy=LevelPrivacy.private, opentocontrib=0, uuid=comp_uuid_2, collection=collection1, cloned_from=composition1.uuid)
+    db.session.add(composition2)
+    db.session.commit()
+
+    track3 = Track(title="Acoustic clone", path=f"compositions/{composition1.id}/acoustic_1-mastered.mp3", composition=composition2,  user_id=user2.id, user_uid=user2.uid, uuid=shortuuid.uuid(), cloned_from=track1.uuid)
+    db.session.add(track3)
     db.session.commit()

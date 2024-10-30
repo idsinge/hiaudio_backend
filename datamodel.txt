@@ -61,6 +61,8 @@ Composition:
  - tracks
  - created_at
  - comp_annotations
+ - is_template
+ - cloned_from
 
  CompAnnotation:
  - id
@@ -84,6 +86,7 @@ Track:
  - needs_compress
  - created_at
  - track_annotations
+ - cloned_from
 
  TrackAnnotation:
  - id
