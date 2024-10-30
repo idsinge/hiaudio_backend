@@ -1,8 +1,10 @@
 import os
+import re
 import shutil
 from flask import request, jsonify
-from orm import db, UserRole, LevelPrivacy, Composition, Contributor, Collection, UserInfo
+from orm import db, UserRole, LevelPrivacy, Composition, Contributor, Collection, UserInfo, Track
 from flask_jwt_extended import current_user
+from utils import Utils
 import config
 
 ERROR_404 = "composition not found"
@@ -124,3 +126,23 @@ def updatecompfield(field):
             return jsonify({"ok":True, "result": field + " updated successfully"})
         else:
             return jsonify({"error":"not possible to update composition field " + field + " with " + str(UserRole(role))})
+
+def clonecompositiontracks(origcomp, newcomp, user):
+    list_tracks = origcomp.tracks
+    try:
+        for item in list_tracks:
+            newtrackpath = re.sub(r'compositions/\d+/', f'compositions/{newcomp.id}/', item.path)
+            newtrack = Track(title=item.title,
+                path=newtrackpath,
+                composition=newcomp,
+                user_id=user.id,
+                user_uid=user.uid,
+                uuid=Utils().generate_unique_uuid(Track,'uuid'),
+                cloned_from=item.uuid)
+            db.session.add(newtrack)
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        return False
+    
