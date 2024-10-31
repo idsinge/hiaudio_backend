@@ -5,8 +5,10 @@ from api.auth import is_user_logged_in
 from flask_cors import cross_origin
 from utils import Utils
 import config
+import os
+import shutil
 
-from .composition_helper import checkcompshouldberetrieved, getcompjsonwithuserandcollection, getcollaborationsbyuseridwithrole, getfilteredcompostionsbyrole, setcontributorsemails, deletecompfolder, updatecompfield, ERROR_404
+from .composition_helper import checkcompshouldberetrieved, getcompjsonwithuserandcollection, getcollaborationsbyuseridwithrole, getfilteredcompostionsbyrole, setcontributorsemails, deletecompfolder, updatecompfield, clonecompositiontracks, ERROR_404
 
 comp = Blueprint('comp', __name__)
 
@@ -106,6 +108,7 @@ def composition(uuid):
                 data['user_id'] = User.query.get(composition.user_id).uid
                 if(user is not None):
                     data['viewer_id'] = user.uid
+                    data['user_isadmin'] = user.is_admin
                 jcomposition = jsonify(data)
                 return jcomposition
 
@@ -138,6 +141,54 @@ def newcomposition():
         return jsonify(composition=composition.to_dict( rules=('-path','-collection') ), ok=True)
     else:
         return jsonify({"error":"privacy value not valid", "ok": False})
+
+@comp.route('/clonecomposition', methods=['POST'])
+@jwt_required()
+@cross_origin()
+def clonecomposition():    
+    title = request.get_json()["title"]
+    description = request.get_json().get("description", None)
+    privacy = request.get_json()["privacy_level"]
+    clone_from = request.get_json().get("clone_from", None)
+    if(clone_from):
+        orig_composition = Composition.query.filter_by(uuid=clone_from).first()
+        if(orig_composition):
+            if(orig_composition.is_template):
+                parent=Collection.query.get(orig_composition.collection_id)
+                if(privacy and (privacy is not None) and (LevelPrivacy.public.value <= int(privacy) <= LevelPrivacy.private.value)):                                      
+                    src_dir = f"compositions/{orig_composition.id}"                     
+                    fullpath_src_dir = os.path.join(config.DATA_BASEDIR, src_dir )                    
+                    user = User.query.get(current_user.id)
+                    clone_composition = Composition(title=title,
+                                               description=description,
+                                               user=user, privacy=LevelPrivacy(int(privacy)).name,
+                                               uuid=Utils().generate_unique_uuid(Composition, 'uuid'),
+                                               collection=parent, cloned_from=orig_composition.uuid)                    
+                    db.session.add(clone_composition)
+                    db.session.commit()                    
+                    dest_dir = f"compositions/{clone_composition.id}/"
+                     
+                    fullpath_dest_dir = os.path.join(config.DATA_BASEDIR, dest_dir )
+                    if not os.path.exists(os.path.dirname(fullpath_dest_dir)):
+                        clone_tracks = clonecompositiontracks(orig_composition, clone_composition, user)
+                        if clone_tracks:                        
+                            shutil.copytree(fullpath_src_dir, fullpath_dest_dir)
+                            return jsonify(composition=clone_composition.to_dict( rules=('-path','-collection') ), ok=True)
+                        else:
+                            db.session.delete(clone_composition)
+                            db.session.commit()
+                            return jsonify({"error":"Error while cloning", "ok": False})                        
+                    else:
+                        return jsonify({"error":"composition directory already exists", "ok": False})
+                else:
+                    return jsonify({"error":"privacy value not valid", "ok": False})
+                
+            else:
+                return jsonify({"error":"Composition is not a template", "ok": False}) 
+        else:
+            return jsonify({"error":"Composition to clone not found", "ok": False})    
+    else:
+        return jsonify({"error":"comp uuid must not be empty", "ok": False})  
 
 @comp.route('/deletecomposition/<string:uuid>', methods=['DELETE'])
 @jwt_required()
@@ -205,3 +256,14 @@ def updatecompcollection():
         return updatecompfield('collection_id')
     else:
         return jsonify({"error":"user not authorized or collection not found"})
+    
+@comp.route('/updatecompastemplate', methods=['PATCH'])
+@jwt_required()
+@cross_origin()
+def updatecompastemplate():
+    # TODO: control the value is boolean
+    user_isadmin = current_user.is_admin
+    if(user_isadmin):
+        return updatecompfield('is_template')
+    else:
+        return jsonify({"error":"user is not admin"})

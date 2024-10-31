@@ -83,6 +83,8 @@ class Composition(db.Model, SerializerMixin):
     collection_id = db.Column(db.Integer, db.ForeignKey('collection.id', ondelete='CASCADE'), nullable=True)
     contributors = db.relationship('Contributor', backref='composition', cascade="all, delete-orphan")
     opentocontrib = db.Column(db.Boolean, nullable=False, server_default='0')
+    is_template = db.Column(db.Boolean, nullable=False, server_default='0')
+    cloned_from = db.Column(db.String(22))
 
     def __repr__(self):
         return f'<Composition "{self.title}">'
@@ -118,6 +120,7 @@ class Track(db.Model, SerializerMixin):
     composition_id = db.Column(db.Integer, db.ForeignKey('composition.id', ondelete='CASCADE'))
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     annotations = db.relationship('TrackAnnotation', backref='track', cascade="all, delete-orphan")
+    cloned_from = db.Column(db.String(22))
 
     def __repr__(self):
         return f'<Track "{self.title}">'
