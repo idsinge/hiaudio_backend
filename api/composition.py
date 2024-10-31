@@ -108,6 +108,7 @@ def composition(uuid):
                 data['user_id'] = User.query.get(composition.user_id).uid
                 if(user is not None):
                     data['viewer_id'] = user.uid
+                    data['user_isadmin'] = user.is_admin
                 jcomposition = jsonify(data)
                 return jcomposition
 
