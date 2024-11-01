@@ -157,7 +157,9 @@ def clonecomposition():
                 parent=Collection.query.get(orig_composition.collection_id)
                 if(privacy and (privacy is not None) and (LevelPrivacy.public.value <= int(privacy) <= LevelPrivacy.private.value)):                                      
                     src_dir = f"compositions/{orig_composition.id}"                     
-                    fullpath_src_dir = os.path.join(config.DATA_BASEDIR, src_dir )                    
+                    fullpath_src_dir = os.path.join(config.DATA_BASEDIR, src_dir )
+                    if not os.path.exists(fullpath_src_dir):
+                        os.makedirs(fullpath_src_dir)                   
                     user = User.query.get(current_user.id)
                     clone_composition = Composition(title=title,
                                                description=description,
