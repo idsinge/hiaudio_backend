@@ -44,30 +44,30 @@
             </div>
         </div>
         <div class="metronome-controls">
-            <button id="play-button" class="metronome-button play-pause-metronome-button btn-success">
+            <button id="play-button" type="button" class="btn metronome-button play-pause-metronome-button btn-success">
                 <div id="play-pause-icon" class="play-metronome-icon"></div>
             </button>
         </div>        
         <div class="metronome-controls">
         
-            <button data-id="tempo-change" class="metronome-button" data-change="-5">-5</button>
-            <button data-id="tempo-change" class="metronome-button" data-change="-1">-</button>
+            <button data-id="tempo-change" type="button" class="btn btn-secondary metronome-button" data-change="-5">-5</button>
+            <button data-id="tempo-change" type="button" class="btn btn-light metronome-button" data-change="-1">-</button>
 
             <div class="tempo-container">
                 <div id="tempo" class="number-metronome">120</div>
                 <div class="subtext-metronome">bpm</div>
             </div>
 
-            <button data-id="tempo-change" class="metronome-button" data-change="+1">+</button>
-            <button data-id="tempo-change" class="metronome-button" data-change="+5">+5</button>
+            <button data-id="tempo-change" type="button" class="btn btn-light metronome-button" data-change="+1">+</button>
+            <button data-id="tempo-change" type="button" class="btn btn-secondary metronome-button" data-change="+5">+5</button>
         </div>
         <div class="metronome-controls">
-            <button data-id="beatsperbar-change" class="metronome-button" data-change="-1">-</button>
+            <button data-id="beatsperbar-change" type="button" class="btn btn-light metronome-button" data-change="-1">-</button>
             <div class="bar-container">
                 <div id="beatsperbar" class="number-metronome">4</div>
-                <div class="subtext-metronome">beats / bar</div>
+                <div class="subtext-metronome">&nbsp;beats / bar</div>                
             </div>
-            <button data-id="beatsperbar-change" class="metronome-button" data-change="+1">+</button>
+            <button data-id="beatsperbar-change" type="button" class="btn btn-light metronome-button" data-change="+1">+</button>            
         </div>
         <div class="metronome-controls">
             <div class="tempo-container">
@@ -149,4 +149,4 @@
             </li>`:""},nq=t=>{t.onclick=nX},nX=()=>{nN?nJ():$("#testMicrophoneModal").modal("show")},nY=()=>{let t=document.querySelectorAll(".hidden-first");if(t.length)for(let e=0;e<t.length;e++)t[e].classList.add("visible-animate")},nJ=t=>{(0,c.default).dynamicModalDialog(`<p>Please, verify the following error related to your microphone/input: &#10;&#13;</p>
       <p><b><i>${t||nN}</i></b></p>`,null,"","Close","Warning!","bg-warning")},nK=t=>{(0,c.default).dynamicModalDialog(`<p>There was a problem while loading the data, probably not supported type of media by the browser: &#10;&#13;</p>
       <p class="breakword"><b>${t}</b></p>`,null,"","Close","Error","bg-danger",n0)},nZ=()=>{document.getElementById("toastNotLoggedIn").style.display="",$("#toastNotLoggedIn").toast("show")},nQ=()=>{document.getElementById("toastNotPermission").style.display="",$("#toastNotPermission").toast("show")},n0=()=>{let t=document.getElementById("download-progress-elems");t&&!t.hidden&&t.remove()};(0,d.activateGoHomeLink)(),(()=>{document.getElementById("useroptions").innerHTML=`${nC()}${nW()}${eI()}`;let t=document.getElementById("testmicrophone");t&&nq(t)})(),nz.init(nB),"demopage"===nB&&(document.getElementById("download-mix-btn").hidden=!1,(0,c.default).dynamicModalDialog("Be careful, the music you record or upload won't be saved, as you are not a registered user and this is only a test feature!",null,"","Close","Warning!","bg-warning",nY))}();
-//# sourceMappingURL=composition.43d73a5b.js.map
+//# sourceMappingURL=composition.ff9b33db.js.map
