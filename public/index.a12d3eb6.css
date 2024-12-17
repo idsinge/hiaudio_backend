@@ -1,0 +1,2 @@
+:root{--box-shadow-color:#c9c9c9}.sticky-container{position:fixed;bottom:0;right:0}@media only screen and (min-width:689px){.sticky-container{width:40%}.track_comp_info{max-width:80%}}@media only screen and (max-width:689px){.track_comp_info{max-width:200px}}.audio-player{box-shadow:.2rem .2rem 1rem .2rem var(--box-shadow-color);background-color:#fff;width:100%}.player-body{width:100%;padding:1rem}span[aria-expanded=true] .fa-chevron-up,span[aria-expanded=false] .fa-chevron-down{display:none}#playfloatingbutton{width:15px}
+/*# sourceMappingURL=index.a12d3eb6.css.map */
