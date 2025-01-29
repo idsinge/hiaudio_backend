@@ -5,11 +5,14 @@ import essentia.streaming as ess
 import essentia.standard as es
 from six.moves import urllib
 from essentia.standard import TensorflowPredictVGGish, TensorflowPredictMusiCNN, TensorflowPredict2D
+from dotenv import load_dotenv
 
+# Load .env file
+load_dotenv()
 import sys
 import os
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import config
 
 ACOUSTIC_ID_API_KEY = os.environ.get("ACOUSTIC_ID_API_KEY")
 
