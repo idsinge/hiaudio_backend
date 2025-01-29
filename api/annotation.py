@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required
 from flask_cors import cross_origin
 from orm import db, TrackAnnotation
 from utils import Utils
+from sqlalchemy import exc
 
 annotat = Blueprint('annotat', __name__)
 
@@ -158,9 +159,13 @@ def handle_new_track_annotation(track_uid, annotation):
                                                     track_uid=track_uid,
                                                     uuid=annotation_uuid,
                                                     custom_added=custom_added_is)
-            db.session.add(new_track_annotation)
-            db.session.commit()
-            return 1, None, new_track_annotation
+            try:
+                db.session.add(new_track_annotation)
+                db.session.commit()
+                return 1, None, new_track_annotation
+            except exc.SQLAlchemyError as e:
+                db.session.rollback()
+                return 0, f"'{track_uid}': missing track", None
         else:
             return 0, f"'{annotation_key}': key already set for track in new annotation", None
     else:        
