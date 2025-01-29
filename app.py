@@ -17,6 +17,7 @@ import api.contributor
 import api.user
 import api.collection
 import api.annotation
+import api.signalprocess
 
 import config
 
@@ -30,6 +31,7 @@ app.register_blueprint(api.track.track)
 app.register_blueprint(api.contributor.contrib)
 app.register_blueprint(api.collection.coll)
 app.register_blueprint(api.annotation.annotat)
+app.register_blueprint(api.signalprocess.signalproc)
 
 # allow uploads up to 50MB by default
 app.config['MAX_CONTENT_LENGTH'] = config.UPLOAD_MAX_SIZE if hasattr(config, 'UPLOAD_MAX_SIZE') else 50 * 1000 * 1000
