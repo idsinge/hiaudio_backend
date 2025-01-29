@@ -114,7 +114,7 @@ python compress_thread.py
 To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, the environment variable `ACOUSTIC_ID_API_KEY` needs to be set at `.env`. It's required to execute the follwoing commands, the first for the installation of the `essentia-tensorflow`, if package not included with `requirements.txt` (see **NOTE**) and the other to run the thread.
 
 ```bash
-pip essentia-tensorflow
+pip install essentia-tensorflow
 
 python process_audio_thread/process_audio_thread.py
 ```
