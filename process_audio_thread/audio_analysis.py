@@ -11,8 +11,10 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import config
 
+ACOUSTIC_ID_API_KEY = os.environ.get("ACOUSTIC_ID_API_KEY")
+
 # Hide logging messages from Essentia
-essentia.log.infoActive = True
+essentia.log.infoActive = False
 
 def tellifisspeech(audio_sr16):
     predictions = TensorflowPredictVGGish(graphFilename='models/genre_rosamerica-vggish-audioset-1.pb')(audio_sr16)
@@ -124,15 +126,17 @@ def getbpmtempo(audio_sr44):
 
 def checkifcopyright(audio_sr44, samplerate):   
     
-    if not config.ACOUSTIC_ID_API_KEY:
+    if not ACOUSTIC_ID_API_KEY:
         print('an API key needs to be set')
         return None
     else:
-        client = config.ACOUSTIC_ID_API_KEY
+        client = ACOUSTIC_ID_API_KEY
         fingerprint = es.Chromaprinter()(audio_sr44)
         duration = len(audio_sr44) / samplerate 
-        #if len(fingerprint) <= 7958:
-            # Composing a query asking for the fields: recordings, releasegroups and compress.
+        # TODO: avoid making a request to acousticid service if we know the size does not fit by:
+        # if len(fingerprint) <= 7958:
+        # TODO: check the correct value instead of 7958
+        # Composing a query asking for the fields: recordings, releasegroups and compress.
         query = 'http://api.acoustid.org/v2/lookup?client=%s&meta=recordings+releasegroups+compress&duration=%i&fingerprint=%s' \
         %(client, duration, fingerprint)
         try:
@@ -141,39 +145,4 @@ def checkifcopyright(audio_sr44, samplerate):
             json_obj = json.loads(string)
             return json_obj
         except Exception as e:
-            return None   
-
-def extractmusicfeatures(fullpath):
-    features, features_frames = es.MusicExtractor()(fullpath)
-    return features
-
-def voice_or_instrumental(audio_sr16):
-    # FAILS WITH muse isolated voice
-    #sr = 16000
-    #audio = MonoLoader(filename=fullpath, sampleRate=sr)()
-    labels = ['instrumental', 'voice']
-    predictions = TensorflowPredictVGGish(graphFilename='models/voice_instrumental-vggish-audioset-1.pb')(audio_sr16)
-    predictions = np.mean(predictions, axis=0)
-    #return '{:.3f}'.format(predictions[7]*100)
-    order = predictions.argsort()[::-1]
-    for i in order:
-        print('{}: {:.3f}'.format(labels[i], predictions[i]))
-    voice_score = predictions[1]*100
-    print(voice_score)
-    return voice_score
-
-def checkiftonal(audio_sr16):
-    # FAILS WITH REM isolated voice
-    #sr = 16000
-    #audio = MonoLoader(filename=fullpath, sampleRate=sr)()
-    labels = ['atonal', 'tonal']
-    predictions = TensorflowPredictVGGish(graphFilename='models/tonal_atonal-vggish-audioset-1.pb')(audio_sr16)
-    #predictions = TensorflowPredictMusiCNN(graphFilename='models/tonal_atonal-musicnn-mtt-2.pb')(audio_sr16)
-    predictions = np.mean(predictions, axis=0)
-    #return '{:.3f}'.format(predictions[7]*100)
-    order = predictions.argsort()[::-1]
-    for i in order:
-        print('{}: {:.3f}'.format(labels[i], predictions[i]))
-    tonal_score = predictions[1]*100
-    print(tonal_score)
-    return tonal_score
+            return None
