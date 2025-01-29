@@ -107,6 +107,18 @@ python compress_thread.py
 **NOTE**: `pytdub` needs either `sudo apt install ffmpeg` (Linux) or `brew install ffmpeg` (Mac) in order to function correctly.
 
 
+## AUDIO PROCESSING MODULE
+
+To use the [Acoustic ID API ](https://acoustid.org/), the env variable `ACOUSTIC_ID_API_KEY` needs to be set at `config.py`  (https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/blob/main/config.py.sample?ref_type=heads#L10). It's required to execute the follwoing commands, the first for the installation of the `essentia-tensorflow`, if package not included with `requirements.txt` (see **NOTE**) and the other to run the thread.
+
+```bash
+pip essentia-tensorflow
+
+python process_audio_thread/process_audio_thread.py
+```
+**NOTE**: In order to make essentia python library to work in the backend this is required: `pip install "numpy<2.0"`.
+
+
 
 ## OTHER INFOS:
 1- [Web App Repo](https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally)
