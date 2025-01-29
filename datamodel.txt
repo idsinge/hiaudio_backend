@@ -84,9 +84,11 @@ Track:
  - path
  - compress_path
  - needs_compress
+ - is_processed
  - created_at
  - track_annotations
  - cloned_from
+ - file_metadata
 
  TrackAnnotation:
  - id
