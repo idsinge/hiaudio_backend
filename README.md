@@ -19,11 +19,13 @@ pip install -r requirements.txt
 # SECRET_KEY is independent and can be self-elected
 # JWT_SECRET_KEY: https://flask-jwt-extended.readthedocs.io/en/stable/options.html#JWT_SECRET_KEY
 # OVH_EMAIL_PASSWD: https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/HOSTING/OVH-(domain) 
+# ACOUSTIC_ID_API_KEY: https://acoustid.org/
 GOOGLE_CLIENT_ID=*****
 GOOGLE_CLIENT_SECRET=*****
 SECRET_KEY=*****
 JWT_SECRET_KEY=*****
 OVH_EMAIL_PASSWD=*****
+ACOUSTIC_ID_API_KEY=*****
 
 
 # For Mac, for Linux see (4) below
@@ -105,6 +107,18 @@ pip install pydub
 python compress_thread.py
 ```
 **NOTE**: `pytdub` needs either `sudo apt install ffmpeg` (Linux) or `brew install ffmpeg` (Mac) in order to function correctly.
+
+
+## AUDIO PROCESSING MODULE
+
+To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, the environment variable `ACOUSTIC_ID_API_KEY` needs to be set at `.env`. It's required to execute the follwoing commands, the first for the installation of the `essentia-tensorflow`, if package not included with `requirements.txt` (see **NOTE**) and the other to run the thread.
+
+```bash
+pip essentia-tensorflow
+
+python process_audio_thread/process_audio_thread.py
+```
+**NOTE**: In order to make essentia python library to work in the backend this is required: `pip install "numpy<2.0"`.
 
 
 
