@@ -19,11 +19,13 @@ pip install -r requirements.txt
 # SECRET_KEY is independent and can be self-elected
 # JWT_SECRET_KEY: https://flask-jwt-extended.readthedocs.io/en/stable/options.html#JWT_SECRET_KEY
 # OVH_EMAIL_PASSWD: https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/HOSTING/OVH-(domain) 
+# ACOUSTIC_ID_API_KEY: https://acoustid.org/
 GOOGLE_CLIENT_ID=*****
 GOOGLE_CLIENT_SECRET=*****
 SECRET_KEY=*****
 JWT_SECRET_KEY=*****
 OVH_EMAIL_PASSWD=*****
+ACOUSTIC_ID_API_KEY=*****
 
 
 # For Mac, for Linux see (4) below
@@ -109,7 +111,7 @@ python compress_thread.py
 
 ## AUDIO PROCESSING MODULE
 
-To use the [Acoustic ID API ](https://acoustid.org/), the env variable `ACOUSTIC_ID_API_KEY` needs to be set at `config.py`  (https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/blob/main/config.py.sample?ref_type=heads#L10). It's required to execute the follwoing commands, the first for the installation of the `essentia-tensorflow`, if package not included with `requirements.txt` (see **NOTE**) and the other to run the thread.
+To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, the environment variable `ACOUSTIC_ID_API_KEY` needs to be set at `.env`. It's required to execute the follwoing commands, the first for the installation of the `essentia-tensorflow`, if package not included with `requirements.txt` (see **NOTE**) and the other to run the thread.
 
 ```bash
 pip essentia-tensorflow
