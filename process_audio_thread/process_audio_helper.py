@@ -20,6 +20,7 @@ def process_audio_file(track, item):
     try:
         fullpath = os.path.join(config.DATA_BASEDIR, track.path)
         metadata = mediainfo(fullpath)
+        metadata.pop("filename", None)
         setattr(track, 'file_metadata', metadata)
         db.session.commit()
         sr_16 = 16000
