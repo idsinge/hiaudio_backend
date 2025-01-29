@@ -70,8 +70,6 @@ def getinfotrack(uuid):
     if(isok):
         annot = get_track_annotations(uuid)
         file_metadata = result.file_metadata
-        if file_metadata:
-            file_metadata.pop("filename", None)
         ret = {"title": result.title, "annotations": annot, "reserved_keys": RESERVED_WORDS, "file_metadata":file_metadata}
         return jsonify(ret)
     else:
