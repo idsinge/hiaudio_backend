@@ -1,7 +1,6 @@
 from sqlalchemy import exc
 import logging
 import essentia.standard as es
-from essentia.standard import MonoLoader
 
 from pydub.utils import mediainfo
 
@@ -23,17 +22,13 @@ def process_audio_file(track, item):
         metadata.pop("filename", None)
         setattr(track, 'file_metadata', metadata)
         db.session.commit()
-        sr_16 = 16000
-        audio_sr16 = MonoLoader(filename=fullpath, sampleRate=sr_16, resampleQuality=4)()
-        is_speech_pred = tellifisspeech(audio_sr16)
+        is_speech_pred = tellifisspeech(fullpath)
         handlegenerictrackannotation('is_speech_score', '{0:.2f}'.format(is_speech_pred), track.uuid)
         if is_speech_pred < 50:
-            sr_44 = 44100
-            audio_sr44 = es.MonoLoader(filename=fullpath, sampleRate=sr_44)()
-            iscopyrightedannotation(audio_sr44, sr_44, track.uuid)
-            tempoannotation(audio_sr44, track.uuid)
-            is_percussion = checkifpercurssion(audio_sr16)
-            handlegenerictrackannotation('is_percurssion', str(is_percussion).lower(), track.uuid)
+            iscopyrightedannotation(fullpath, track.uuid)
+            tempoannotation(fullpath, track.uuid)
+            is_percussion = checkifpercurssion(fullpath)
+            handlegenerictrackannotation('is_percurssion', str(is_percussion).lower(), track.uuid)            
             if not is_percussion:
                tonalkeyscaleannotation(fullpath, track.uuid)
 
@@ -48,12 +43,12 @@ def handlegenerictrackannotation(key_annot, value_annot, track_uuid):
     result = handle_new_track_annotation(track_uuid, annot_json)
     # TODO: check if every annotation is successful
 
-def tempoannotation(audio_sr44, track_uuid):
-    bpm_tempo = getbpmtempo(audio_sr44)
+def tempoannotation(fullpath, track_uuid):
+    bpm_tempo = getbpmtempo(fullpath)
     handlegenerictrackannotation('BPM', bpm_tempo, track_uuid)    
 
-def iscopyrightedannotation(audio_sr44, sr_44, track_uuid):
-    is_copyrighted = checkifcopyright(audio_sr44, sr_44)
+def iscopyrightedannotation(fullpath, track_uuid):
+    is_copyrighted = checkifcopyright(fullpath)
     if is_copyrighted and len(is_copyrighted['results']) > 0:
         handlegenerictrackannotation('is_copyrighted_score', '{0:.2f}'.format(is_copyrighted['results'][0]['score']*100), track_uuid)
         recordings = is_copyrighted['results'][0].get('recordings')
