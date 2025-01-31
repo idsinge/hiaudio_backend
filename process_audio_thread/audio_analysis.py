@@ -4,7 +4,7 @@ import essentia
 import essentia.streaming as ess
 import essentia.standard as es
 from six.moves import urllib
-from essentia.standard import TensorflowPredictVGGish, TensorflowPredictMusiCNN, TensorflowPredict2D
+from essentia.standard import MonoLoader, TensorflowPredictVGGish, TensorflowPredictMusiCNN, TensorflowPredict2D
 from dotenv import load_dotenv
 
 # Load .env file
@@ -15,27 +15,37 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 ACOUSTIC_ID_API_KEY = os.environ.get("ACOUSTIC_ID_API_KEY")
+sr_16 = 16000
+sr_44 = 44100
 
 # Hide logging messages from Essentia
 essentia.log.infoActive = False
 
-def tellifisspeech(audio_sr16):
-    predictions = TensorflowPredictVGGish(graphFilename='models/genre_rosamerica-vggish-audioset-1.pb')(audio_sr16)
+model_genre_rosamerica = TensorflowPredictVGGish(graphFilename='models/genre_rosamerica-vggish-audioset-1.pb')
+model_msd_musicnn = TensorflowPredictMusiCNN(graphFilename='models/msd-musicnn-1.pb', output="model/dense/BiasAdd")
+model_fs_loop_ds_msd = TensorflowPredict2D(graphFilename="models/fs_loop_ds-msd-musicnn-1.pb", input="serving_default_model_Placeholder", output="PartitionedCall")
+
+def tellifisspeech(fullpath):
+    audio_sr16_loader = MonoLoader()
+    audio_sr16_loader.configure(filename=fullpath, sampleRate=sr_16, resampleQuality=4)
+    audio_sr16 = audio_sr16_loader()
+    predictions = model_genre_rosamerica(audio_sr16)
     predictions = np.mean(predictions, axis=0)
     if isinstance(predictions,np.ndarray):
         return predictions[7]*100
     else:
         return 0
     
-def checkifpercurssion(audio_sr16):
+def checkifpercurssion(fullpath):
+    audio_sr16_loader = MonoLoader()
+    audio_sr16_loader.configure(filename=fullpath, sampleRate=sr_16, resampleQuality=4)
+    audio_sr16 = audio_sr16_loader()
     msd_labels = ['bass', 'chords', 'fx', 'melody', 'percussion']
-    embedding_model = TensorflowPredictMusiCNN(graphFilename='models/msd-musicnn-1.pb', output="model/dense/BiasAdd")
-    embeddings = embedding_model(audio_sr16)
+    embeddings = model_msd_musicnn(audio_sr16)
     if not len(embeddings):
         return False
     else:
-        model = TensorflowPredict2D(graphFilename="models/fs_loop_ds-msd-musicnn-1.pb", input="serving_default_model_Placeholder", output="PartitionedCall")
-        predictions = model(embeddings)
+        predictions = model_fs_loop_ds_msd(embeddings)
         top_n = 1
 
         # The shape of the predictions matrix is [n_patches, n_labels]
@@ -122,20 +132,26 @@ def get_first_artist_and_title(data):
             
     return None
 
-def getbpmtempo(audio_sr44):
+def getbpmtempo(fullpath):
+    audio_sr44_loader = MonoLoader()
+    audio_sr44_loader.configure(filename=fullpath, sampleRate=sr_44)
+    audio_sr44 = audio_sr44_loader()
     rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
     bpm_info = rhythm_extractor(audio_sr44)
     return round(bpm_info[0])
 
-def checkifcopyright(audio_sr44, samplerate):   
+def checkifcopyright(fullpath):   
     
     if not ACOUSTIC_ID_API_KEY:
         print('an API key needs to be set')
         return None
     else:
+        audio_sr44_loader = MonoLoader()
+        audio_sr44_loader.configure(filename=fullpath, sampleRate=sr_44)
+        audio_sr44 = audio_sr44_loader()
         client = ACOUSTIC_ID_API_KEY
         fingerprint = es.Chromaprinter()(audio_sr44)
-        duration = len(audio_sr44) / samplerate 
+        duration = len(audio_sr44) / sr_44 
         # TODO: avoid making a request to acousticid service if we know the size does not fit by:
         # if len(fingerprint) <= 7958:
         # TODO: check the correct value instead of 7958
