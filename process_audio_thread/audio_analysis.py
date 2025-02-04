@@ -25,6 +25,20 @@ model_genre_rosamerica = TensorflowPredictVGGish(graphFilename='models/genre_ros
 model_msd_musicnn = TensorflowPredictMusiCNN(graphFilename='models/msd-musicnn-1.pb', output="model/dense/BiasAdd")
 model_fs_loop_ds_msd = TensorflowPredict2D(graphFilename="models/fs_loop_ds-msd-musicnn-1.pb", input="serving_default_model_Placeholder", output="PartitionedCall")
 
+def tellifsilence(fullpath):
+    audio_loader = MonoLoader()
+    audio_loader.configure(filename=fullpath)
+    audio = audio_loader()
+    rms = es.RMS()(audio)
+    rms_db = 20 * np.log10(rms + 1e-10) # Add small epsilon to avoid log(0)
+    # Check if the RMS value is below the threshold
+    #if rms < 0.01:
+    # Other possible value : -40 dB
+    if rms_db < -60:
+        return True, rms_db
+    else:
+        return False, rms_db
+
 def tellifisspeech(fullpath):
     audio_sr16_loader = MonoLoader()
     audio_sr16_loader.configure(filename=fullpath, sampleRate=sr_16, resampleQuality=4)

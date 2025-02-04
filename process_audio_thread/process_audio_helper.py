@@ -4,7 +4,7 @@ import essentia.standard as es
 
 from pydub.utils import mediainfo
 
-from audio_analysis import tellifisspeech, getbpmtempo, checkifpercurssion, checkifcopyright, get_first_artist_and_title, getkeyandscale
+from audio_analysis import tellifisspeech, getbpmtempo, checkifpercurssion, checkifcopyright, get_first_artist_and_title, getkeyandscale, tellifsilence
 
 logging.basicConfig(filename='processed_audio_logfile.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -22,15 +22,19 @@ def process_audio_file(track, item):
         metadata.pop("filename", None)
         setattr(track, 'file_metadata', metadata)
         db.session.commit()
-        is_speech_pred = tellifisspeech(fullpath)
-        handlegenerictrackannotation('is_speech_score', '{0:.2f}'.format(is_speech_pred), track.uuid)
-        if is_speech_pred < 50:
-            iscopyrightedannotation(fullpath, track.uuid)
-            tempoannotation(fullpath, track.uuid)
-            is_percussion = checkifpercurssion(fullpath)
-            handlegenerictrackannotation('is_percurssion', str(is_percussion).lower(), track.uuid)            
-            if not is_percussion:
-               tonalkeyscaleannotation(fullpath, track.uuid)
+        is_silence, rms_db = tellifsilence(fullpath)
+        handlegenerictrackannotation('is_silence', str(is_silence).lower(), track.uuid)
+        handlegenerictrackannotation('RMS', '{0:.2f}'.format(rms_db), track.uuid)
+        if not is_silence:        
+            is_speech_pred = tellifisspeech(fullpath)
+            handlegenerictrackannotation('is_speech_score', '{0:.2f}'.format(is_speech_pred), track.uuid)
+            if is_speech_pred < 50:
+                iscopyrightedannotation(fullpath, track.uuid)
+                tempoannotation(fullpath, track.uuid)
+                is_percussion = checkifpercurssion(fullpath)
+                handlegenerictrackannotation('is_percurssion', str(is_percussion).lower(), track.uuid)            
+                if not is_percussion:
+                    tonalkeyscaleannotation(fullpath, track.uuid)
 
         set_track_as_processed(track)
 
