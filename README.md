@@ -1,4 +1,7 @@
-## General usage: 
+## General usage:
+
+### Recommended Python version 3.10
+
 
 ```bash
 git clone https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt.git
@@ -28,7 +31,8 @@ OVH_EMAIL_PASSWD=*****
 ACOUSTIC_ID_API_KEY=*****
 
 
-# For Mac, for Linux see (4) below
+# For Mac, for Linux see (Note 2) below
+# More info about DB migration in Note 3.
 brew install mysql
 
 # Start MySQL server
@@ -65,7 +69,7 @@ MAIL_SERVER = ""
 MAIL_PORT = 0
 MAIL_USERNAME = ""
 
-# To initialize SQLite run:
+# To initialize the DB:
 python initdb.py
 
 # run the server 
@@ -76,10 +80,10 @@ Open -> https://localhost:7007/
 
 ```
 
-## To make the frontend work together with the backend in local DEV mode/environment
+## To make the frontend repo work together with the backend in local DEV mode/environment
 
 
-Inside backend repo clone:
+Inside backend repo clone (see **NOTE 1**):
 ```
 git clone https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp.git
 
@@ -87,7 +91,7 @@ git clone https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp.git
 
 Then rename the folder `beatbytebot_webapp` to `webapp`
 
-Note: in dev it might be useful to temporarly ignore the contents of the public directory, this can be done with
+**Hint**: during development it might be useful to temporarly ignore the contents of the public directory, this can be done with
 
 ```
 # ignore public/ contents for git diff, grep, status, etc.
@@ -99,34 +103,38 @@ git ls-files -z public/ | xargs -0 git update-index --no-skip-worktree
 
 ## COMPRESSION MODULE
 
-In order to run the compression module locally, the env variable `COMPRESSION_MODULE_ACTIVE` at `config.py` needs to be set to `True` (https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/blob/main/config.py.sample?ref_type=heads#L9). It's required to execute the follwoing commands, the first for the installation of the `pydub` package (see **NOTE**) and the other to run the thread.
+In order to run the compression module locally, the env variable `COMPRESSION_MODULE_ACTIVE` at `config.py` needs to be set to `True` (https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/blob/main/config.py.sample?ref_type=heads#L9). It's required to execute the follwoing commands, the first for the installation of the `pydub` package (see **NOTE 4**) and the other to run the thread. More info about setting a python script as a service in **Note 6**.
 
 ```bash
 pip install pydub
 
 python compress_thread.py
 ```
-**NOTE**: `pytdub` needs either `sudo apt install ffmpeg` (Linux) or `brew install ffmpeg` (Mac) in order to function correctly.
 
 
 ## AUDIO PROCESSING MODULE
 
-To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, the environment variable `ACOUSTIC_ID_API_KEY` needs to be set at `.env`. It's required to execute the follwoing commands, the first for the installation of the `essentia-tensorflow`, if package not included with `requirements.txt` (see **NOTE**) and the other to run the thread.
+To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, the environment variable `ACOUSTIC_ID_API_KEY` needs to be set at `.env`. It's required to execute the follwoing commands, for the installation of `pytdub` (see **NOTE 4**) and `essentia-tensorflow` (see **NOTE 5**) in order to run the audio processing service. More info about setting a python script as a service in **Note 6**.
 
 ```bash
+pip install pydub
+
 pip install essentia-tensorflow
 
 python process_audio_thread/process_audio_thread.py
 ```
-**NOTE**: In order to make essentia python library to work in the backend this is required: `pip install "numpy<2.0"`.
 
 
 
-## OTHER INFOS:
+## NOTES:
 1- [Web App Repo](https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally)
 
-2- [Debuggable Frontend with Backend](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Debuggable-Frontend-with-Backend)
+2- [MySQL DB setup and installation, check](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/DB/Change-DB-type-to-MySQL)
 
 3- Flask-Migrate: https://flask-migrate.readthedocs.io/en/latest/#example
 
-4- [MySQL DB setup and installation, check](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/DB/Change-DB-type-to-MySQL)
+4- [Install FFMPEG](https://gist.github.com/barbietunnie/47a3de3de3274956617ce092a3bc03a1). `pydub` needs either `sudo apt install ffmpeg` (Linux) or `brew install ffmpeg` (Mac) in order to function correctly. 
+
+5- In order to make essentia python library to work in the backend this is required: `pip install "numpy<2.0"`.
+
+6- [Setup a python script as a service through systemctl and systemd](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/HOSTING/Setup-a-python-script-as-a-service-through-systemctl-and-systemd)
