@@ -115,7 +115,7 @@ class Track(db.Model, SerializerMixin):
     path = db.Column(db.String(1024))
     compress_path = db.Column(db.String(1024))
     needs_compress = db.Column(db.Boolean())
-    is_processed = db.Column(db.Boolean(), default=False, nullable=False)
+    is_audio_processed = db.Column(db.Boolean(), default=False, nullable=False)
     user_id = db.Column(db.Integer)
     user_uid = db.Column(db.String(22))
     composition_id = db.Column(db.Integer, db.ForeignKey('composition.id', ondelete='CASCADE'))
