@@ -37,13 +37,13 @@ def processfile(item):
     with app.app_context():
         track = db.session.get(Track, item.id)
         if track is not None:
-            is_processed = track.is_processed
-            if is_processed is False:
+            is_audio_processed = track.is_audio_processed
+            if is_audio_processed is False:
                process_audio_file(track, item)
 
 def getpendingtracks(queue):    
     with app.app_context():
-        tracks = Track.query.filter((Track.is_processed == False)).all()
+        tracks = Track.query.filter((Track.is_audio_processed == False)).all()
     if(len(tracks)):        
         logging.info("we have " + f"{len(tracks)}" + " tracks")
         for i in tracks:              
