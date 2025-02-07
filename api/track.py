@@ -70,7 +70,7 @@ def getinfotrack(uuid):
     if(isok):
         annot = get_track_annotations(uuid)
         file_metadata = result.file_metadata
-        ret = {"title": result.title, "annotations": annot, "reserved_keys": RESERVED_WORDS, "file_metadata":file_metadata}
+        ret = {"title": result.title, "annotations": annot, "reserved_keys": RESERVED_WORDS, "file_metadata":file_metadata, "is_audio_processed":result.is_audio_processed}
         return jsonify(ret)
     else:
         return result
