@@ -71,7 +71,7 @@ def set_track_as_processed(item):
         # Objective: check if track was deleted before was processed
         track = db.session.get(Track, item.id)
         if track is not None:
-            setattr(track, "is_processed", True)
+            setattr(track, "is_audio_processed", True)
             db.session.commit()
     except exc.SQLAlchemyError as e:
         db.session.rollback()
