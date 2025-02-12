@@ -166,7 +166,7 @@ def setaccessforuser(user, response):
         db.session.commit()
     # create token, write it in the response, and redirect to home
     access_token = create_access_token(identity=user.uid)
-    set_access_cookies(response, access_token)
+    set_access_cookies(response, access_token, max_age=1209600)
 
     return response
 
