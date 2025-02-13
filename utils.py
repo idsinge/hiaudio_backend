@@ -100,6 +100,9 @@ class Utils(metaclass=UtilsSingletonMeta):
                 msg.html = render_template_string(html_template, host=host, refusal_code=refusal_code)
 
                 with self._app.open_resource("static/tryhiaudio.jpg") as fp:
+                    # For Flask-Mail v0.10.0
+                    # msg.attach("tryhiaudio.jpg", "image/jpeg", fp.read(), headers={"Content-ID": "<image1>"})
+                    # For Flask-Mail v0.9.1
                     msg.attach("tryhiaudio.jpg", "image/jpeg", fp.read(), headers=[('Content-ID', '<image1>')])
                 
                 self._mail.send(msg)

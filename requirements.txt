@@ -14,5 +14,5 @@ Flask-Migrate
 random-username
 shortuuid
 flask_jwt_extended
-Flask-Mail
+Flask-Mail==0.9.1
 email-validator
