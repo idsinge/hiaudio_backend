@@ -4,7 +4,7 @@ import essentia.standard as es
 
 from pydub.utils import mediainfo
 
-from audio_analysis import tellifisspeech, getbpmtempo, checkifpercurssion, checkifcopyright, get_first_artist_and_title, getkeyandscale, tellifsilence
+from audio_analysis import tellifisspeech, getbpmtempo, checkifpercurssion, checkifcopyright, get_first_artist_and_title, getkeyandscale, tellifsilence, guessmusicalinstrument
 
 logging.basicConfig(filename='processed_audio_logfile.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -35,6 +35,8 @@ def process_audio_file(track, item):
                 handlegenerictrackannotation('is_percurssion', str(is_percussion).lower(), track.uuid)            
                 if not is_percussion:
                     tonalkeyscaleannotation(fullpath, track.uuid)
+                    instrument_label = guessmusicalinstrument(fullpath)
+                    handlegenerictrackannotation('instrument', instrument_label, track.uuid)
 
         set_track_as_processed(track)
 
