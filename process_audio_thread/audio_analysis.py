@@ -4,7 +4,7 @@ import essentia
 import essentia.streaming as ess
 import essentia.standard as es
 from six.moves import urllib
-from essentia.standard import MonoLoader, TensorflowPredictVGGish, TensorflowPredictMusiCNN, TensorflowPredict2D
+from essentia.standard import MonoLoader, TensorflowPredictVGGish, TensorflowPredictMusiCNN, TensorflowPredict2D, TensorflowPredictEffnetDiscogs
 from dotenv import load_dotenv
 
 # Load .env file
@@ -179,3 +179,37 @@ def checkifcopyright(fullpath):
             return json_obj
         except Exception as e:
             return None
+
+def guessmusicalinstrument(fullpath):
+    
+    audio = MonoLoader(filename=fullpath, sampleRate=16000, resampleQuality=4)()
+    embedding_model = TensorflowPredictEffnetDiscogs(graphFilename="models/discogs-effnet-bs64-1.pb", output="PartitionedCall:1")
+    embeddings = embedding_model(audio)
+
+    # OPTION 1: fails with guitar
+    #labels = ['accordion', 'acousticbassguitar', 'acousticguitar', 'bass', 'beat', 'bell', 'bongo', 'brass', 'cello', 'clarinet', 'classicalguitar', 'computer', 'doublebass', 'drummachine', 'drums', 'electricguitar', 'electricpiano', 'flute', 'guitar', 'harmonica', 'harp', 'horn', 'keyboard', 'oboe', 'orchestra', 'organ', 'pad', 'percussion', 'piano', 'pipeorgan', 'rhodes', 'sampler', 'saxophone', 'strings', 'synthesizer', 'trombone', 'trumpet', 'viola', 'violin', 'voice']
+    #model = TensorflowPredict2D(graphFilename="models/mtg_jamendo_instrument-discogs-effnet-1.pb")
+
+    # OPTION 2: fails with flute
+    labels = ['mallet', 'string', 'reed', 'guitar', 'synth_lead', 'vocal', 'bass', 'flute', 'keyboard', 'brass', 'organ']
+    model = TensorflowPredict2D(graphFilename="models/nsynth_instrument-discogs-effnet-1.pb", output="model/Softmax")
+    predictions = model(embeddings)
+    # Average predictions over the time axis
+    predictions = np.mean(predictions, axis=0)
+
+    max_index = np.argmax(predictions)
+    # Get the label and the maximum value formatted to three decimal places
+    max_label = labels[max_index]
+    max_value = predictions[max_index]
+    formatted_max_value = float('{:.3f}'.format(max_value))
+
+    # Return the label with the highest value
+    result = {max_label: formatted_max_value}
+    # order = predictions.argsort()[::-1]
+    # ret = {"instruments":{}}
+    # for i in order:
+    #     # TODO: if the value 
+    #     # print('{}: {:.3f}'.format(labels[i], predictions[i]))
+    #     ret["instruments"][labels[i]] = '{:.3f}'.format(predictions[i])
+    print(result)
+    return max_label
