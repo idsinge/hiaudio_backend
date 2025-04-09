@@ -77,6 +77,10 @@ def user_page(uid):
 def collection(uid):
     return redirect(url_for('page', filename=DEFAULT_PAGE, collectionid=uid))
 
+@app.route('/workshop', methods=["GET"])
+def redirect_external():
+    return redirect('https://hi-audio.imt.fr/agenda/29th-april-music-workshop/', code=302)
+
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):
     filename = filename or DEFAULT_PAGE
