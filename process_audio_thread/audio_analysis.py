@@ -6,6 +6,7 @@ import essentia.standard as es
 from six.moves import urllib
 from essentia.standard import MonoLoader, TensorflowPredictVGGish, TensorflowPredictMusiCNN, TensorflowPredict2D
 from dotenv import load_dotenv
+from instrument_recognition import init_inst_recog
 
 # Load .env file
 load_dotenv()
@@ -25,6 +26,8 @@ model_genre_rosamerica = TensorflowPredictVGGish(graphFilename='models/genre_ros
 model_msd_musicnn = TensorflowPredictMusiCNN(graphFilename='models/msd-musicnn-1.pb', output="model/dense/BiasAdd")
 model_fs_loop_ds_msd = TensorflowPredict2D(graphFilename="models/fs_loop_ds-msd-musicnn-1.pb", input="serving_default_model_Placeholder", output="PartitionedCall")
 
+init_inst_recog()
+
 def tellifsilence(fullpath):
     audio_loader = MonoLoader()
     audio_loader.configure(filename=fullpath)
@@ -34,7 +37,7 @@ def tellifsilence(fullpath):
     # Check if the RMS value is below the threshold
     #if rms < 0.01:
     # Other possible value : -40 dB
-    if rms_db < -38:
+    if rms_db < -48:
         return True, rms_db
     else:
         return False, rms_db
@@ -176,6 +179,6 @@ def checkifcopyright(fullpath):
             page = urllib.request.urlopen(query)
             string = page.read().decode('utf-8')
             json_obj = json.loads(string)
-            return json_obj
+            return json_obj, fingerprint
         except Exception as e:
-            return None
+            return None, None
