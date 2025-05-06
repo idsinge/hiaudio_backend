@@ -1,5 +1,4 @@
 import os
-import json
 import time
 from flask import Blueprint, request, jsonify, send_from_directory, current_app
 from werkzeug.utils import secure_filename
@@ -69,7 +68,11 @@ def getinfotrack(uuid):
 
     if(isok):
         annot = get_track_annotations(uuid)
-        file_metadata = result.file_metadata
+        file_metadata = None
+        if result is not None:
+            file_metadata = result.file_metadata
+            if file_metadata is not None:
+                file_metadata["uploading_date"] = result.created_at
         ret = {"title": result.title, "annotations": annot, "reserved_keys": RESERVED_WORDS, "file_metadata":file_metadata, "is_audio_processed":result.is_audio_processed}
         return jsonify(ret)
     else:
