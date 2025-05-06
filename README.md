@@ -121,6 +121,14 @@ pip install pydub
 
 pip install essentia-tensorflow
 
+pip install torch # for instrument recognition
+
+pip install torchaudio # for instrument recognition
+
+pip install soundfile # for instrument recognition
+
+pip install timm==0.4.5 # for instrument recognition
+
 python process_audio_thread/process_audio_thread.py
 ```
 
