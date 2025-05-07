@@ -1,6 +1,7 @@
 
 # From the CSV the labels which correspond to musical instruments or performance
 instrument_labels = [    
+    "Speech",
     "Guitar",
     "Electric guitar",
     "Bass guitar",
