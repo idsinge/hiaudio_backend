@@ -6,7 +6,7 @@ from src.models.ast_models import ASTModel
 from essentia.standard import MonoLoader
 import os
 from instrument_filtered_labels import instrument_labels
-
+from annotation_utils import LOWER_SPEECH_PRED_SCORE
 
 # Get the directory where this script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -54,18 +54,19 @@ class ASTModelVis(ASTModel):
         return att_list
 
 def make_features(wav_name, mel_bins, target_length=1024):
-    # NOTE: assert sr == 16000, 'input audio sampling rate must be 16kHz'
-    waveform, sr = torchaudio.load(wav_name)
-    target_sr = 16000
-    if sr != target_sr:
-       resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=target_sr)
-       audio_tensor = resampler(waveform)
-       sr = target_sr
 
-    fbank = torchaudio.compliance.kaldi.fbank(       
-        audio_tensor, htk_compat=True, sample_frequency=sr, use_energy=False,
-        window_type='hanning', num_mel_bins=mel_bins, dither=0.0, frame_shift=10)
+    sr_16 = 16000
+    audio_sr16_loader = MonoLoader()
+    audio_sr16_loader.configure(filename=wav_name, sampleRate=sr_16, resampleQuality=4)
+    audio_sr16 = audio_sr16_loader()
+    audio_tensor = torch.tensor(audio_sr16)
+    audio_tensor = audio_tensor.to(device)
+    audio_tensor = audio_tensor.unsqueeze(0)
 
+    fbank = torchaudio.compliance.kaldi.fbank(
+        audio_tensor, htk_compat=True, sample_frequency=sr_16, use_energy=False,
+        window_type='hanning', num_mel_bins=mel_bins, dither=0.0, frame_shift=10)   
+   
     n_frames = fbank.shape[0]
 
     p = target_length - n_frames
@@ -108,7 +109,7 @@ def load_ast_model(device):
     return audiomodel       
 
 
-def make_instrument_pred(sample_audio_path):
+def make_instrument_pred(sample_audio_path, is_speech_pred):
     inst_label = None
     inst_score = 0
     feats = make_features(sample_audio_path, mel_bins=128)           # shape(1024, 128)
@@ -141,6 +142,9 @@ def make_instrument_pred(sample_audio_path):
     for idx in sorted_indexes:
         label = labels[idx]
         score = result_output[idx]
+         # Skip "Speech" label if the is_speech_score is too low
+        if label == "Speech" and is_speech_pred < LOWER_SPEECH_PRED_SCORE:
+            continue
         if label in instrument_labels:
             inst_label = label
             inst_score = score
