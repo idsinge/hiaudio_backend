@@ -54,26 +54,16 @@ class ASTModelVis(ASTModel):
         return att_list
 
 def make_features(wav_name, mel_bins, target_length=1024):
-    sr_16 = 16000
-    audio_sr16_loader = MonoLoader()
-    audio_sr16_loader.configure(filename=wav_name, sampleRate=sr_16, resampleQuality=4)
-    audio_sr16 = audio_sr16_loader()
-    audio_tensor = torch.tensor(audio_sr16)
-    audio_tensor = audio_tensor.to(device)
-    audio_tensor = audio_tensor.unsqueeze(0)
-    
-    # TODO: assert sr == 16000, 'input audio sampling rate must be 16kHz'
-    # waveform, sr = torchaudio.load(wav_name)
-    # target_sr = 16000
-    # if sr != target_sr:
-    #    resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=target_sr)
-    #    audio_tensor = resampler(waveform)
-    #    sr = target_sr
-
-    #audio_tensor, htk_compat=True, sample_frequency=sr, use_energy=False,
+    # NOTE: assert sr == 16000, 'input audio sampling rate must be 16kHz'
+    waveform, sr = torchaudio.load(wav_name)
+    target_sr = 16000
+    if sr != target_sr:
+       resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=target_sr)
+       audio_tensor = resampler(waveform)
+       sr = target_sr
 
     fbank = torchaudio.compliance.kaldi.fbank(       
-        audio_tensor, htk_compat=True, sample_frequency=sr_16, use_energy=False,
+        audio_tensor, htk_compat=True, sample_frequency=sr, use_energy=False,
         window_type='hanning', num_mel_bins=mel_bins, dither=0.0, frame_shift=10)
 
     n_frames = fbank.shape[0]
