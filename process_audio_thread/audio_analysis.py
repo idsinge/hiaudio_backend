@@ -7,6 +7,7 @@ from six.moves import urllib
 from essentia.standard import MonoLoader, TensorflowPredictVGGish, TensorflowPredictMusiCNN, TensorflowPredict2D
 from dotenv import load_dotenv
 from instrument_recognition import init_inst_recog
+from annotation_utils import SILENCE_RMS_DB_THRESHOLD
 
 # Load .env file
 load_dotenv()
@@ -37,7 +38,7 @@ def tellifsilence(fullpath):
     # Check if the RMS value is below the threshold
     #if rms < 0.01:
     # Other possible value : -40 dB
-    if rms_db < -38:
+    if rms_db < SILENCE_RMS_DB_THRESHOLD:
         return True, rms_db
     else:
         return False, rms_db
