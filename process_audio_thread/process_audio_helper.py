@@ -18,7 +18,7 @@ import config
 from api.annotation import handle_new_track_annotation
 from instrument_recognition import make_instrument_pred
 from instrument_filtered_labels import percussion_instruments
-from annotation_utils import convertmetadata
+from annotation_utils import convertmetadata, LOWER_SPEECH_PRED_SCORE, THRESHOLD_SPEECH_PRED_SCORE
 
  # Export result
 export_dir = os.path.join(config.DATA_BASEDIR, "processed")
@@ -30,7 +30,8 @@ def process_audio_file(track, item):
         metadata = mediainfo(originalpath)
         metadata.pop("filename", None)
         converted_metadata = convertmetadata(metadata)
-        audio = AudioSegment.from_file(originalpath)
+        
+        audio = AudioSegment.from_file(originalpath).set_channels(1)
 
         # Split audio into chunks, removing silence
         chunks = split_on_silence(audio,
@@ -53,7 +54,7 @@ def process_audio_file(track, item):
         if not is_silence:        
             is_speech_pred = tellifisspeech(processedpath)
             handlegenerictrackannotation('is_human_voice_score', '{0:.2f}%'.format(is_speech_pred), track.uuid)
-            if is_speech_pred < 50:
+            if is_speech_pred < THRESHOLD_SPEECH_PRED_SCORE:
                 is_copyrighted, fingerprint = iscopyrightedannotation(originalpath, track.uuid)
                 if is_copyrighted:
                     metadata["fingerprint"] = fingerprint
@@ -62,10 +63,10 @@ def process_audio_file(track, item):
                 handlegenerictrackannotation('is_percurssion', str(is_percussion).lower(), track.uuid)            
                 if not is_percussion:
                     tonalkeyscaleannotation(processedpath, track.uuid)
-                if 8 <= is_speech_pred:
+                if LOWER_SPEECH_PRED_SCORE <= is_speech_pred:
                     handlegenerictrackannotation('is_human_voice', str(True).lower(), track.uuid)
                 
-                instrumentannotation(processedpath, track.uuid, is_percussion)
+                instrumentannotation(processedpath, track.uuid, is_percussion, is_speech_pred)
                   
             else:
                 handlegenerictrackannotation('instrument', 'speech', track.uuid)
@@ -104,8 +105,8 @@ def tonalkeyscaleannotation(processedpath, track_uuid):
     handlegenerictrackannotation('tonality_key', key, track_uuid)
     handlegenerictrackannotation('tonality_scale', scale, track_uuid)
 
-def instrumentannotation(processedpath, track_uuid, is_percussion):
-    instrum_label, instrum_score = make_instrument_pred(processedpath)
+def instrumentannotation(processedpath, track_uuid, is_percussion, is_speech_pred):
+    instrum_label, instrum_score = make_instrument_pred(processedpath, is_speech_pred)
     if is_percussion and (instrum_label not in percussion_instruments):
         instrum_label = ''
         instrum_score = 0
