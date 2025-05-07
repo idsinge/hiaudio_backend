@@ -1,3 +1,7 @@
+LOWER_SPEECH_PRED_SCORE = 8
+THRESHOLD_SPEECH_PRED_SCORE = 50
+SILENCE_RMS_DB_THRESHOLD = -42
+
 def format_bytes(size_bytes):
     size_bytes = int(size_bytes)
     if size_bytes >= 1024 ** 2:
