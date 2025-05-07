@@ -37,7 +37,7 @@ def tellifsilence(fullpath):
     # Check if the RMS value is below the threshold
     #if rms < 0.01:
     # Other possible value : -40 dB
-    if rms_db < -48:
+    if rms_db < -38:
         return True, rms_db
     else:
         return False, rms_db
