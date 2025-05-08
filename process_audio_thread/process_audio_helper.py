@@ -1,9 +1,6 @@
 from sqlalchemy import exc
 import logging
-import essentia.standard as es
 
-from pydub import AudioSegment
-from pydub.silence import split_on_silence
 from pydub.utils import mediainfo
 
 from audio_analysis import tellifisspeech, getbpmtempo, checkifpercurssion, checkifcopyright, get_first_artist_and_title, getkeyandscale, tellifsilence
@@ -16,57 +13,40 @@ from orm import db, Track
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import config
 from api.annotation import handle_new_track_annotation
-from instrument_recognition import make_instrument_pred
-from instrument_filtered_labels import percussion_instruments
+from instrument_recognition import make_instrument_pred, getaudioexcerpt
 from annotation_utils import convertmetadata, LOWER_SPEECH_PRED_SCORE, THRESHOLD_SPEECH_PRED_SCORE
-
- # Export result
-export_dir = os.path.join(config.DATA_BASEDIR, "processed")
-os.makedirs(export_dir, exist_ok=True)
 
 def process_audio_file(track, item):    
     try:
         originalpath = os.path.join(config.DATA_BASEDIR, track.path)
         metadata = mediainfo(originalpath)
-        metadata.pop("filename", None)
+        metadata.pop("filename", None)       
         converted_metadata = convertmetadata(metadata)
         
-        audio = AudioSegment.from_file(originalpath).set_channels(1)
-
-        # Split audio into chunks, removing silence
-        chunks = split_on_silence(audio,
-            min_silence_len=500,       # consider as silence if >500ms
-            silence_thresh=audio.dBFS - 14,  # silence threshold relative to dBFS
-            keep_silence=200           # keep 200ms of silence at each cut
-        )
-
-        # Combine the chunks back into one audio file
-        processed_audio = sum(chunks)
-               
-        processedpath = os.path.join(export_dir, f"nosilence.wav")
-        processed_audio.export(processedpath, format="wav")
-        
-        is_silence, rms_db = tellifsilence(processedpath)
+        is_silence, rms_db = tellifsilence(originalpath)
         metadata["RMS"] ='{0:.2f} dB'.format(rms_db)
         if is_silence:
-            handlegenerictrackannotation('is_silence', str(is_silence).lower(), track.uuid)      
-        
-        if not is_silence:        
-            is_speech_pred = tellifisspeech(processedpath)
+            handlegenerictrackannotation('is_silence', str(is_silence).lower(), track.uuid)        
+        else:           
+            is_speech_pred = tellifisspeech(originalpath)
             handlegenerictrackannotation('is_human_voice_score', '{0:.2f}%'.format(is_speech_pred), track.uuid)
+            
             if is_speech_pred < THRESHOLD_SPEECH_PRED_SCORE:
                 is_copyrighted, fingerprint = iscopyrightedannotation(originalpath, track.uuid)
                 if is_copyrighted:
                     metadata["fingerprint"] = fingerprint
                 tempoannotation(originalpath, track.uuid)
-                is_percussion = checkifpercurssion(processedpath)
+                is_percussion = checkifpercurssion(originalpath)
                 handlegenerictrackannotation('is_percurssion', str(is_percussion).lower(), track.uuid)            
                 if not is_percussion:
-                    tonalkeyscaleannotation(processedpath, track.uuid)
+                    tonalkeyscaleannotation(originalpath, track.uuid)
                 if LOWER_SPEECH_PRED_SCORE <= is_speech_pred:
                     handlegenerictrackannotation('is_human_voice', str(True).lower(), track.uuid)
                 
-                instrumentannotation(processedpath, track.uuid, is_percussion, is_speech_pred)
+                # TODO: better way to check output from getaudioexcerpt
+                processedpath =  getaudioexcerpt(originalpath)
+                if processedpath is not None:
+                    instrumentannotation(processedpath, track.uuid, is_speech_pred)
                   
             else:
                 handlegenerictrackannotation('instrument', 'speech', track.uuid)
@@ -100,16 +80,13 @@ def iscopyrightedannotation(originalpath, track_uuid):
             handlegenerictrackannotation('is_copyrighted_title', artist_title.get('title'), track_uuid)
     return is_copyrighted, fingerprint
 
-def tonalkeyscaleannotation(processedpath, track_uuid):
-    key, scale = getkeyandscale(processedpath)
+def tonalkeyscaleannotation(filepath, track_uuid):
+    key, scale = getkeyandscale(filepath)
     handlegenerictrackannotation('tonality_key', key, track_uuid)
     handlegenerictrackannotation('tonality_scale', scale, track_uuid)
 
-def instrumentannotation(processedpath, track_uuid, is_percussion, is_speech_pred):
+def instrumentannotation(processedpath, track_uuid, is_speech_pred):
     instrum_label, instrum_score = make_instrument_pred(processedpath, is_speech_pred)
-    if is_percussion and (instrum_label not in percussion_instruments):
-        instrum_label = ''
-        instrum_score = 0
     handlegenerictrackannotation('instrument', str(instrum_label).lower(), track_uuid)
     handlegenerictrackannotation('instrument_score', '{0:.2f}%'.format(instrum_score*100), track_uuid)
     
