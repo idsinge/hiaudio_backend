@@ -29,12 +29,16 @@ model_fs_loop_ds_msd = TensorflowPredict2D(graphFilename="models/fs_loop_ds-msd-
 
 init_inst_recog()
 
-def tellifsilence(fullpath):
+def computeRMS(fullpath):
     audio_loader = MonoLoader()
     audio_loader.configure(filename=fullpath)
     audio = audio_loader()
     rms = es.RMS()(audio)
     rms_db = 20 * np.log10(rms + 1e-10) # Add small epsilon to avoid log(0)
+    return rms_db
+
+def tellifsilence(fullpath):
+    rms_db = computeRMS(fullpath)
     # Check if the RMS value is below the threshold
     #if rms < 0.01:
     # Other possible value : -40 dB
