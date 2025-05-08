@@ -1,4 +1,5 @@
 import csv
+import sys
 import torch, torchaudio
 import numpy as np
 from torch.amp import autocast
@@ -7,12 +8,20 @@ from essentia.standard import MonoLoader
 import os
 from instrument_filtered_labels import instrument_labels
 from annotation_utils import LOWER_SPEECH_PRED_SCORE
+from pydub import AudioSegment
+from pydub.silence import split_on_silence
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import config
 
 # Get the directory where this script is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
  # Load the AudioSet label set
 label_csv = os.path.join(SCRIPT_DIR, 'egs/audioset/data', 'class_labels_indices.csv')
 # label_csv = './egs/audioset/data/class_labels_indices.csv'       # label and indices for audioset data
+ # Export result
+export_dir = os.path.join(config.DATA_BASEDIR, "processed")
+os.makedirs(export_dir, exist_ok=True)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Assume each input spectrogram has 1024 time frames
@@ -108,7 +117,31 @@ def load_ast_model(device):
     audiomodel.eval()
     return audiomodel       
 
-
+def getaudioexcerpt(filepath):
+    audio = AudioSegment.from_file(filepath).set_channels(1)
+    # Split audio into chunks, removing silence
+    chunks = split_on_silence(audio,
+        min_silence_len=500,       # consider as silence if >500ms
+        silence_thresh=audio.dBFS - 10,  # silence threshold relative to dBFS
+        keep_silence=200,           # keep 200ms of silence at each cut
+        seek_step = 100
+    ) 
+    # Combine the chunks back into one audio file
+    processed_audio = sum(chunks)
+    duration_seconds = len(processed_audio) / 1000
+    processedpath = os.path.join(export_dir, f"nosilence.wav")
+    if duration_seconds > 60:
+        # Extract 30 seconds after 10 seconds
+        start_time = (30) * 1000  # convert to milliseconds
+        end_time = (60) * 1000
+        segment = processed_audio[start_time:end_time]
+        segment.export(processedpath, format="wav")
+    else:
+        # Export full audio
+        processed_audio.export(processedpath, format="wav")
+    
+    return processedpath
+            
 def make_instrument_pred(sample_audio_path, is_speech_pred):
     inst_label = None
     inst_score = 0
