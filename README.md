@@ -1,12 +1,28 @@
+## About
+
+Hi-Audio online platform is a collaborative web application for musicians and researchers in the MIR (Music Information Retrieval) domain, with a view to build a public database of music recordings from a wide variety of styles and different cultures. It allows:
+
+- Creating musical compositions and collections with different levels of privacy.
+- Uploading and recording audio tracks from the browser.
+- Annotating audio tracks with relevant MIR information.
+- Inviting collaborators to participate using different roles.
+
+![screenshot](doc/screenshot.png)
+
+This repo contains information relative to the server side or back-end, for the client side (web application) check the following repo:
+
+https://github.com/idsinge/hiaudio_webapp
+
+
 ## General usage:
 
 ### Recommended Python version 3.10
 
 
 ```bash
-git clone https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt.git
+git clone https://github.com/idsinge/hiaudio_backend.git
 
-cd musicplatform_mgmt
+cd hiaudio_backend
 
 # create python virtualenv
 python3 -m venv venv
@@ -17,11 +33,11 @@ python3 -m venv venv
 # install requirements
 pip install -r requirements.txt
 
-# create .env file with the following content
-# Google Values: https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/Google-OAuth-Setup
+# Create .env file with the following content
+# Google Values: https://console.cloud.google.com/apis/credentials
 # SECRET_KEY is independent and can be self-elected
 # JWT_SECRET_KEY: https://flask-jwt-extended.readthedocs.io/en/stable/options.html#JWT_SECRET_KEY
-# OVH_EMAIL_PASSWD: https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/HOSTING/OVH-(domain) 
+# OVH_EMAIL_PASSWD: https://www.ovh.com/manager/#/web/email_domain/
 # ACOUSTIC_ID_API_KEY: https://acoustid.org/
 GOOGLE_CLIENT_ID=*****
 GOOGLE_CLIENT_SECRET=*****
@@ -41,10 +57,10 @@ mysql.server start
 # Login as root
 mysql -u root -p
 
-# Then create DB and add new user (ubuntu) at localhost
+# Then create DB and add new user (mysqluser) at localhost
 create database hiaudio ; 
-CREATE USER 'ubuntu'@'localhost' IDENTIFIED BY 'hiaudio';
-GRANT ALL PRIVILEGES ON hiaudio.* TO 'ubuntu'@'localhost';
+CREATE USER 'mysqluser'@'localhost' IDENTIFIED BY 'hiaudio';
+GRANT ALL PRIVILEGES ON hiaudio.* TO 'mysqluser'@'localhost';
 FLUSH PRIVILEGES;
 
 mysql > exit
@@ -59,12 +75,11 @@ DB_CNX = f"mysql://{MYSQL_USER}:{MYSQL_PASS}@{MYSQL_HOST}/{MYSQL_DB}"
 
 # In config.py fill the following details:
 MYSQL_HOST="localhost"
-MYSQL_USER="ubuntu"
-MYSQL_PASS="hiaudio"
+MYSQL_USER="mysqluser"
+MYSQL_PASS="password"
 MYSQL_DB="hiaudio"
 
-# In config.py for Mail settings go to Email provider: 
-# https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/HOSTING/OVH-(domain) 
+# In config.py for Mail settings go to Email provider:
 MAIL_SERVER = ""
 MAIL_PORT = 0
 MAIL_USERNAME = ""
@@ -85,11 +100,11 @@ Open -> https://localhost:7007/
 
 Inside backend repo clone (see **NOTE 1**):
 ```
-git clone https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp.git
+git clone https://github.com/idsinge/hiaudio_webapp.git
 
 ```
 
-Then rename the folder `beatbytebot_webapp` to `webapp`
+Then rename the folder `hiaudio_webapp` to `webapp`
 
 **Hint**: during development it might be useful to temporarly ignore the contents of the public directory, this can be done with
 
@@ -103,7 +118,7 @@ git ls-files -z public/ | xargs -0 git update-index --no-skip-worktree
 
 ## COMPRESSION MODULE
 
-In order to run the compression module locally, the env variable `COMPRESSION_MODULE_ACTIVE` at `config.py` needs to be set to `True` (https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/blob/main/config.py.sample?ref_type=heads#L9). It's required to execute the follwoing commands, the first for the installation of the `pydub` package (see **NOTE 4**) and the other to run the thread. More info about setting a python script as a service in **Note 6**.
+In order to run the compression module locally, the env variable `COMPRESSION_MODULE_ACTIVE` at `config.py` needs to be set to `True`. It's required to execute the follwoing commands, the first for the installation of the `pydub` package (see **NOTE 3**) and the other to run the thread. 
 
 ```bash
 pip install pydub
@@ -114,7 +129,7 @@ python compress_thread.py
 
 ## AUDIO PROCESSING MODULE
 
-To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, the environment variable `ACOUSTIC_ID_API_KEY` needs to be set at `.env`. It's required to execute the follwoing commands, for the installation of `pytdub` (see **NOTE 4**) and `essentia-tensorflow` (see **NOTE 5**) in order to run the audio processing service. More info about setting a python script as a service in **Note 6**.
+To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, the environment variable `ACOUSTIC_ID_API_KEY` needs to be set at `.env`. It's required to execute the follwoing commands, for the installation of `pydub` (see **NOTE 3**) and `essentia-tensorflow` (see **NOTE 4**) in order to run the audio processing service.
 
 ```bash
 pip install pydub
@@ -135,14 +150,10 @@ python process_audio_thread/process_audio_thread.py
 
 
 ## NOTES:
-1- [Web App Repo](https://gitlab.telecom-paris.fr/idsinge/hiaudio/beatbytebot_webapp#how-to-run-it-locally)
+1- [Web App Repo](https://github.com/idsinge/hiaudio_webapp)
 
-2- [MySQL DB setup and installation, check](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/SOURCE-CODE/DB/Change-DB-type-to-MySQL)
+2- Flask-Migrate: https://flask-migrate.readthedocs.io/en/latest/#example
 
-3- Flask-Migrate: https://flask-migrate.readthedocs.io/en/latest/#example
+3- [Install FFMPEG](https://gist.github.com/barbietunnie/47a3de3de3274956617ce092a3bc03a1). `pydub` needs either `sudo apt install ffmpeg` (Linux) or `brew install ffmpeg` (Mac) in order to function correctly. 
 
-4- [Install FFMPEG](https://gist.github.com/barbietunnie/47a3de3de3274956617ce092a3bc03a1). `pydub` needs either `sudo apt install ffmpeg` (Linux) or `brew install ffmpeg` (Mac) in order to function correctly. 
-
-5- In order to make essentia python library to work in the backend this is required: `pip install "numpy<2.0"`.
-
-6- [Setup a python script as a service through systemctl and systemd](https://gitlab.telecom-paris.fr/idsinge/hiaudio/musicplatform_mgmt/-/wikis/HOSTING/Setup-a-python-script-as-a-service-through-systemctl-and-systemd)
+4- In order to make essentia python library to work in the backend this is required: `pip install "numpy<2.0"`.
