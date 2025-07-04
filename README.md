@@ -131,7 +131,7 @@ python compress_thread.py
 
 To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, the environment variable `ACOUSTIC_ID_API_KEY` needs to be set at `.env`. It's required to execute the follwoing commands, for the installation of `pydub` (see **NOTE 3**) and `essentia-tensorflow` (see **NOTE 4**) in order to run the audio processing service.
 
-### Download the following models files.
+### Download the following models files and place them in the suggested locations.
 
 1) Place these under `models/` directory:
 
