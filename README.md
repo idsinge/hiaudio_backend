@@ -135,8 +135,6 @@ To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, t
 
 1) Download and place the following models under `models/` directory:
 
-- [tonal_atonal-vggish-audioset-1.pb](https://essentia.upf.edu/models/classifiers/tonal_atonal/tonal_atonal-vggish-audioset-1.pb)
-
 - [voice_instrumental-vggish-audioset-1.pb](https://essentia.upf.edu/models/classifiers/voice_instrumental/voice_instrumental-vggish-audioset-1.pb)
 
 - [genre_rosamerica-vggish-audioset-1.pb](https://essentia.upf.edu/models/classifiers/genre_rosamerica/genre_rosamerica-vggish-audioset-1.pb)
@@ -147,6 +145,8 @@ To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, t
 
 - [audio_mdl.pth](https://www.dropbox.com/s/cv4knew8mvbrnvq/audioset_0.4593.pth?dl=1)
 
+
+### Installation
 
 ```bash
 pip install pydub
@@ -165,12 +165,12 @@ python process_audio_thread/process_audio_thread.py
 ```
 
 
-
 ## NOTES:
 1- [Web App Repo](https://github.com/idsinge/hiaudio_webapp)
 
 2- `sudo apt install mysql-server`
 
+3- Flask-Migrate: https://flask-migrate.readthedocs.io/en/latest/#example
 
 4- [Install FFMPEG](https://gist.github.com/barbietunnie/47a3de3de3274956617ce092a3bc03a1). `pydub` needs either `sudo apt install ffmpeg` (Linux) or `brew install ffmpeg` (Mac) in order to function correctly. 
 
