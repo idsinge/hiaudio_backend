@@ -171,7 +171,6 @@ python process_audio_thread/process_audio_thread.py
 
 2- `sudo apt install mysql-server`
 
-3- Flask-Migrate: https://flask-migrate.readthedocs.io/en/latest/#example
 
 4- [Install FFMPEG](https://gist.github.com/barbietunnie/47a3de3de3274956617ce092a3bc03a1). `pydub` needs either `sudo apt install ffmpeg` (Linux) or `brew install ffmpeg` (Mac) in order to function correctly. 
 
