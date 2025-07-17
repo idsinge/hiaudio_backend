@@ -135,10 +135,7 @@ To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, t
 
 1) Download and place the following models under `models/` directory:
 
-- [voice_instrumental-vggish-audioset-1.pb](https://essentia.upf.edu/models/classifiers/voice_instrumental/voice_instrumental-vggish-audioset-1.pb)
-
 - [genre_rosamerica-vggish-audioset-1.pb](https://essentia.upf.edu/models/classifiers/genre_rosamerica/genre_rosamerica-vggish-audioset-1.pb)
-
 
 
 2) Download, rename the following model to `audio_mdl.pth` and place it under `process_audio_thread/pretrained_models/` directory:
