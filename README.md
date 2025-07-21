@@ -79,7 +79,7 @@ TODO
 ```bash
 # Create a DB and add new user (mysqluser) at localhost. Choose your own user name if you want to.
 create database hiaudio ; 
-CREATE USER 'mysqluser'@'localhost' IDENTIFIED BY 'hiaudio';
+CREATE USER 'mysqluser'@'localhost' IDENTIFIED BY 'password';
 GRANT ALL PRIVILEGES ON hiaudio.* TO 'mysqluser'@'localhost';
 FLUSH PRIVILEGES;
 
