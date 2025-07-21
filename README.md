@@ -46,18 +46,38 @@ JWT_SECRET_KEY=*****
 OVH_EMAIL_PASSWD=*****
 ACOUSTIC_ID_API_KEY=*****
 
+```
+### Install MySQL for macOS
 
-# For Mac, for Linux see (Note 2) below
-# More info about DB migration in Note 3.
+```bash
 brew install mysql
 
-# Start MySQL server
+pip install mysqlclient
+
 mysql.server start
 
-# Login as root
 mysql -u root -p
+```
 
-# Then create DB and add new user (mysqluser) at localhost
+### Install MySQL for Linux
+```bash
+sudo apt install mysql-server
+sudo apt install python3-dev libmysqlclient-dev
+
+pip install mysqlclient
+
+service mysql start
+
+sudo mysql -u root -p
+```
+
+### Install MySQL for Windows
+```bash
+TODO
+```
+
+```bash
+# Create a DB and add new user (mysqluser) at localhost. Choose your own user name if you want to.
 create database hiaudio ; 
 CREATE USER 'mysqluser'@'localhost' IDENTIFIED BY 'hiaudio';
 GRANT ALL PRIVILEGES ON hiaudio.* TO 'mysqluser'@'localhost';
@@ -65,13 +85,7 @@ FLUSH PRIVILEGES;
 
 mysql > exit
 
-# When finished MySQL setup then run
-pip install mysqlclient
-
 # Duplicate config.py.sample and rename it to config.py
-
-# At config.py check default option for MySQL connection is:
-DB_CNX = f"mysql://{MYSQL_USER}:{MYSQL_PASS}@{MYSQL_HOST}/{MYSQL_DB}"
 
 # In config.py fill the following details:
 MYSQL_HOST="localhost"
@@ -84,10 +98,10 @@ MAIL_SERVER = ""
 MAIL_PORT = 0
 MAIL_USERNAME = ""
 
-# To initialize the DB:
+# Initialize the DB:
 python initdb.py
 
-# run the server 
+# Run the local server 
 python app.py
 
 # Verify it's running
@@ -165,7 +179,10 @@ python process_audio_thread/process_audio_thread.py
 ## NOTES:
 1- [Web App Repo](https://github.com/idsinge/hiaudio_webapp)
 
-2- `sudo apt install mysql-server`
+2- In case `pip install mysqlclient` fails:
+`sudo apt install build-essential`
+`sudo apt-get install libmariadb-dev`
+`sudo apt-get install pkg-config`
 
 3- Flask-Migrate: https://flask-migrate.readthedocs.io/en/latest/#example
 
