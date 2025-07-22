@@ -52,8 +52,6 @@ ACOUSTIC_ID_API_KEY=*****
 ```bash
 brew install mysql
 
-pip install mysqlclient
-
 mysql.server start
 
 mysql -u root -p
@@ -64,8 +62,6 @@ mysql -u root -p
 sudo apt install mysql-server
 sudo apt install python3-dev libmysqlclient-dev
 
-pip install mysqlclient
-
 service mysql start
 
 sudo mysql -u root -p
@@ -73,7 +69,10 @@ sudo mysql -u root -p
 
 ### Install MySQL for Windows
 ```bash
-TODO
+# Install from here: 
+https://dev.mysql.com/downloads/installer/
+
+mysql -u root -p
 ```
 
 ```bash
@@ -84,6 +83,9 @@ GRANT ALL PRIVILEGES ON hiaudio.* TO 'mysqluser'@'localhost';
 FLUSH PRIVILEGES;
 
 mysql > exit
+
+# Install MySQL database connector for Python
+pip install mysqlclient
 
 # Duplicate config.py.sample and rename it to config.py
 
@@ -179,9 +181,12 @@ python process_audio_thread/process_audio_thread.py
 ## NOTES:
 1- [Web App Repo](https://github.com/idsinge/hiaudio_webapp)
 
-2- In case `pip install mysqlclient` fails:
+2- In case `pip install mysqlclient` fails, try the following commands:
+
 `sudo apt install build-essential`
+
 `sudo apt-get install libmariadb-dev`
+
 `sudo apt-get install pkg-config`
 
 3- Flask-Migrate: https://flask-migrate.readthedocs.io/en/latest/#example
