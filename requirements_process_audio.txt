@@ -1,0 +1,7 @@
+pydub
+essentia-tensorflow
+torch
+torchaudio
+soundfile
+timm==0.4.5
+
