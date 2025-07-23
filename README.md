@@ -14,41 +14,9 @@ This repo contains information relative to the server side or back-end, for the 
 https://github.com/idsinge/hiaudio_webapp
 
 
-## General usage:
+## Local database preparation:
 
-### Recommended Python version 3.10
-
-
-```bash
-git clone https://github.com/idsinge/hiaudio_backend.git
-
-cd hiaudio_backend
-
-# create python virtualenv
-python3 -m venv venv
-
-# activate virtualenv
-. venv/bin/activate
-
-# install requirements
-pip install -r requirements.txt
-
-# Create .env file with the following content
-# Google Values: https://console.cloud.google.com/apis/credentials
-# SECRET_KEY is independent and can be self-elected
-# JWT_SECRET_KEY: https://flask-jwt-extended.readthedocs.io/en/stable/options.html#JWT_SECRET_KEY
-# OVH_EMAIL_PASSWD: https://www.ovh.com/manager/#/web/email_domain/
-# ACOUSTIC_ID_API_KEY: https://acoustid.org/
-GOOGLE_CLIENT_ID=*****
-GOOGLE_CLIENT_SECRET=*****
-SECRET_KEY=*****
-JWT_SECRET_KEY=*****
-OVH_EMAIL_PASSWD=*****
-ACOUSTIC_ID_API_KEY=*****
-
-```
 ### Install MySQL for macOS
-
 ```bash
 brew install mysql
 
@@ -62,6 +30,8 @@ mysql -u root -p
 sudo apt install mysql-server
 sudo apt install python3-dev libmysqlclient-dev
 
+# See Note 2 in case of errors
+
 service mysql start
 
 sudo mysql -u root -p
@@ -69,26 +39,71 @@ sudo mysql -u root -p
 
 ### Install MySQL for Windows
 ```bash
-# Install from here: 
+# Install MySQL server from here: 
 https://dev.mysql.com/downloads/installer/
+
+# More info:
+https://www.w3schools.com/mysql/mysql_install_windows.asp
 
 mysql -u root -p
 ```
 
+### Create the local database
 ```bash
-# Create a DB and add new user (mysqluser) at localhost. Choose your own user name if you want to.
+# Create a DB and add new user (mysqluser) at localhost. 
+# Choose your own user name if you want to.
 create database hiaudio ; 
 CREATE USER 'mysqluser'@'localhost' IDENTIFIED BY 'password';
 GRANT ALL PRIVILEGES ON hiaudio.* TO 'mysqluser'@'localhost';
 FLUSH PRIVILEGES;
 
 mysql > exit
+```
 
-# Install MySQL database connector for Python
-pip install mysqlclient
+## Run the local server. Recommended Python version 3.10
 
-# Duplicate config.py.sample and rename it to config.py
+### Clone or download the repository
+```bash
+git clone https://github.com/idsinge/hiaudio_backend.git
 
+cd hiaudio_backend
+```
+### Create and activate Python environment (Linux and macOS)
+```bash
+python3 -m venv venv
+
+. venv/bin/activate
+```
+
+### Create and activate Python environment (Windows)
+```bash
+python -m venv venv
+
+venv\Scripts\activate
+```
+
+### Install requirements
+```bash
+pip install -r requirements.txt
+```
+
+### Create .env file with the following content
+```bash
+# Google Values: https://console.cloud.google.com/apis/credentials
+# SECRET_KEY is independent and can be self-elected
+# JWT_SECRET_KEY: https://flask-jwt-extended.readthedocs.io/en/stable/options.html#JWT_SECRET_KEY
+# OVH_EMAIL_PASSWD: https://www.ovh.com/manager/#/web/email_domain/
+# ACOUSTIC_ID_API_KEY: https://acoustid.org/
+GOOGLE_CLIENT_ID=*****
+GOOGLE_CLIENT_SECRET=*****
+SECRET_KEY=*****
+JWT_SECRET_KEY=*****
+OVH_EMAIL_PASSWD=*****
+ACOUSTIC_ID_API_KEY=*****
+```
+
+### Duplicate config.py.sample and rename it to config.py
+```bash
 # In config.py fill the following details:
 MYSQL_HOST="localhost"
 MYSQL_USER="mysqluser"
@@ -99,8 +114,10 @@ MYSQL_DB="hiaudio"
 MAIL_SERVER = ""
 MAIL_PORT = 0
 MAIL_USERNAME = ""
+```
 
-# Initialize the DB:
+### Initialize the DB for the first time and run the app:
+```bash
 python initdb.py
 
 # Run the local server 
@@ -108,7 +125,6 @@ python app.py
 
 # Verify it's running
 Open -> https://localhost:7007/
-
 ```
 
 ## To make the frontend repo work together with the backend in local DEV mode/environment
