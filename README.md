@@ -9,9 +9,7 @@ Hi-Audio online platform is a collaborative web application for musicians and re
 
 ![screenshot](doc/screenshot.png)
 
-This repo contains information relative to the server side or back-end, for the client side (web application) check the following repo:
-
-https://github.com/idsinge/hiaudio_webapp
+This repo contains information relative to the server side or back-end, for the client side (web application) see **NOTE 1**.
 
 
 ## Local database preparation:
@@ -30,7 +28,7 @@ mysql -u root -p
 sudo apt install mysql-server
 sudo apt install python3-dev libmysqlclient-dev
 
-# See Note 2 in case of errors
+# See NOTE 2 in case of errors
 
 service mysql start
 
@@ -42,8 +40,7 @@ sudo mysql -u root -p
 # Install MySQL server from here: 
 https://dev.mysql.com/downloads/installer/
 
-# More info:
-https://www.w3schools.com/mysql/mysql_install_windows.asp
+# See NOTE 3 for more info:
 
 mysql -u root -p
 ```
@@ -130,7 +127,7 @@ Open -> https://localhost:7007/
 ## To make the frontend repo work together with the backend in local DEV mode/environment
 
 
-Inside backend repo clone (see **NOTE 1**):
+Inside backend repo clone the frontend repo:
 ```
 git clone https://github.com/idsinge/hiaudio_webapp.git
 
@@ -161,7 +158,7 @@ python compress_thread.py
 
 ## AUDIO PROCESSING MODULE
 
-To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, the environment variable `ACOUSTIC_ID_API_KEY` needs to be set at `.env`. It's required to execute the follwoing commands, for the installation of `pydub` (see **NOTE 4**) and `essentia-tensorflow` (see **NOTE 5**) in order to run the audio processing service.
+To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, the environment variable `ACOUSTIC_ID_API_KEY` needs to be set at `.env`. It's required to execute the follwoing commands, for the installation of `pydub` (see **NOTE 4**) and `essentia-tensorflow` in order to run the audio processing service.
 
 ### Download the following models files and place them in the suggested locations.
 
@@ -175,20 +172,10 @@ To use the [Acoustic ID API ](https://acoustid.org/) for audio identification, t
 - [audio_mdl.pth](https://www.dropbox.com/s/cv4knew8mvbrnvq/audioset_0.4593.pth?dl=1)
 
 
-### Installation
+### Installation and launch
 
 ```bash
-pip install pydub
-
-pip install essentia-tensorflow
-
-pip install torch # for instrument recognition - AST
-
-pip install torchaudio # for instrument recognition - AST
-
-pip install soundfile # for instrument recognition - AST
-
-pip install timm==0.4.5 # for instrument recognition - AST
+pip install -r requirements_process_audio.txt
 
 python process_audio_thread/process_audio_thread.py
 ```
@@ -205,8 +192,6 @@ python process_audio_thread/process_audio_thread.py
 
 `sudo apt-get install pkg-config`
 
-3- Flask-Migrate: https://flask-migrate.readthedocs.io/en/latest/#example
+3- MySQL Installation on Windows: https://www.w3schools.com/mysql/mysql_install_windows.asp
 
-4- [Install FFMPEG](https://gist.github.com/barbietunnie/47a3de3de3274956617ce092a3bc03a1). `pydub` needs either `sudo apt install ffmpeg` (Linux) or `brew install ffmpeg` (Mac) in order to function correctly. 
-
-5- In order to make essentia python library to work in the backend this is required: `pip install "numpy<2.0"`.
+4- [Install FFMPEG](https://gist.github.com/barbietunnie/47a3de3de3274956617ce092a3bc03a1). `pydub` needs either `sudo apt install ffmpeg` (Linux) or `brew install ffmpeg` (Mac) in order to function correctly.
