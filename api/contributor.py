@@ -17,9 +17,9 @@ def addcontributorbyemail():
     user_auth = current_user.id
     rjson = request.get_json()
     comp_uuid = rjson.get("composition_id", None)   
-    email = rjson.get("email", None)
-    role = rjson.get("role", None)
-    if(comp_uuid is None) or (email is None) or (not role) or  (role is None) or (int(role) < UserRole.owner.value) or (int(role) > UserRole.guest.value):
+    email_to_invite = rjson.get("email", None)
+    role_to_add = rjson.get("role", None)
+    if(comp_uuid is None) or (email_to_invite is None) or (not role_to_add) or  (role_to_add is None) or (int(role_to_add) < UserRole.owner.value) or (int(role_to_add) > UserRole.guest.value):
         return jsonify({"error":"error in parameters"})
     else:
         composition = Composition.query.filter_by(uuid=comp_uuid).first()
@@ -27,47 +27,50 @@ def addcontributorbyemail():
             return jsonify({"error":"composition not found"})
         
         user1 = UserInfo.query.get(user_auth)
-        # if the person who tries to add the contributor is the owner
-        # TODO: [issue 89] check if the role is 1 (UserRole.owner.value)
-        # control that permission is not changed to creator of the composition
-        if composition.user.id == user_auth:            
+        creator = UserInfo.query.get(composition.user_id)
+        user_who_invites = Contributor.query.filter_by(user_uid=user1.user_uid, composition_id=composition.id).first()
+        is_allowed = False
+
+        if (user_who_invites is not None) and (role_to_add != UserRole.owner.value):
+            is_allowed = user_who_invites.role.value == UserRole.owner.value
             
-            if email is not None:                
+        if ((creator.user_id == user_auth) or is_allowed) and creator.user_email != email_to_invite:
+            if email_to_invite is not None:                
                 try:
-                    emailinfo = validate_email(email, check_deliverability=False)
-                    email = emailinfo.normalized
+                    emailinfo = validate_email(email_to_invite, check_deliverability=False)
+                    email_to_invite = emailinfo.normalized
                 except EmailNotValidError as e:            
                     return jsonify({"ok":False, "error":str(e)})  
             
-            # if Owner tries to add himself throws error            
-            if(user1.user_email != email):
-                user2 = UserInfo.query.filter_by(user_email=email).first()
+            # if user tries to add himself throws error            
+            if(user1.user_email != email_to_invite):
+                user2 = UserInfo.query.filter_by(user_email=email_to_invite).first()
 
                 if(user2 is None):                
                     refusal_code = shortuuid.uuid()                    
-                    result = Utils().sendinvitationemail(email, request.host, refusal_code)                    
+                    result = Utils().sendinvitationemail(email_to_invite, request.host, refusal_code)                    
                     if(result):                        
-                        new_invitation = InvitationEmail(email=email, refusal_code=refusal_code, invited_by=user_auth)
+                        new_invitation = InvitationEmail(email=email_to_invite, refusal_code=refusal_code, invited_by=user_auth)
                         db.session.add(new_invitation)
                         db.session.commit()  
-                        newuser = api.auth.createnewuserindb(email)
+                        newuser = api.auth.createnewuserindb(email_to_invite)
                         user2 = user2 = UserInfo.query.get(newuser.id)
                     else:
                         return jsonify({"error":"problem sending email"})
 
-                return addcontributortodb(user2.id, user2.user_uid, composition, role)
+                return addcontributortodb(user2.id, user2.user_uid, composition, role_to_add)
             else:
-                return jsonify({"error":"not valid contributor"})
+                return jsonify({"error":"you can't add yourself as a contributor"})
         else:
-            return jsonify({"error":"not valid owner"})
+            return jsonify({"error":"adding that contributor with that role is not allowed"})
 
 
 @contrib.route('/addcontributorbyid', methods=['POST'])
 @cross_origin()
 @jwt_required()
 def addcontributorbyid():
-
-    user_auth = current_user.id
+    return jsonify({"error":"method not valid anymore"})
+    """ user_auth = current_user.id
     comp_uuid = request.get_json()['composition_id']
     composition = Composition.query.filter_by(uuid=comp_uuid).first()
     if(composition is None):
@@ -88,7 +91,7 @@ def addcontributorbyid():
             else:
                 return jsonify({"error":"not valid contributor"})
         else:
-            return jsonify({"error":"not valid owner"})
+            return jsonify({"error":"not valid owner"}) """
 
 def addcontributortodb(user2id, user2uid, composition, role):
     querycontributor = Contributor.query.filter_by(user_id=user2id, composition_id=composition.id)
@@ -127,11 +130,12 @@ def deletecontributor():
                 else:
                     queryauthorized = Contributor.query.filter_by(user_id=user_auth, composition_id=composition.id)
                     isauthorized = queryauthorized.first()
+                    # a owner contributor cannot delete another owner contributor, only creator can do that
                     if (isauthorized is not None):
                         role = isauthorized.role.value
                         # check the user is not the owner but it's himself, example:
                         # I removed myself from a composition where I was a contributor (role member)
-                        if ((UserRole.owner.value<= role <= UserRole.admin.value) or(isauthorized.user_uid == contrib_uuid)):
+                        if ((role == UserRole.owner.value and contributor.role.value != UserRole.owner.value) or(isauthorized.user_uid == contrib_uuid)):
                             db.session.delete(contributor)
                             db.session.commit()
                             return jsonify({"ok":True,  "result":"deleted contributor " + contrib_uuid + " from composition " + comp_uuid + " by " +isauthorized.user_uid })
