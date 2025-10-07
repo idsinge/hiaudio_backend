@@ -201,15 +201,8 @@ def deletecomposition(uuid):
     if(composition is None):
         return jsonify({"error":ERROR_404})
     else:
-        iscontributor = Contributor.query.filter_by(composition_id=composition.id, user_id=user_auth).first()
-
-        role = UserRole.none.value
+        # only the creator can delete the composition
         if(composition.user.id == user_auth):
-            role = UserRole.owner.value
-        if(iscontributor is not None):
-            role = iscontributor.role.value
-
-        if(role == UserRole.owner.value):
             deletecompfolder(composition.id)
             db.session.delete(composition)
             db.session.commit()
@@ -250,15 +243,21 @@ def updatecomptocontrib():
 @jwt_required()
 @cross_origin()
 def updatecompcollection():
-    # TODO: issue-150 other users with owner role can update collection too
     user_auth = current_user.id
     coll_id = request.get_json()['collection_id']
-    collection = Collection.query.filter_by(uuid=coll_id).first()
-    if((coll_id == '' or coll_id == None) or(collection is not None and collection.user.id == user_auth)):
-        return updatecompfield('collection_id')
+    comp_uid = request.get_json()['uuid']
+    composition = Composition.query.filter_by(uuid=comp_uid).first()
+    if(composition is not None):
+        if(composition.user.id == user_auth):
+            collection = Collection.query.filter_by(uuid=coll_id).first()
+            if(coll_id == '' or coll_id == None) or(collection is not None):
+                return updatecompfield('collection_id')
+            else:
+                return jsonify({"error":"collection not found"})
+        else:
+            return jsonify({"error":"user not authorized"})
     else:
-        return jsonify({"error":"user not authorized or collection not found"})
-    
+        return jsonify({"error":"composition not found"})
 @comp.route('/updatecompastemplate', methods=['PATCH'])
 @jwt_required()
 @cross_origin()
