@@ -113,8 +113,9 @@ def addcontributortodb(user2id, user2uid, composition, role):
 @cross_origin()
 def deletecontributor():
     user_auth = current_user.id
-    contrib_uuid = request.get_json()['contrib_uuid']
-    comp_uuid = request.get_json()['comp_uuid']
+    rjson = request.get_json()
+    contrib_uuid = rjson.get("contrib_uuid", None)
+    comp_uuid = rjson.get("comp_uuid", None)
     if(contrib_uuid and comp_uuid):
         composition = Composition.query.filter_by(uuid=comp_uuid).first()
         if(composition):
