@@ -5,7 +5,7 @@ from flask_cors import cross_origin
 from sqlalchemy import and_, or_
 from orm import db, User, Collection, LevelPrivacy, Composition, UserInfo
 from utils import Utils
-from .composition_helper import getcompjsonwithuserandcollection, getfilteredcompostionsbyrole, checkcompshouldberetrieved
+from .composition_helper import getcompjsonwithuserandcollection, getfilteredcompostionsbyrole, checkcompshouldberetrieved, deletecompfolder
 
 
 coll = Blueprint('coll', __name__)
@@ -304,6 +304,9 @@ def deletecollection(uuid):
         return jsonify({"error":ERROR_404})
     else:
         if(collection.user.id == user_auth):
+            compositions = Composition.query.filter_by(collection_id=collection.id).all()
+            for comp in compositions:
+                deletecompfolder(comp.id)
             db.session.delete(collection)
             db.session.commit()
             return jsonify({"ok":True, "result": "collection deleted successfully"})
