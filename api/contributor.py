@@ -3,9 +3,10 @@ from email_validator import validate_email, EmailNotValidError
 from orm import db, User, UserRole, Composition, Contributor, UserInfo, InvitationEmail
 from flask_jwt_extended import current_user, jwt_required
 from flask_cors import cross_origin
-from utils import Utils
+from emails import Emails
 import api.auth
 import shortuuid
+import config
 
 contrib = Blueprint('contrib', __name__)
 
@@ -13,7 +14,8 @@ contrib = Blueprint('contrib', __name__)
 @cross_origin()
 @jwt_required()
 def addcontributorbyemail():
-
+    if config.EMAIL_MODULE_ACTIVE is False:
+        return jsonify({"error":"email module not active"})
     user_auth = current_user.id
     rjson = request.get_json()
     comp_uuid = rjson.get("composition_id", None)   
@@ -48,7 +50,7 @@ def addcontributorbyemail():
 
                 if(user2 is None):                
                     refusal_code = shortuuid.uuid()                    
-                    result = Utils().sendinvitationemail(email_to_invite, request.host, refusal_code)                    
+                    result = Emails().sendinvitationemail(email_to_invite, request.host, refusal_code)
                     if(result):                        
                         new_invitation = InvitationEmail(email=email_to_invite, refusal_code=refusal_code, invited_by=user_auth)
                         db.session.add(new_invitation)
