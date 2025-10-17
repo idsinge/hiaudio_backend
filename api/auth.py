@@ -182,7 +182,7 @@ def logout():
 
 @auth.route('/generatelogincode/<string:email>', methods=['PUT'])
 def generatelogincode(email):
-    if config.EMAIL_MODULE_ACTIVE is False:
+    if not getattr(config, 'EMAIL_MODULE_ACTIVE', False):
         return jsonify({"error":"email module not active"})
     if is_user_logged_in():
         return jsonify({"ok":False, "error":"user already logged in"})

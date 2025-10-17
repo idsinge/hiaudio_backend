@@ -14,7 +14,7 @@ contrib = Blueprint('contrib', __name__)
 @cross_origin()
 @jwt_required()
 def addcontributorbyemail():
-    if config.EMAIL_MODULE_ACTIVE is False:
+    if not getattr(config, 'EMAIL_MODULE_ACTIVE', False):
         return jsonify({"error":"email module not active"})
     user_auth = current_user.id
     rjson = request.get_json()
