@@ -55,7 +55,7 @@ migrate = Migrate(app, db)
 
 db.init_app(app)
 
-if config.EMAIL_MODULE_ACTIVE:
+if getattr(config, 'EMAIL_MODULE_ACTIVE', False):
     app.config['MAIL_SERVER'] = config.MAIL_SERVER
     app.config['MAIL_PORT'] = config.MAIL_PORT
     app.config['MAIL_USERNAME'] = config.MAIL_USERNAME
@@ -94,7 +94,7 @@ def page(filename):
 
 HiAdmin(app, db)
 Utils(app)
-if config.EMAIL_MODULE_ACTIVE:
+if getattr(config, 'EMAIL_MODULE_ACTIVE', False):
     Emails(app, mail)
 
 # FOR HTTPS
