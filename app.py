@@ -8,6 +8,7 @@ from flask_mail import Mail
 from flask_jwt_extended import JWTManager
 
 from admin import HiAdmin
+from emails import Emails
 from utils import Utils
 
 import api.auth
@@ -54,14 +55,14 @@ migrate = Migrate(app, db)
 
 db.init_app(app)
 
-
-app.config['MAIL_SERVER'] = config.MAIL_SERVER
-app.config['MAIL_PORT'] = config.MAIL_PORT
-app.config['MAIL_USERNAME'] = config.MAIL_USERNAME
-app.config['MAIL_PASSWORD'] = os.environ.get("OVH_EMAIL_PASSWD")
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USE_SSL'] = False
-mail = Mail(app)
+if config.EMAIL_MODULE_ACTIVE:
+    app.config['MAIL_SERVER'] = config.MAIL_SERVER
+    app.config['MAIL_PORT'] = config.MAIL_PORT
+    app.config['MAIL_USERNAME'] = config.MAIL_USERNAME
+    app.config['MAIL_PASSWORD'] = os.environ.get("OVH_EMAIL_PASSWD")
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USE_SSL'] = False
+    mail = Mail(app)
 
 DEFAULT_PAGE = 'index.html'
 
@@ -92,7 +93,9 @@ def page(filename):
 
 
 HiAdmin(app, db)
-Utils(app, mail)
+Utils(app)
+if config.EMAIL_MODULE_ACTIVE:
+    Emails(app, mail)
 
 # FOR HTTPS
 if __name__ == "__main__":
