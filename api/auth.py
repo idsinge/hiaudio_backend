@@ -1,4 +1,5 @@
 import os, json
+import config
 from email_validator import validate_email, EmailNotValidError
 import random
 from oauthlib.oauth2 import WebApplicationClient
@@ -9,6 +10,7 @@ import requests
 from datetime import datetime
 
 from utils import Utils
+from emails import Emails
 
 from flask_jwt_extended import (
     jwt_required, create_access_token, unset_jwt_cookies,
@@ -180,7 +182,8 @@ def logout():
 
 @auth.route('/generatelogincode/<string:email>', methods=['PUT'])
 def generatelogincode(email):
-
+    if config.EMAIL_MODULE_ACTIVE is False:
+        return jsonify({"error":"email module not active"})
     if is_user_logged_in():
         return jsonify({"ok":False, "error":"user already logged in"})
     else:
@@ -209,7 +212,7 @@ def generatelogincode(email):
             db.session.add(new_code)
             db.session.commit()
 
-        result = Utils().sendeverificationcode(email, code)
+        result = Emails().sendeverificationcode(email, code)
 
         if result:
             return jsonify({"ok":True, "result":"Code successfully sent"})
