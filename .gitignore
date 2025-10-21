@@ -1,9 +1,7 @@
-env
 venv
 .env
 .DS_Store
 database.db
-sqlite_db
 webapp
 config.py
 *.sql
