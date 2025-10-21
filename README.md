@@ -50,7 +50,7 @@ SECRET_KEY=*****
 JWT_SECRET_KEY=*****
 ```
 
-### Duplicate config.py.sample and rename it to config.py
+### Duplicate `config.py.sample` and rename it to `config.py`
 
 ### Initialize the DB for the first time and run the app:
 ```bash
@@ -66,7 +66,7 @@ Open -> https://localhost:7007/
 ### To make the frontend repo work together with the backend in local DEV mode/environment
 
 
-Inside backend repo clone the frontend repo:
+In a different termimal inside the current directory run the following commands:
 ```bash
 cd hiaudio_demoapp
 
