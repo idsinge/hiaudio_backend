@@ -1,0 +1,3 @@
+[submodule "hiaudio_webapp"]
+	path = hiaudio_webapp
+	url = https://github.com/idsinge/hiaudio_webapp
