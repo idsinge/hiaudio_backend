@@ -16,7 +16,7 @@ This repo contains information relative to the server side or back-end, for the 
 
 ### Clone or download the repository
 ```bash
-git clone https://github.com/idsinge/hiaudio_backend.git
+git clone --recursive https://github.com/idsinge/hiaudio_backend.git
 
 cd hiaudio_backend
 ```
@@ -63,28 +63,17 @@ python app.py
 Open -> https://localhost:7007/
 ```
 
-## To make the frontend repo work together with the backend in local DEV mode/environment
+### To make the frontend repo work together with the backend in local DEV mode/environment
 
 
 Inside backend repo clone the frontend repo:
+```bash
+cd hiaudio_demoapp
+
+npm i
+
+npm run dev
 ```
-git clone https://github.com/idsinge/hiaudio_webapp.git
-
-```
-
-Then rename the folder `hiaudio_webapp` to `webapp`
-
-**Hint**: during development it might be useful to temporarly ignore the contents of the public directory, this can be done with
-
-```
-# ignore public/ contents for git diff, grep, status, etc.
-git ls-files -z public/ | xargs -0 git update-index --skip-worktree
-
-# track the contents of public/ again (when commiting changes to it for example)
-git ls-files -z public/ | xargs -0 git update-index --no-skip-worktree
-```
-
-
 
 ## NOTES:
 1- [Web App Repo](https://github.com/idsinge/hiaudio_webapp)
@@ -104,3 +93,7 @@ https://github.com/idsinge/hiaudio_backend/wiki/Audio-compression-module
 5- To run the audio processing module:
 
 https://github.com/idsinge/hiaudio_backend/wiki/Audio-processing-module
+
+6- Ignore temporally changes in `public` folder:
+
+https://github.com/idsinge/hiaudio_backend/wiki/Hint:-ignore-temp-changes-public-directory
