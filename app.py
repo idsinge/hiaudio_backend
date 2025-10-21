@@ -21,6 +21,11 @@ import api.annotation
 
 import config
 
+DB_CNX_REAL = getattr(config, 'DB_CNX_PROD', False)
+DB_CNX = config.DB_CNX_SQLITE
+if DB_CNX_REAL:
+    DB_CNX = config.DB_CNX_MYSQL
+
 DB_FILE = config.DB_FILE if hasattr(config, 'DB_FILE') else None
 app = Flask(__name__, static_folder=os.path.join(config.BASEDIR, "public", "static"))
 
@@ -37,7 +42,7 @@ app.config['MAX_CONTENT_LENGTH'] = config.UPLOAD_MAX_SIZE if hasattr(config, 'UP
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = config.DB_CNX
+app.config['SQLALCHEMY_DATABASE_URI'] = DB_CNX
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.secret_key = os.environ.get("SECRET_KEY") or os.urandom(24)
@@ -59,7 +64,7 @@ if getattr(config, 'EMAIL_MODULE_ACTIVE', False):
     app.config['MAIL_SERVER'] = config.MAIL_SERVER
     app.config['MAIL_PORT'] = config.MAIL_PORT
     app.config['MAIL_USERNAME'] = config.MAIL_USERNAME
-    app.config['MAIL_PASSWORD'] = os.environ.get("OVH_EMAIL_PASSWD")
+    app.config['MAIL_PASSWORD'] = os.environ.get("EMAIL_PASSWD")
     app.config['MAIL_USE_TLS'] = True
     app.config['MAIL_USE_SSL'] = False
     mail = Mail(app)
