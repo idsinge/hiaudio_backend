@@ -17,7 +17,6 @@ DB_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'database.db'
 DB_CNX_SQLITE = 'sqlite:///' +  DB_FILE
 
 
-
 ## mysql config example
 
 MYSQL_HOST=""

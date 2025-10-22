@@ -75,6 +75,12 @@ npm i
 npm run dev
 ```
 
+## Keep up to date `hiaudio_demoapp` and `waveform-playlist` submodules:
+
+```bash
+git submodule update --recursive --remote --merge
+```
+
 ## NOTES:
 1- [Web App Repo](https://github.com/idsinge/hiaudio_webapp)
 
