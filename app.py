@@ -28,7 +28,7 @@ if DB_CNX_REAL:
 
 FRONTEND_DIR = "public"
 if getattr(config, 'DEV_FRONTEND', False):
-    FRONTEND_DIR = "hiaudio_demoapp/public"
+    FRONTEND_DIR = "hiaudio_webapp/public"
 
 DB_FILE = config.DB_FILE if hasattr(config, 'DB_FILE') else None
 app = Flask(__name__, static_folder=os.path.join(config.BASEDIR, FRONTEND_DIR, "static"))
