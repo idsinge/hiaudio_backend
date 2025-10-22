@@ -2,12 +2,10 @@ venv
 .env
 .DS_Store
 database.db
-webapp
 config.py
 *.sql
 __pycache__
 compression_logfile.log
 processed_audio_logfile.log
-waveformplaylist
 models/genre_rosamerica-vggish-audioset-1.pb
 process_audio_thread/pretrained_models/audio_mdl.pth
