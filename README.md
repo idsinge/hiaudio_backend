@@ -68,7 +68,7 @@ Open -> https://localhost:7007/
 
 In a different termimal inside the current directory run the following commands:
 ```bash
-cd hiaudio_demoapp
+cd hiaudio_webapp
 
 npm i
 
@@ -93,7 +93,3 @@ https://github.com/idsinge/hiaudio_backend/wiki/Audio-compression-module
 5- To run the audio processing module:
 
 https://github.com/idsinge/hiaudio_backend/wiki/Audio-processing-module
-
-6- Ignore temporally changes in `public` folder:
-
-https://github.com/idsinge/hiaudio_backend/wiki/Hint:-ignore-temp-changes-public-directory
