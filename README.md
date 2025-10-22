@@ -65,6 +65,10 @@ Open -> https://localhost:7007/
 
 ### To make the frontend repo work together with the backend in local DEV mode/environment
 
+At `config.py` change the value of the following variable to `True`
+```bash
+DEV_FRONTEND = True # default False
+```
 
 In a different termimal inside the current directory run the following commands:
 ```bash
