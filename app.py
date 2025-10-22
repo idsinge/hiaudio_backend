@@ -26,8 +26,12 @@ DB_CNX = config.DB_CNX_SQLITE
 if DB_CNX_REAL:
     DB_CNX = config.DB_CNX_MYSQL
 
+FRONTEND_DIR = "public"
+if getattr(config, 'DEV_FRONTEND', False):
+    FRONTEND_DIR = "hiaudio_demoapp/public"
+
 DB_FILE = config.DB_FILE if hasattr(config, 'DB_FILE') else None
-app = Flask(__name__, static_folder=os.path.join(config.BASEDIR, "public", "static"))
+app = Flask(__name__, static_folder=os.path.join(config.BASEDIR, FRONTEND_DIR, "static"))
 
 app.register_blueprint(api.auth.auth)
 app.register_blueprint(api.user.user)
@@ -91,7 +95,7 @@ def redirect_external():
 def page(filename):
     filename = filename or DEFAULT_PAGE
     if request.method == 'GET':   
-        return send_from_directory(os.path.join(config.BASEDIR, "public"), filename)
+        return send_from_directory(os.path.join(config.BASEDIR, FRONTEND_DIR), filename)
 
     abort(404, description="Resource not found")
 

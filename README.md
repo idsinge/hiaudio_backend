@@ -16,7 +16,7 @@ This repo contains information relative to the server side or back-end, for the 
 
 ### Clone or download the repository
 ```bash
-git clone --recursive https://github.com/idsinge/hiaudio_backend.git
+git clone --recurse-submodules --remote-submodules https://github.com/idsinge/hiaudio_backend.git
 
 cd hiaudio_backend
 ```
