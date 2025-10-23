@@ -6,10 +6,10 @@ import shortuuid
 with app.app_context():
 
     if DB_FILE is not None and os.path.exists(DB_FILE):
-        print('The file exists')
+        print('The file exists, will be removed')
         os.remove(DB_FILE)
     else:
-        print('The file does not exist')       
+        print('DB initialize correctly')       
     
     db.drop_all()
     db.create_all()
