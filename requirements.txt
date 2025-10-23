@@ -16,4 +16,3 @@ shortuuid
 flask_jwt_extended
 Flask-Mail==0.9.1
 email-validator
-mysqlclient
