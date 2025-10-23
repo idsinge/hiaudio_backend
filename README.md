@@ -11,12 +11,11 @@ Hi-Audio online platform is a collaborative web application for musicians and re
 
 This repo contains information relative to the server side or back-end, for the client side (web application) see **NOTE 1**.
 
-
 ## Recommended Python version 3.10
 
 ### Clone or download the repository
 ```bash
-git clone --recurse-submodules --remote-submodules https://github.com/idsinge/hiaudio_backend.git
+git clone --depth=1 https://github.com/idsinge/hiaudio_backend.git
 
 cd hiaudio_backend
 ```
@@ -63,30 +62,10 @@ python app.py
 Open -> https://localhost:7007/
 ```
 
-### To make the frontend repo work together with the backend in local DEV mode/environment
-
-At `config.py` change the value of the following variable to `True`
-```bash
-DEV_FRONTEND = True # default False
-```
-
-In a different termimal inside the current directory run the following commands:
-```bash
-cd hiaudio_webapp
-
-npm i
-
-npm run dev
-```
-
-## Keep up to date `hiaudio_demoapp` and `waveform-playlist` submodules:
-
-```bash
-git submodule update --recursive --remote --merge
-```
-
 ## NOTES:
-1- [Web App Repo](https://github.com/idsinge/hiaudio_webapp)
+1- [Web App Repo](https://github.com/idsinge/hiaudio_webapp). Instructions:
+
+https://github.com/idsinge/hiaudio_backend/wiki/Working-with-the-frontend-and-backend-at-the-same-time-for-development
 
 2- For MySQL database follow these steps:
 
