@@ -11,6 +11,11 @@ EMAIL_MODULE_ACTIVE = False
 DB_CNX_PROD = False
 DEV_FRONTEND = False
 
+# here you can define regex on routes you want to exclude from CORS (with is enabled by default)
+EXCLUDED_CORS_ROUTES = [
+    # r'/generatelogincode/.*',
+]
+
 # sqllite config example
 
 DB_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'database.db')

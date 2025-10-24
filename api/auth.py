@@ -4,10 +4,11 @@ from email_validator import validate_email, EmailNotValidError
 import random
 from oauthlib.oauth2 import WebApplicationClient
 from random_username.generate import generate_username
-from orm import db, User, UserInfo, VerificationCode, InvitationEmail
+from orm import db, User, UserInfo, VerificationCode, InvitationEmail, limiter
 from flask import Blueprint, jsonify, request, redirect, url_for
 import requests
 from datetime import datetime
+
 
 from utils import Utils
 from emails import Emails
@@ -181,6 +182,7 @@ def logout():
     return response
 
 @auth.route('/generatelogincode/<string:email>', methods=['PUT'])
+@limiter.limit("2 per minute")
 def generatelogincode(email):
     if not getattr(config, 'EMAIL_MODULE_ACTIVE', False):
         return jsonify({"error":"email module not active"})

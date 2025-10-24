@@ -6,6 +6,9 @@ import shortuuid
 from datetime import datetime
 from sqlalchemy.sql import func
 
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
 class UserRole(enum.Enum):
     none = 0
     owner = 1
@@ -19,6 +22,14 @@ class LevelPrivacy(enum.Enum):
     private = 3
 
 db = SQLAlchemy()
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    # Setting default_limits to an empty list disables all global rate limiting.
+    default_limits=[],
+    storage_uri="memory://",
+)
+
 
 class User(db.Model, SerializerMixin):
 
@@ -43,7 +54,7 @@ class UserInfo(db.Model, SerializerMixin):
     user = db.relationship('User', back_populates='userinfo')
     name = db.Column(db.String(100), unique=True, nullable=False)
     profile_pic = db.Column(db.String(100))
-    user_uid = db.Column(db.String(100), unique=True, nullable=False)   
+    user_uid = db.Column(db.String(100), unique=True, nullable=False)
     user_email = db.Column(db.String(120), unique=True, nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -158,7 +169,7 @@ class Contributor(db.Model, SerializerMixin):
         return f'<Contributor "{self.user_id}">'
 
 class VerificationCode(db.Model):
-    
+
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     code = db.Column(db.String(6), nullable=False)
@@ -166,7 +177,7 @@ class VerificationCode(db.Model):
     attempts = db.Column(db.Integer, default=0, nullable=False)
 
 class InvitationEmail(db.Model):
-    
+
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     refusal_code = db.Column(db.String(100), nullable=False)

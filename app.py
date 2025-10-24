@@ -1,8 +1,8 @@
-import os
+import os, re
 from flask import Flask, request, send_from_directory, abort, redirect, url_for
 from flask_migrate import Migrate
 from flask_cors import CORS
-from orm import db
+from orm import db, limiter
 from flask_mail import Mail
 
 from flask_jwt_extended import JWTManager
@@ -41,6 +41,34 @@ app.register_blueprint(api.contributor.contrib)
 app.register_blueprint(api.collection.coll)
 app.register_blueprint(api.annotation.annotat)
 
+
+EXCLUDED_CORS_ROUTES = getattr(config, 'EXCLUDED_CORS_ROUTES', [])
+
+# this needs to be declared BEFORE doing CORS(app)
+# becose after_request functions are called in reverse order
+# so we want to remove the headers last, after they have been added by CORS
+@app.after_request
+def remove_cors_headers(response):
+    """
+    This hook runs after every request. It checks if the current route is in
+    the EXCLUDED_CORS_ROUTES list and manually deletes the CORS headers
+    added by the global configuration.
+    """
+
+    for rule in EXCLUDED_CORS_ROUTES:
+        if re.match(rule, request.path, re.IGNORECASE):
+            # Manually delete all CORS-related headers from the response
+            response.headers.pop('Access-Control-Allow-Origin', None)
+            response.headers.pop('Access-Control-Allow-Headers', None)
+            response.headers.pop('Access-Control-Allow-Methods', None)
+            response.headers.pop('Access-Control-Allow-Credentials', None)
+            response.headers.pop('Access-Control-Max-Age', None)
+            print(response.headers)
+            return response
+
+    return response
+
+
 # allow uploads up to 50MB by default
 app.config['MAX_CONTENT_LENGTH'] = config.UPLOAD_MAX_SIZE if hasattr(config, 'UPLOAD_MAX_SIZE') else 50 * 1000 * 1000
 cors = CORS(app)
@@ -63,6 +91,7 @@ jwt.user_lookup_loader(api.auth.user_loader_callback)
 migrate = Migrate(app, db)
 
 db.init_app(app)
+limiter.init_app(app)
 
 if getattr(config, 'EMAIL_MODULE_ACTIVE', False):
     app.config['MAIL_SERVER'] = config.MAIL_SERVER
@@ -80,7 +109,7 @@ def index():
     return page(DEFAULT_PAGE)
 
 @app.route('/user_page/<string:uid>')
-def user_page(uid):    
+def user_page(uid):
     return redirect(url_for('page', filename=DEFAULT_PAGE, userid=uid))
 
 @app.route('/collection_page/<string:uid>')
@@ -94,7 +123,7 @@ def redirect_external():
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):
     filename = filename or DEFAULT_PAGE
-    if request.method == 'GET':   
+    if request.method == 'GET':
         return send_from_directory(os.path.join(config.BASEDIR, FRONTEND_DIR), filename)
 
     abort(404, description="Resource not found")
