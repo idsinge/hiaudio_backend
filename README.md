@@ -41,6 +41,7 @@ pip install -r requirements.txt
 ### Create .env file with the following content
 ```bash
 # Google Values: https://console.cloud.google.com/apis/credentials
+# See Note 2 for more info about Google OAuth 2.0 clients
 # SECRET_KEY is independent and can be self-elected
 # JWT_SECRET_KEY: https://flask-jwt-extended.readthedocs.io/en/stable/options.html#JWT_SECRET_KEY
 GOOGLE_CLIENT_ID=*****
@@ -67,18 +68,22 @@ Open -> https://localhost:7007/
 
 https://github.com/idsinge/hiaudio_backend/wiki/Working-with-the-frontend-and-backend-at-the-same-time-for-development
 
-2- For MySQL database follow these steps:
+2- How to configure Google OAuth:
+
+https://github.com/idsinge/hiaudio_backend/wiki/Create-a-Google-OAuth-2.0-Client
+
+3- For MySQL database follow these steps:
 
 https://github.com/idsinge/hiaudio_backend/wiki/Using-MySQL-by-default-instead-of-SQLite 
 
-3- To activate email feature:
+4- To activate email feature:
 
 https://github.com/idsinge/hiaudio_backend/wiki/Activate-email-exchange-feature
 
-4- To run the audio compression module:
+5- To run the audio compression module:
 
 https://github.com/idsinge/hiaudio_backend/wiki/Audio-compression-module
 
-5- To run the audio processing module:
+6- To run the audio processing module:
 
 https://github.com/idsinge/hiaudio_backend/wiki/Audio-processing-module
