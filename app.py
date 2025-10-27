@@ -123,6 +123,8 @@ def redirect_external():
 @app.route('/<path:filename>', methods=['GET', 'POST'])
 def page(filename):
     filename = filename or DEFAULT_PAGE
+    if filename == "robots.txt":
+        return send_from_directory(config.BASEDIR, filename)
     if request.method == 'GET':
         return send_from_directory(os.path.join(config.BASEDIR, FRONTEND_DIR), filename)
 
