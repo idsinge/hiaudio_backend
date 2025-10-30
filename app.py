@@ -63,7 +63,6 @@ def remove_cors_headers(response):
             response.headers.pop('Access-Control-Allow-Methods', None)
             response.headers.pop('Access-Control-Allow-Credentials', None)
             response.headers.pop('Access-Control-Max-Age', None)
-            print(response.headers)
             return response
 
     return response
