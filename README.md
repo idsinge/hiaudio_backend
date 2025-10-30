@@ -13,6 +13,8 @@ This repo contains information relative to the server side or back-end, for the 
 
 ## Recommended Python version 3.10
 
+More info: https://github.com/idsinge/hiaudio_backend/wiki/Manually-innstall-Python-3.10-(macOS)
+
 ### Clone or download the repository
 ```bash
 git clone --depth=1 https://github.com/idsinge/hiaudio_backend.git
