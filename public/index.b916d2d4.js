@@ -1,2 +1,0 @@
-const e=document.getElementById("searchInput");e.onkeyup=e=>{e=e||window.event,t()};const t=()=>{let t=e.value.toUpperCase(),n=document.getElementById("grid").getElementsByClassName("grid-div");for(let e=0;e<n.length;e++){let l=n[e].getElementsByTagName("a")[1];(l.textContent||l.innerText).toUpperCase().indexOf(t)>-1?n[e].style.display="":n[e].style.display="none"}};
-//# sourceMappingURL=index.b916d2d4.js.map
