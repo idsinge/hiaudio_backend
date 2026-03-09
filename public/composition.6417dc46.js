@@ -18,6 +18,7 @@ class t extends HTMLElement{connectedCallback(){let t=this.getAttribute("static-
             <li><a href="${t}github.html">GitHub</a></li>
             <li><a href="${t}research.html">Research</a></li>
             <li><a href="${t}support.html">Support</a></li>
+            <li><a href="${t}automatedgeneration.html">Automated Data Generation</a></li>
           </ul>
           <span id="companyName">&copy; Hi-Audio</span>
         </div>
@@ -30,4 +31,4 @@ class t extends HTMLElement{connectedCallback(){let t=this.getAttribute("static-
         `:""}
       </footer>
     `}}customElements.define("hi-audio-footer",t);
-//# sourceMappingURL=composition.80ae1ba0.js.map
+//# sourceMappingURL=composition.6417dc46.js.map
