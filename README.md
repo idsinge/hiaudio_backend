@@ -1,3 +1,5 @@
+# Hi-Audio Backend
+
 ## About
 
 Hi-Audio online platform is a collaborative web application for musicians and researchers in the MIR (Music Information Retrieval) domain, with a view to build a public database of music recordings from a wide variety of styles and different cultures. It allows:
@@ -9,11 +11,11 @@ Hi-Audio online platform is a collaborative web application for musicians and re
 
 ![screenshot](doc/screenshot.png)
 
-This repo contains information relative to the server side or back-end, for the client side (web application) see **NOTE 1**.
+This repo contains information relative to the server side or back-end, for the client side (web application) see Note 1.
 
-## Recommended Python version 3.10
+## Getting Started
 
-More info: https://github.com/idsinge/hiaudio_backend/wiki/Manually-innstall-Python-3.10-(macOS)
+> **Recommended Python version: 3.10** — [installation guide (macOS)](https://github.com/idsinge/hiaudio_backend/wiki/Manually-install-Python-3.10-(macOS))
 
 ### Clone or download the repository
 ```bash
@@ -41,7 +43,7 @@ pip install -r requirements.txt
 ```
 
 ### Create .env file with the following content
-```bash
+```env
 # Google Values: https://console.cloud.google.com/apis/credentials
 # See Note 2 for more info about Google OAuth 2.0 clients
 # SECRET_KEY is independent and can be self-elected
@@ -58,34 +60,69 @@ JWT_SECRET_KEY=*****
 ```bash
 python initdb.py
 
-# Run the local server 
+# Run the local server
 python app.py
-
-# Verify it's running
-Open -> https://localhost:7007/
 ```
 
-## NOTES:
-1- [Web App Repo](https://github.com/idsinge/hiaudio_webapp). Instructions:
+Then open https://localhost:7007/ in your browser to verify it's running.
 
-https://github.com/idsinge/hiaudio_backend/wiki/Working-with-the-frontend-and-backend-at-the-same-time-for-development
+## Notes
 
-2- How to configure Google OAuth:
+1. [Web App Repo](https://github.com/idsinge/hiaudio_webapp) — [frontend + backend dev instructions](https://github.com/idsinge/hiaudio_backend/wiki/Working-with-the-frontend-and-backend-at-the-same-time-for-development)
+2. [How to configure Google OAuth](https://github.com/idsinge/hiaudio_backend/wiki/Create-a-Google-OAuth-2.0-Client)
+3. [Using MySQL instead of SQLite](https://github.com/idsinge/hiaudio_backend/wiki/Using-MySQL-by-default-instead-of-SQLite)
+4. [Activate the email feature](https://github.com/idsinge/hiaudio_backend/wiki/Activate-email-exchange-feature)
+5. [Run the audio compression module](https://github.com/idsinge/hiaudio_backend/wiki/Audio-compression-module)
+6. [Run the audio processing module](https://github.com/idsinge/hiaudio_backend/wiki/Audio-processing-module)
 
-https://github.com/idsinge/hiaudio_backend/wiki/Create-a-Google-OAuth-2.0-Client
+---
 
-3- For MySQL database follow these steps:
+## Acknowledgments
 
-https://github.com/idsinge/hiaudio_backend/wiki/Using-MySQL-by-default-instead-of-SQLite 
+The Hi-Audio platform is developed as part of the project *Hybrid and Interpretable Deep Neural Audio Machines*, funded by the **European Research Council (ERC)** under the European Union's Horizon Europe research and innovation programme (grant agreement No. 101052978).
 
-4- To activate email feature:
+<img src="./doc/ERC_logo.png" alt="European Research Council logo" width="250"/>
 
-https://github.com/idsinge/hiaudio_backend/wiki/Activate-email-exchange-feature
+---
 
-5- To run the audio compression module:
+## How to Cite
 
-https://github.com/idsinge/hiaudio_backend/wiki/Audio-compression-module
+If you use or reference the data or findings from this repository, please cite the published journal article. You may also cite the repository directly.
 
-6- To run the audio processing module:
+> Gil Panal, J. M., David, A., & Richard, G. (2026). The Hi-Audio online platform for recording and distributing multi-track music datasets. *Journal on Audio, Speech, and Music Processing*. https://doi.org/10.1186/s13636-026-00459-0
 
-https://github.com/idsinge/hiaudio_backend/wiki/Audio-processing-module
+**BibTeX:**
+
+```bibtex
+@article{GilPanal2026,
+  author  = {Gil Panal, Jos{\'e} M. and David, Aur{\'e}lien and Richard, Ga{\"e}l},
+  title   = {The Hi-Audio online platform for recording and distributing multi-track music datasets},
+  journal = {Journal on Audio, Speech, and Music Processing},
+  year    = {2026},
+  issn    = {3091-4523},
+  doi     = {10.1186/s13636-026-00459-0},
+  url     = {https://doi.org/10.1186/s13636-026-00459-0}
+}
+```
+
+A preprint version is also available at: [https://hal.science/hal-05153739](https://hal.science/hal-05153739)
+
+**Repository citation:**
+
+> Gil Panal, J. M., David, A., & Richard, G. (2026). *Hi-Audio Backend* [Software repository]. GitHub. https://github.com/idsinge/hiaudio_backend
+
+```bibtex
+@misc{GilPanal2026backend,
+  author = {Gil Panal, Jos{\'e} M. and David, Aur{\'e}lien and Richard, Ga{\"e}l},
+  title  = {Hi-Audio Backend},
+  year   = {2026},
+  url    = {https://github.com/idsinge/hiaudio_backend}
+}
+```
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE.md).  
+Copyright (c) 2022 Hi-Audio.
